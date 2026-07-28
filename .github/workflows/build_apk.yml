@@ -1,0 +1,66 @@
+name: Build Android APK & Windows Executable
+
+on:
+  push:
+    branches: [ master, main ]
+  workflow_dispatch:
+
+jobs:
+  build-apk:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Set up Java JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Install Bubblewrap CLI & Build APK
+        run: |
+          npm install -g @bubblewrap/cli
+          mkdir -p apk_build
+          cd apk_build
+          npx @bubblewrap/cli init --manifest=https://barathwaj2006.github.io/Brain-Computer-Interface---Cognitive-Load-Analysis/web/manifest.json
+          npx @bubblewrap/cli build
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: NeuroSim-Android-APK
+          path: apk_build/*.apk
+
+  build-exe:
+    name: Build Windows Executable
+    runs-on: windows-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install Dependencies & PyInstaller
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Build Executable
+        run: |
+          pyinstaller --noconfirm NeuroSim.spec
+
+      - name: Upload Windows Executable Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: NeuroSim-Windows-Executable
+          path: dist/NeuroSim.exe
