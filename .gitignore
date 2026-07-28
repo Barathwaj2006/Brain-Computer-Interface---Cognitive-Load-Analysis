@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+devel/
+dist/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Database / Local Session Data
+*.db
+*.sqlite
+*.sqlite3
+
+# PDF Reports generated during testing
+*.pdf
+
+# PyInstaller
+*.manifest
+*.spec
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
