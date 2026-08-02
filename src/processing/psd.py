@@ -1,106 +1,136 @@
 """
-Frequency & Power Spectral Density (PSD) Analysis Module
-Calculates Welch PSD, absolute and relative band powers, dominant frequencies, and clinical stress indices.
+Power Spectral Density (PSD) Analysis Module
+Computes Welch PSD, relative band powers, clinical ratios, and validation metrics.
 """
 
 import numpy as np
-from scipy import signal, integrate
-from typing import Dict, Any, Tuple
-from src.app.config import SAMPLING_RATE_HZ, BAND_LIMITS
+from scipy.signal import welch
+import time
+from src.app.config import SAMPLING_RATE, BANDS
 
 class PSDAnalyzer:
-    def __init__(self, sampling_rate: int = SAMPLING_RATE_HZ):
-        self.sampling_rate = sampling_rate
+    """
+    Computes spectral band powers, Welch PSD estimation,
+    clinical ratios, and validation tests.
+    """
 
-    def compute_psd(self, eeg_signal: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    def __init__(self, fs=SAMPLING_RATE):
+        self.fs = fs
+
+    def compute_psd(self, signal, nperseg=256):
         """
-        Compute Welch Power Spectral Density (PSD).
-        Returns:
-            freqs (np.ndarray): Frequency array (Hz)
-            psd (np.ndarray): Power Spectral Density array (uV^2/Hz)
+        Calculates Welch PSD for input time-series signal.
+        Returns: (freqs, psd)
         """
-        nperseg = min(len(eeg_signal), self.sampling_rate * 2)
-        if nperseg < 32:
-            return np.array([]), np.array([])
-            
-        freqs, psd = signal.welch(eeg_signal, fs=self.sampling_rate, nperseg=nperseg, noverlap=nperseg//2)
+        if len(signal) < nperseg:
+            return np.array([0]), np.array([0])
         
-        # Crop freqs to 0 - 45 Hz
-        valid_idx = (freqs >= 0.5) & (freqs <= 45.0)
-        return freqs[valid_idx], psd[valid_idx]
+        freqs, psd = welch(signal, fs=self.fs, nperseg=min(nperseg, len(signal)))
+        return freqs, psd
 
-    def analyze_bands(self, freqs: np.ndarray, psd: np.ndarray) -> Dict[str, Any]:
+    def extract_band_powers(self, freqs, psd):
         """
-        Extract absolute and relative band powers, dominant band/frequency, and clinical stress ratios.
+        Integrates PSD across Delta, Theta, Alpha, and Beta frequency bands.
+        Returns dictionary of absolute and relative band powers.
         """
-        if len(freqs) == 0 or len(psd) == 0:
-            return {
-                'abs_powers': {'delta': 0.0, 'theta': 0.0, 'alpha': 0.0, 'beta': 0.0},
-                'rel_powers': {'delta': 25.0, 'theta': 25.0, 'alpha': 25.0, 'beta': 25.0},
-                'total_power': 0.0,
-                'dominant_freq': 0.0,
-                'dominant_band': 'ALPHA',
-                'theta_beta_ratio': 1.0,
-                'alpha_beta_ratio': 1.0,
-                'stress_index': 0.5,
-                'engagement_index': 0.5,
-                'fatigue_metric': 0.5
-            }
+        band_powers = {}
+        total_power = np.sum(psd) + 1e-12
 
-        dx = freqs[1] - freqs[0] if len(freqs) > 1 else 1.0
-        abs_powers = {}
-
-        for band, (low, high) in BAND_LIMITS.items():
-            if band == 'gamma':
-                continue
-            idx = (freqs >= low) & (freqs <= high)
-            if np.any(idx):
-                # Simpson's / trapezoidal integration
-                power = float(integrate.simpson(psd[idx], x=freqs[idx])) if hasattr(integrate, 'simpson') else float(np.trapz(psd[idx], dx=dx))
-                abs_powers[band] = max(1e-6, power)
+        for band_name, (f_min, f_max) in BANDS.items():
+            idx = np.where((freqs >= f_min) & (freqs <= f_max))[0]
+            if len(idx) > 0:
+                abs_power = np.trapz(psd[idx], freqs[idx])
             else:
-                abs_powers[band] = 1e-6
+                abs_power = 0.0
+            band_powers[f"{band_name}_abs"] = float(abs_power)
 
-        total_power = sum(abs_powers.values())
-        rel_powers = {band: (p / total_power) * 100.0 for band, p in abs_powers.items()}
+        abs_total = sum(band_powers.values()) + 1e-12
+        for band_name in BANDS.keys():
+            band_powers[f"{band_name}_rel"] = float(band_powers[f"{band_name}_abs"] / abs_total) * 100.0
 
-        # Dominant frequency & band
-        max_psd_idx = np.argmax(psd)
-        dominant_freq = float(freqs[max_psd_idx])
+        return band_powers
 
-        dominant_band = 'ALPHA'
-        for band, (low, high) in BAND_LIMITS.items():
-            if low <= dominant_freq <= high:
-                dominant_band = band.upper()
-                break
+    def compute_metrics(self, band_powers, freqs=None, psd=None):
+        """
+        Computes clinical stress index, TBR, engagement, dominant frequency,
+        and telemetry latency metrics.
+        """
+        start_t = time.perf_counter()
 
-        # Clinical Stress Ratios
-        theta_p = abs_powers['theta']
-        alpha_p = abs_powers['alpha']
-        beta_p  = abs_powers['beta']
-        delta_p = abs_powers['delta']
+        delta = band_powers.get('delta_rel', 25.0)
+        theta = band_powers.get('theta_rel', 25.0)
+        alpha = band_powers.get('alpha_rel', 25.0)
+        beta = band_powers.get('beta_rel', 25.0)
 
-        theta_beta_ratio = theta_p / max(1e-6, beta_p)  # Theta/Beta Ratio (TBR) -> Mental Fatigue
-        alpha_beta_ratio = alpha_p / max(1e-6, beta_p)  # Relaxation vs Focus
-        
-        # Spectral Stress Index (SSI): ratio of Beta (high arousal) to (Alpha + Theta)
-        stress_index = beta_p / max(1e-6, (alpha_p + theta_p))
-        
-        # Engagement Index: Beta / (Alpha + Theta)
-        engagement_index = beta_p / max(1e-6, (alpha_p + theta_p))
-        
-        # Fatigue Metric: Theta / (Alpha + Beta)
-        fatigue_metric = theta_p / max(1e-6, (alpha_p + beta_p))
+        # Ratios
+        stress_index = beta / (alpha + theta + 1e-6)
+        tbr = theta / (beta + 1e-6)
+        abr = alpha / (beta + 1e-6)
+        engagement = beta / (alpha + theta + 1e-6)
+        fatigue = theta / (alpha + beta + 1e-6)
+
+        # Dominant Frequency
+        dom_freq = 10.0
+        dom_band = "ALPHA"
+        if freqs is not None and psd is not None and len(psd) > 0:
+            dom_idx = np.argmax(psd)
+            dom_freq = float(freqs[dom_idx])
+            if dom_freq <= 4.0:
+                dom_band = "DELTA"
+            elif dom_freq <= 8.0:
+                dom_band = "THETA"
+            elif dom_freq <= 13.0:
+                dom_band = "ALPHA"
+            else:
+                dom_band = "BETA"
+
+        calc_latency = (time.perf_counter() - start_t) * 1000.0
 
         return {
-            'abs_powers': abs_powers,
-            'rel_powers': rel_powers,
-            'total_power': total_power,
-            'dominant_freq': dominant_freq,
-            'dominant_band': dominant_band,
-            'theta_beta_ratio': theta_beta_ratio,
-            'alpha_beta_ratio': alpha_beta_ratio,
-            'stress_index': stress_index,
-            'engagement_index': engagement_index,
-            'fatigue_metric': fatigue_metric
+            'stress_index': float(stress_index),
+            'tbr': float(tbr),
+            'abr': float(abr),
+            'engagement': float(engagement),
+            'fatigue': float(fatigue),
+            'dominant_frequency': float(dom_freq),
+            'dominant_band': dom_band,
+            'calc_latency_ms': float(calc_latency)
+        }
+
+    def run_validation_test(self, test_band):
+        """
+        Runs automated DSP validation self-test for a specified band.
+        Generates synthetic pure test tone, computes detected peak frequency,
+        verifies band match, and returns accuracy PASS/FAIL metrics.
+        """
+        test_freqs = {
+            'delta': 2.0,
+            'theta': 6.0,
+            'alpha': 10.0,
+            'beta': 20.0
+        }
+        
+        target_f = test_freqs.get(test_band.lower(), 10.0)
+        t = np.linspace(0, 5, self.fs * 5)
+        # Pure tone + small noise
+        test_signal = np.sin(2 * np.pi * target_f * t) + np.random.normal(0, 0.05, len(t))
+
+        freqs, psd = self.compute_psd(test_signal, nperseg=512)
+        bands = self.extract_band_powers(freqs, psd)
+        metrics = self.compute_metrics(bands, freqs, psd)
+
+        detected_f = metrics['dominant_frequency']
+        detected_band = metrics['dominant_band']
+        freq_error = abs(detected_f - target_f)
+        
+        passed = (freq_error <= 0.5) and (detected_band.lower() == test_band.lower())
+
+        return {
+            'test_band': test_band.upper(),
+            'target_frequency_hz': target_f,
+            'detected_frequency_hz': detected_f,
+            'detected_band': detected_band,
+            'frequency_error_hz': round(freq_error, 2),
+            'result': "PASS" if passed else "FAIL",
+            'passed': passed
         }

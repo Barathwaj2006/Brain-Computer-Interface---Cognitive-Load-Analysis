@@ -1,28 +1,29 @@
 """
-PyInstaller Packaging Build Script
-Builds standalone NeuroSim.exe Windows desktop executable in dist/ directory.
+PyInstaller Packaging Script for NeuroSim Standalone Executable
+Compiles src/main.py into dist/NeuroSim.exe
 """
 
-import os
-import sys
 import subprocess
+import sys
+import os
 
-def build():
-    print("[Build] Compiling NeuroSim executable with PyInstaller...")
-    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    spec_path = os.path.join(project_root, "NeuroSim.spec")
+def build_exe():
+    print("Building NeuroSim Standalone Windows Executable...")
+    venv_python = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'venv', 'Scripts', 'python.exe')
+    pyinstaller_exe = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'venv', 'Scripts', 'pyinstaller.exe')
 
-    venv_pyinstaller = os.path.join(project_root, "venv", "Scripts", "pyinstaller.exe")
-    cmd = [venv_pyinstaller, "--noconfirm", spec_path]
+    if not os.path.exists(pyinstaller_exe):
+        pyinstaller_exe = "pyinstaller"
 
-    res = subprocess.run(cmd, cwd=project_root)
-    if res.returncode == 0:
-        exe_path = os.path.join(project_root, "dist", "NeuroSim.exe")
-        print(f"\n[Build Success] Package built successfully!")
-        print(f"Executable location: {exe_path}")
-    else:
-        print(f"\n[Build Failure] PyInstaller exited with code {res.returncode}")
-        sys.exit(res.returncode)
+    cmd = [
+        pyinstaller_exe,
+        "--noconfirm",
+        "--clean",
+        "NeuroSim.spec"
+    ]
+    print(f"Running command: {' '.join(cmd)}")
+    subprocess.run(cmd, check=True)
+    print("Build finished successfully! Binary location: dist/NeuroSim.exe")
 
 if __name__ == '__main__':
-    build()
+    build_exe()

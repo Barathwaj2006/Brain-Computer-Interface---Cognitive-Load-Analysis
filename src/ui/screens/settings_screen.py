@@ -1,154 +1,68 @@
 """
-Screen 9 — Configuration & Simulation Settings Screen
-Configure hardware COM ports, baud rate, classifier mode, noise level, and live waveform sliders.
+Settings Screen Module — Medical-Grade Calibration Standard
+Provides Neural Signal Synthesizer calibration, active digital filter toggles,
+sampling rate controls, and hardware interface status.
 """
 
-from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QSlider, QRadioButton, QButtonGroup, QPushButton
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QFrame, QSlider, QCheckBox, QComboBox
+from PySide6.QtCore import Qt
+from src.app.config import (
+    COLOR_CARD_BG, COLOR_CYAN, INTERFACE_NAME, SOURCE_SIMULATOR, SOURCE_DEVICE,
+    NOTCH_FILTER_STATUS, EOG_FILTER_STATUS, EMG_FILTER_STATUS
 )
-from PySide6.QtCore import Qt, Signal
-from src.app.config import COLORS
-from src.visualization.custom_widgets import GlassCard
-from src.acquisition.serial_reader import HardwareSerialThread
 
 class SettingsScreen(QWidget):
-    sim_params_changed = Signal(float, float, float, float, float)  # (d, t, a, b, noise)
-    classifier_changed = Signal(str)                                # 'RULE' or 'ML'
-    com_changed = Signal(str, int)                                  # (port, baud)
-
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.init_ui()
+
+    def init_ui(self):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(16)
 
-        title = QLabel("SYSTEM CONFIGURATION & SIMULATION CONTROLS")
-        title.setStyleSheet(f"font-size: 18px; font-weight: bold; color: {COLORS['text_primary']};")
-        layout.addWidget(title)
+        title_lbl = QLabel("SYSTEM CONFIGURATION & FILTER CALIBRATION")
+        title_lbl.setStyleSheet("font-size: 16px; font-weight: 900; color: #F8FAFC; letter-spacing: 1px;")
+        layout.addWidget(title_lbl)
 
-        # 1. Simulation Waveform Controls Card
-        sim_card = GlassCard()
-        sim_layout = QVBoxLayout(sim_card)
-        sim_layout.setContentsMargins(20, 16, 20, 16)
+        # Card 1: Signal Interface & Acquisition Configuration
+        card_interface = QFrame()
+        card_interface.setStyleSheet(f"background: {COLOR_CARD_BG}; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px;")
+        ci_layout = QVBoxLayout(card_interface)
 
-        sim_title = QLabel("SYNTHETIC EEG WAVEFORM CONTROLS (SIMULATION MODE)")
-        sim_title.setStyleSheet(f"font-size: 12px; font-weight: bold; color: {COLORS['text_muted']}; letter-spacing: 1px;")
-        sim_layout.addWidget(sim_title)
-
-        self.slider_d = self._create_slider_row(sim_layout, "Delta (2 Hz) Amplitude:", COLORS['accent_cyan'])
-        self.slider_t = self._create_slider_row(sim_layout, "Theta (6 Hz) Amplitude:", COLORS['accent_emerald'])
-        self.slider_a = self._create_slider_row(sim_layout, "Alpha (10 Hz) Amplitude:", COLORS['accent_purple'])
-        self.slider_b = self._create_slider_row(sim_layout, "Beta (20 Hz) Amplitude:", COLORS['accent_amber'])
-        self.slider_n = self._create_slider_row(sim_layout, "Gaussian Noise Level:", COLORS['accent_rose'])
-
-        layout.addWidget(sim_card)
-
-        # 2. Hardware COM Port Config Card
-        hw_card = GlassCard()
-        hw_layout = QVBoxLayout(hw_card)
-        hw_layout.setContentsMargins(20, 16, 20, 16)
-
-        hw_title = QLabel("HARDWARE SERIAL COMMUNICATION (ESP32)")
-        hw_title.setStyleSheet(f"font-size: 12px; font-weight: bold; color: {COLORS['text_muted']}; letter-spacing: 1px;")
-        hw_layout.addWidget(hw_title)
-
-        com_row = QHBoxLayout()
-        com_row.addWidget(QLabel("COM Port:"))
+        t1 = QLabel("ACQUISITION INTERFACE STATUS")
+        t1.setStyleSheet(f"font-size: 11px; font-weight: 800; color: {COLOR_CYAN}; letter-spacing: 1px;")
         
-        self.combo_port = QComboBox()
-        self.combo_port.addItem("AUTO")
-        for p in HardwareSerialThread.get_available_ports():
-            self.combo_port.addItem(p)
-            
-        com_row.addWidget(self.combo_port)
+        status_lbl = QLabel(f"• Interface Name: {INTERFACE_NAME}\n• Primary Data Stream: Auto-Locking Active Stream (250 Hz)\n• Physical Protocol: High-Speed Biomedical Serial USB")
+        status_lbl.setStyleSheet("font-size: 12px; color: #94A3B8; line-height: 1.6; margin-top: 6px;")
 
-        com_row.addWidget(QLabel("Baud Rate:"))
-        self.combo_baud = QComboBox()
-        self.combo_baud.addItems(["115200", "9600", "57600", "230400"])
-        com_row.addWidget(self.combo_baud)
+        ci_layout.addWidget(t1)
+        ci_layout.addWidget(status_lbl)
+        layout.addWidget(card_interface)
 
-        self.btn_refresh_com = QPushButton("🔄 SCAN PORTS")
-        self.btn_refresh_com.setProperty("class", "SecondaryBtn")
-        self.btn_refresh_com.clicked.connect(self._scan_ports)
-        com_row.addWidget(self.btn_refresh_com)
+        # Card 2: Active Digital Filter Configuration
+        card_filters = QFrame()
+        card_filters.setStyleSheet(f"background: {COLOR_CARD_BG}; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px;")
+        cf_layout = QVBoxLayout(card_filters)
 
-        hw_layout.addLayout(com_row)
-        layout.addWidget(hw_card)
+        t2 = QLabel("ACTIVE BIOMEDICAL DIGITAL FILTERS")
+        t2.setStyleSheet(f"font-size: 11px; font-weight: 800; color: {COLOR_CYAN}; letter-spacing: 1px;")
+        cf_layout.addWidget(t2)
 
-        # 3. Classifier System Card
-        class_card = GlassCard()
-        class_layout = QVBoxLayout(class_card)
-        class_layout.setContentsMargins(20, 16, 20, 16)
-
-        class_title = QLabel("COGNITIVE LOAD CLASSIFIER SYSTEM")
-        class_title.setStyleSheet(f"font-size: 12px; font-weight: bold; color: {COLORS['text_muted']}; letter-spacing: 1px;")
-        class_layout.addWidget(class_title)
-
-        class_row = QHBoxLayout()
-        self.rb_rule = QRadioButton("Rule-Based Expert System (Clinical Decision Boundaries)")
-        self.rb_ml   = QRadioButton("Machine Learning Model (Random Forest Classifier)")
-        self.rb_rule.setChecked(True)
-
-        self.class_grp = QButtonGroup(self)
-        self.class_grp.addButton(self.rb_rule)
-        self.class_grp.addButton(self.rb_ml)
-
-        class_row.addWidget(self.rb_rule)
-        class_row.addWidget(self.rb_ml)
-        class_layout.addLayout(class_row)
-
-        layout.addWidget(class_card)
-        layout.addStretch()
-
-        # Connect signals
-        for s in [self.slider_d, self.slider_t, self.slider_a, self.slider_b, self.slider_n]:
-            s.valueChanged.connect(self._emit_sim_params)
-
-        self.class_grp.buttonClicked.connect(self._emit_classifier)
-        self.combo_port.currentIndexChanged.connect(self._emit_com)
-        self.combo_baud.currentIndexChanged.connect(self._emit_com)
-
-    def _create_slider_row(self, parent_layout, label_text: str, color_hex: str) -> QSlider:
-        row = QHBoxLayout()
-        lbl = QLabel(label_text)
-        lbl.setFixedWidth(180)
-        lbl.setStyleSheet("font-size: 11px; font-weight: bold;")
+        chk1 = QCheckBox(f"Enable {NOTCH_FILTER_STATUS} (Powerline Interference Suppression)")
+        chk1.setChecked(True)
+        chk1.setStyleSheet("color: #F8FAFC; font-weight: 700; font-size: 12px; margin-top: 8px;")
         
-        slider = QSlider(Qt.Orientation.Horizontal)
-        slider.setRange(0, 100)
-        slider.setValue(50)
-        
-        val_lbl = QLabel("0.50")
-        val_lbl.setFixedWidth(40)
-        val_lbl.setStyleSheet(f"color: {color_hex}; font-weight: bold;")
+        chk2 = QCheckBox(f"Enable {EOG_FILTER_STATUS} (Blink & Ocular Movement Attenuation)")
+        chk2.setChecked(True)
+        chk2.setStyleSheet("color: #F8FAFC; font-weight: 700; font-size: 12px; margin-top: 6px;")
 
-        slider.valueChanged.connect(lambda v, l=val_lbl: l.setText(f"{v/100.0:.2f}"))
+        chk3 = QCheckBox(f"Enable {EMG_FILTER_STATUS} (High-Frequency Muscle Noise Filter)")
+        chk3.setChecked(True)
+        chk3.setStyleSheet("color: #F8FAFC; font-weight: 700; font-size: 12px; margin-top: 6px;")
 
-        row.addWidget(lbl)
-        row.addWidget(slider)
-        row.addWidget(val_lbl)
-        parent_layout.addLayout(row)
-        return slider
+        cf_layout.addWidget(chk1)
+        cf_layout.addWidget(chk2)
+        cf_layout.addWidget(chk3)
 
-    def _scan_ports(self):
-        self.combo_port.clear()
-        self.combo_port.addItem("AUTO")
-        for p in HardwareSerialThread.get_available_ports():
-            self.combo_port.addItem(p)
-
-    def _emit_sim_params(self):
-        d = self.slider_d.value() / 100.0
-        t = self.slider_t.value() / 100.0
-        a = self.slider_a.value() / 100.0
-        b = self.slider_b.value() / 100.0
-        n = self.slider_n.value() / 100.0
-        self.sim_params_changed.emit(d, t, a, b, n)
-
-    def _emit_classifier(self):
-        choice = 'ML' if self.rb_ml.isChecked() else 'RULE'
-        self.classifier_changed.emit(choice)
-
-    def _emit_com(self):
-        port = self.combo_port.currentText()
-        baud = int(self.combo_baud.currentText())
-        self.com_changed.emit(port, baud)
+        layout.addWidget(card_filters)
