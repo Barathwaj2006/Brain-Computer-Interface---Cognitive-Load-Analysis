@@ -1,0 +1,8 @@
+{
+  "name": "NEUROSIM — Synthetic EEG Cognitive Analysis",
+  "short_name": "NeuroSim",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#0B0F19",
+  "theme_color": "#0B0F19"
+}

@@ -13,33 +13,34 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-
-      - name: Set up Java JDK
+      - name: Set up Java JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Install Bubblewrap CLI & Build APK
-        run: |
-          npm install -g @bubblewrap/cli
-          mkdir -p apk_build
-          cd apk_build
-          npx @bubblewrap/cli init --manifest=https://barathwaj2006.github.io/Brain-Computer-Interface---Cognitive-Load-Analysis/web/manifest.json
-          npx @bubblewrap/cli build
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
 
-      - name: Upload APK Artifact
+      - name: Build Android APK with Gradle
+        run: |
+          cd android
+          chmod +x gradlew || true
+          gradle assembleDebug
+
+      - name: Copy and Rename APK
+        run: |
+          mkdir -p output_apk
+          cp android/app/build/outputs/apk/debug/app-debug.apk output_apk/NeuroSim.apk
+
+      - name: Upload Android APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: NeuroSim-Android-APK
-          path: apk_build/*.apk
+          path: output_apk/NeuroSim.apk
 
   build-exe:
-    name: Build Windows Executable
+    name: Package Windows Executable
     runs-on: windows-latest
     steps:
       - name: Checkout Code
@@ -50,14 +51,14 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install Dependencies & PyInstaller
+      - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Build Executable
+      - name: Build Executable with PyInstaller
         run: |
-          pyinstaller --noconfirm NeuroSim.spec
+          pyinstaller --noconfirm --clean NeuroSim.spec
 
       - name: Upload Windows Executable Artifact
         uses: actions/upload-artifact@v4
