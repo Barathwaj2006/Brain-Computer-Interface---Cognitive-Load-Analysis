@@ -15,6 +15,7 @@ from src.app.config import APP_TITLE, APP_LOGO_TEXT, STATUS_BADGE, COLOR_BACKGRO
 from src.simulation.eeg_generator import SyntheticEEGGenerator
 from src.processing.psd import PSDAnalyzer
 from src.classification.rule_classifier import RuleBasedClassifier
+from src.classification.ml_classifier import MLClassifier
 
 # Import All Screens
 from src.ui.screens.overview_screen import OverviewScreen
@@ -41,7 +42,8 @@ class MainWindow(QMainWindow):
 
         self.generator = SyntheticEEGGenerator()
         self.psd_analyzer = PSDAnalyzer()
-        self.classifier = RuleBasedClassifier()
+        self.rule_classifier = RuleBasedClassifier()
+        self.ml_classifier = MLClassifier()
 
         self.signal_buffer = []
         self.init_ui()
@@ -113,7 +115,6 @@ class MainWindow(QMainWindow):
                 color: #0F172A;
             }
             QListWidget::item:selected {
-                background: rgba(2, 255, 255, 0.18);
                 background: rgba(2, 132, 199, 0.12);
                 color: #0284C7;
                 font-weight: 900;
@@ -228,12 +229,17 @@ class MainWindow(QMainWindow):
         band_powers = self.psd_analyzer.extract_band_powers(freqs, psd)
         metrics = self.psd_analyzer.compute_metrics(band_powers, freqs, psd)
         
-        load_class, conf = self.classifier.classify(band_powers, metrics['stress_index'])
-        metrics['load_class'] = load_class
+        # Dual Classification
+        rule_res = self.rule_classifier.classify(band_powers)
+        ml_res = self.ml_classifier.predict(band_powers)
+
+        metrics['load_class'] = rule_res['cognitive_state']
+        metrics['rule_margin'] = rule_res['rule_margin']
+        metrics['ml_confidence'] = ml_res['confidence']
 
         # Update active screens
         self.screen_overview.update_overview(signal_arr, band_powers, metrics)
         self.screen_monitor.update_monitor(signal_arr, freqs, psd)
         self.screen_signal_lab.update_lab_data(signal_arr)
-        self.screen_results.update_results(band_powers, metrics)
+        self.screen_results.update_results(band_powers, metrics, rule_res=rule_res, ml_res=ml_res)
         self.screen_presentation.update_presentation(signal_arr, metrics)
