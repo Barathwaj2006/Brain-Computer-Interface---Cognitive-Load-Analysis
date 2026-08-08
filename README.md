@@ -6,7 +6,7 @@
 [![Platform](https://img.shields.io/badge/Platform-Windows%20Desktop%20%28x64%29-0078D6.svg)](dist/NeuroSim.exe)
 [![Domain](https://img.shields.io/badge/Domain-Neuroscience%20%26%20BCI-purple.svg)]()
 
-**NeuroSim** is a native Windows Desktop Application (`NeuroSim.exe`) designed for real-time Electroencephalography (EEG) signal processing, spectral band power decomposition, 10-20 International System spatial topographic brain mapping, multi-channel oscilloscope trace visualization, automated cognitive load classification, and medical research session reporting.
+**NeuroSim** is a native Windows Desktop Application (`NeuroSim.exe`) designed for real-time Electroencephalography (EEG) signal processing, spectral band power decomposition, 10-20 International System spatial topographic brain mapping, multi-channel oscilloscope trace visualization, dual-model cognitive load classification (Rule-Based & Machine Learning), and research session reporting.
 
 ---
 
@@ -22,17 +22,14 @@
 ### 3. 🌊 **Time-Frequency Spectrogram Waterfall Plot**
 - Real-time 2D color spectral density heatmap over time (0–40 Hz frequency spectrum).
 
-### 4. 🎛️ **Care-Style Hardware Connection CAD Terminal**
-- **Zero-Click Hardware Auto-Lock**: Background USB serial scanner locks onto physical ESP32 acquisition hardware at 115200 baud / 250 Hz instantly.
+### 4. 🎛️ **Care-Style Hardware Connection CAD Terminal & Checksum Protocol**
+- **Zero-Click Hardware Auto-Lock**: Background USB serial scanner locks onto physical ESP32 acquisition hardware at 115200 baud / 250 Hz using `NEUROSIM_HELLO,v1` handshake.
+- **Packet Integrity Checksum Protocol**: Validates incoming 4-part packets (`SAMPLE,<val>,<seq>,<checksum>`) and logs dropped packet percentages.
 - **Interactive Digital Potentiometer Control Array**: On-screen control knobs for Delta (2Hz), Theta (6Hz), Alpha (10Hz), and Beta (20Hz) with live voltage (`0.00 V – 3.30 V`) and ADC (`0 – 4095`) readouts.
-- **Live Serial Data Packet Monitor**: Terminal monitor streaming raw packet data.
 
-### 5. 📊 **Unified Executive Results & Research Platform**
-- Single-view summary combining classified cognitive state (RELAXED, MODERATE, HIGH LOAD), Spectral Stress Index, dominant rhythm, signal quality, spectral band matrix, and one-click PDF report export.
-
-### 6. 🧪 **Automated Validation Center & AI Session Interpreter**
-- 10-point mathematical DSP verification suite verifying Welch PSD integration, FFT windowing, band power conservation, and classification determinism.
-- AI Session Interpreter providing clinical narrative summaries and feature attributions.
+### 5. 📊 **Dual Classifier Panel & Disagreement Warning**
+- Displays Rule-Based Heuristic Margin alongside ML Random Forest Statistical Probability side-by-side.
+- Automatically flags classifier disagreements with a visual warning banner.
 
 ---
 
@@ -51,7 +48,7 @@ NeuroSim interfaces with **ESP32 DevKit V1** hardware configured with 4 potentio
 
 ---
 
-## 💻 Running NeuroSim
+## 💻 Running & Building NeuroSim
 
 ### **Option 1: Launch Pre-Compiled Executable (`NeuroSim.exe`)**
 Navigate to the `dist/` directory and double-click:
@@ -60,58 +57,39 @@ dist/NeuroSim.exe
 ```
 
 ### **Option 2: Run from Python Source**
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/Barathwaj2006/Brain-Computer-Interface---Cognitive-Load-Analysis.git
-   cd Brain-Computer-Interface---Cognitive-Load-Analysis
-   ```
-2. Create & activate a virtual environment:
-   ```powershell
-   python -m venv venv
-   .\venv\Scripts\activate
-   ```
-3. Install dependencies:
-   ```powershell
-   pip install -r requirements.txt
-   ```
-4. Launch the desktop application:
-   ```powershell
-   python src/main.py
-   ```
+```powershell
+python -m venv venv
+.\venv\Scripts\activate
+pip install -r requirements.txt
+python src/main.py
+```
+
+### **Option 3: Building Executables with PyInstaller**
+- **Single-File Bundle (`NeuroSim.exe`)**:
+  ```powershell
+  python scripts/build_executable.py
+  ```
+- **Directory Folder Build (`--onedir`)** (Faster startup & code-signing ready):
+  ```powershell
+  python scripts/build_executable.py --onedir
+  ```
+
+---
+
+## ⚠️ Limitations & Research Scope
+
+1. **Synthetic Simulation**: NeuroSim is a synthetic EEG signal simulator and research demonstration platform; it is **not** a medical device or clinically validated diagnostic tool.
+2. **Synthetic-Only Model Evaluation**: The Machine Learning (Random Forest) classifier is trained and evaluated exclusively on synthetic signal profiles. Full clinical validation requires benchmark human EEG datasets (e.g., PhysioNet EEG Motor Movement/Imagery Database).
+3. **Heuristic Signal Quality & Contact Checks**: Contact impedance and signal quality metrics represent power-threshold heuristics rather than true clinical hardware impedance measurements.
 
 ---
 
 ## 🧪 Automated Testing & System Verification
 
-Run the comprehensive medical diagnostics test suite:
+Run unit tests and diagnostic suite:
 ```powershell
+python -m unittest discover tests
 python scripts/verify_medical.py
-```
-
----
-
-## 📂 Repository Structure
-
-```text
-├── dist/
-│   └── NeuroSim.exe               # Standalone Windows Desktop Executable
-├── src/
-│   ├── acquisition/               # USB Serial Auto-Scanner & Signal Interface
-│   ├── app/                       # Config, Tokens, Medical Terminology
-│   ├── classification/            # Rule-Based Classifier & AI Interpreter
-│   ├── processing/                # Welch PSD Analyzer & Signal Processing
-│   ├── reporting/                 # ReportLab Clinical PDF Generator
-│   ├── simulation/                # Synthetic EEG Generator Engine
-│   ├── ui/                        # PySide6 GUI Screens & Controllers
-│   └── visualization/             # Topographic Heatmap, Spectrogram & 8-Ch Montage
-├── firmware/
-│   └── esp32/                      # ESP32 DevKit Firmware (.ino)
-├── scripts/
-│   ├── build_executable.py        # PyInstaller Build Automation Script
-│   └── verify_medical.py          # System Verification Test Suite
-├── NeuroSim.spec                  # PyInstaller Package Configuration
-├── requirements.txt               # Python Dependencies
-└── README.md                      # Project Documentation
 ```
 
 ---
