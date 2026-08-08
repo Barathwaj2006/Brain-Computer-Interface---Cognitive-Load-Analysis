@@ -184,7 +184,7 @@ class HardwareScreen(QWidget):
 
         pr2 = QHBoxLayout()
         pr2.addWidget(QLabel("BLE GATT Service UUID:"))
-        self.lbl_gatt_uuid = QLabel("0000fe40-0000-1000-8000-00805f9b34fb")
+        self.lbl_gatt_uuid = QLabel("0000fe50-0000-1000-8000-00805f9b34fb")
         self.lbl_gatt_uuid.setStyleSheet("color: #7C3AED; font-weight: 700; font-size: 10px; font-family: monospace;")
         pr2.addWidget(self.lbl_gatt_uuid)
         pr2.addStretch()

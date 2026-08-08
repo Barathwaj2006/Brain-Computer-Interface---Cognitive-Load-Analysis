@@ -16,9 +16,9 @@ import asyncio
 from PySide6.QtCore import QThread, QObject, Signal
 
 # Default Pokidex GATT UUID Constants
-POKIDEX_SERVICE_UUID = "0000fe40-0000-1000-8000-00805f9b34fb"
-POKIDEX_CHAR_DATA_UUID = "0000fe41-0000-1000-8000-00805f9b34fb"
-POKIDEX_CHAR_EVENT_UUID = "0000fe42-0000-1000-8000-00805f9b34fb"
+POKIDEX_SERVICE_UUID = "0000fe50-0000-1000-8000-00805f9b34fb"
+POKIDEX_CHAR_DATA_UUID = "0000fe51-0000-1000-8000-00805f9b34fb"
+POKIDEX_CHAR_EVENT_UUID = "0000fe52-0000-1000-8000-00805f9b34fb"
 
 
 class PokidexWebSocketClient(QThread):
@@ -148,6 +148,7 @@ class PokidexBleClient(QThread):
         self.dropped_packets = 0
         self.last_latency_ms = 0.0
         self.last_sequence = -1
+        self.pending_chunks = {}
 
     def run(self):
         asyncio.run(self._ble_loop())
@@ -197,6 +198,49 @@ class PokidexBleClient(QThread):
         if not raw_bytes:
             return
 
+        # Check for 4-byte BLE fragmentation header:
+        # byte 0: seq_hi, byte 1: seq_lo, byte 2: chunk_index, byte 3: total_chunks
+        if len(raw_bytes) >= 4 and not raw_bytes.startswith(b'{'):
+            seq_num = (raw_bytes[0] << 8) | raw_bytes[1]
+            chunk_index = raw_bytes[2]
+            total_chunks = raw_bytes[3]
+            fragment = raw_bytes[4:]
+
+            # Discard any older/incomplete sequences if a new sequence number starts
+            stale_seqs = [s for s in self.pending_chunks if s != seq_num]
+            for s in stale_seqs:
+                del self.pending_chunks[s]
+                self.dropped_packets += 1
+
+            if seq_num not in self.pending_chunks:
+                self.pending_chunks[seq_num] = {
+                    "total": total_chunks,
+                    "chunks": {}
+                }
+
+            self.pending_chunks[seq_num]["chunks"][chunk_index] = fragment
+
+            # Check if all fragments for seq_num have arrived
+            if len(self.pending_chunks[seq_num]["chunks"]) == total_chunks:
+                sorted_fragments = [
+                    self.pending_chunks[seq_num]["chunks"][i]
+                    for i in range(total_chunks)
+                    if i in self.pending_chunks[seq_num]["chunks"]
+                ]
+
+                if len(sorted_fragments) == total_chunks:
+                    full_payload = b"".join(sorted_fragments)
+                    del self.pending_chunks[seq_num]
+                    self._process_ble_json(full_payload, t_recv)
+                else:
+                    # Missing chunk index inside sequence
+                    del self.pending_chunks[seq_num]
+                    self.dropped_packets += 1
+        else:
+            # Unfragmented bare JSON payload
+            self._process_ble_json(raw_bytes, t_recv)
+
+    def _process_ble_json(self, raw_bytes, t_recv):
         self.total_packets += 1
         try:
             msg_text = raw_bytes.decode('utf-8', errors='ignore').strip()

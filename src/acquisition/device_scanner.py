@@ -115,7 +115,7 @@ class DeviceScanner:
         pokidex_endpoints.append({
             "name": "Pokidex Android Stimulator (BLE GATT Peripheral)",
             "type": "BLE GATT Service",
-            "endpoint": "GATT: 0000fe40-0000-1000-8000-00805f9b34fb",
+            "endpoint": "GATT: 0000fe50-0000-1000-8000-00805f9b34fb",
             "schema": "BLE SignalFrame Notification",
             "status": "Ready to Scan"
         })
