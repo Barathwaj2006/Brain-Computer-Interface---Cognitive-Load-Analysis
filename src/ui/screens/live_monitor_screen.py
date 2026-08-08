@@ -5,6 +5,7 @@ Integrates:
 - Time-Frequency 2D Spectrogram / Waterfall Plot
 - Time-Window Selection (1s | 5s | 10s | 30s)
 - Telemetry & Filter Badges
+Theme: Bright Frosted Glassmorphism
 """
 
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QFrame, QPushButton, QButtonGroup, QTabWidget
@@ -31,15 +32,15 @@ class LiveMonitorScreen(QWidget):
 
         # Header with Telemetry & Filter Status
         h_card = QFrame()
-        h_card.setStyleSheet(f"background: {COLOR_CARD_BG}; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 12px 18px;")
+        h_card.setStyleSheet("background: rgba(255, 255, 255, 0.85); border: 1px solid #E2E8F0; border-radius: 12px; padding: 12px 18px;")
         h_layout = QHBoxLayout(h_card)
 
         t_box = QVBoxLayout()
         title = QLabel("LIVE NEURAL SIGNAL MONITOR — 10-20 SYSTEM")
-        title.setStyleSheet("font-size: 15px; font-weight: 900; color: #F8FAFC; letter-spacing: 1px;")
+        title.setStyleSheet("font-size: 15px; font-weight: 900; color: #0F172A; letter-spacing: 1px;")
         
         self.telemetry_lbl = QLabel("LIVE STREAM • 250 Hz • Latency: 12.4 ms • Active Filter Stack: 50Hz Notch + EOG + EMG")
-        self.telemetry_lbl.setStyleSheet("font-size: 11px; color: #06B6D4; font-weight: 700;")
+        self.telemetry_lbl.setStyleSheet("font-size: 11px; color: #0284C7; font-weight: 700;")
         
         t_box.addWidget(title)
         t_box.addWidget(self.telemetry_lbl)
@@ -49,7 +50,7 @@ class LiveMonitorScreen(QWidget):
 
         # Window Selector Buttons (1s | 5s | 10s | 30s)
         win_label = QLabel("Time Window:")
-        win_label.setStyleSheet("font-size: 11px; color: #94A3B8; font-weight: 700; margin-right: 6px;")
+        win_label.setStyleSheet("font-size: 11px; color: #64748B; font-weight: 700; margin-right: 6px;")
         h_layout.addWidget(win_label)
 
         self.btn_group = QButtonGroup(self)
@@ -58,62 +59,63 @@ class LiveMonitorScreen(QWidget):
             btn = QPushButton(text)
             btn.setCheckable(True)
             btn.setStyleSheet("""
-                QPushButton { background: rgba(15,23,42,0.8); color: #94A3B8; border: 1px solid rgba(255,255,255,0.08); padding: 6px 14px; border-radius: 6px; font-weight: 700; font-size: 11px; }
-                QPushButton:checked { background: #06B6D4; color: white; border-color: #06B6D4; }
+                QPushButton { background: #F1F5F9; color: #475569; border: 1px solid #CBD5E1; font-weight: 700; font-size: 11px; padding: 5px 12px; border-radius: 6px; }
+                QPushButton:checked { background: #0284C7; color: white; border: none; }
             """)
             if sec == 5.0:
                 btn.setChecked(True)
+            btn.clicked.connect(lambda _, s=sec: self.set_window_sec(s))
             self.btn_group.addButton(btn)
-            btn.clicked.connect(lambda _, s=sec: self.set_window(s))
             h_layout.addWidget(btn)
 
         layout.addWidget(h_card)
 
-        # Tabbed Visualization Display (Single Channel vs 8-Channel Montage vs Spectrogram)
+        # Tabbed View Containers (Primary Waveform & PSD | 8-Channel Oscilloscope | Spectrogram Waterfall)
         self.tabs = QTabWidget()
         self.tabs.setStyleSheet("""
-            QTabWidget::pane { background: rgba(21, 29, 42, 0.75); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 12px; }
-            QTabBar::tab { background: rgba(15,23,42,0.8); color: #94A3B8; font-weight: 700; font-size: 11px; padding: 8px 16px; border-top-left-radius: 6px; border-top-right-radius: 6px; }
-            QTabBar::tab:selected { background: #06B6D4; color: white; }
+            QTabWidget::pane { border: 1px solid #E2E8F0; background: rgba(255, 255, 255, 0.85); border-radius: 10px; }
+            QTabBar::tab { background: #F1F5F9; color: #64748B; font-weight: 800; font-size: 12px; padding: 10px 20px; border-top-left-radius: 8px; border-top-right-radius: 8px; margin-right: 4px; }
+            QTabBar::tab:selected { background: #FFFFFF; color: #0284C7; border: 1px solid #E2E8F0; border-bottom: none; }
         """)
 
         # Tab 1: Primary Trace & Welch PSD
-        tab_primary = QWidget()
-        tp_layout = QVBoxLayout(tab_primary)
-        
-        self.wave_plot = pg.PlotWidget()
-        self.wave_plot.setBackground(None)
-        self.wave_plot.showGrid(x=True, y=True, alpha=0.15)
-        self.wave_curve = self.wave_plot.plot(pen=pg.mkPen(color=COLOR_CYAN, width=2))
-        tp_layout.addWidget(self.wave_plot)
+        t1 = QWidget()
+        t1_layout = QHBoxLayout(t1)
 
-        self.psd_plot = pg.PlotWidget()
-        self.psd_plot.setBackground(None)
+        self.trace_plot = pg.PlotWidget(title="PRIMARY WAVEFORM TRACE (Fp1)")
+        self.trace_plot.setBackground('#FFFFFF')
+        self.trace_plot.showGrid(x=True, y=True, alpha=0.15)
+        self.trace_curve = self.trace_plot.plot(pen=pg.mkPen(color='#0284C7', width=2))
+
+        self.psd_plot = pg.PlotWidget(title="WELCH POWER SPECTRAL DENSITY (0-40 Hz)")
+        self.psd_plot.setBackground('#FFFFFF')
         self.psd_plot.showGrid(x=True, y=True, alpha=0.15)
-        self.psd_curve = self.psd_plot.plot(pen=pg.mkPen(color=COLOR_PURPLE, width=2), fillLevel=0, brush=(139, 92, 246, 50))
-        tp_layout.addWidget(self.psd_plot)
+        self.psd_curve = self.psd_plot.plot(pen=pg.mkPen(color='#7C3AED', width=2))
 
-        self.tabs.addTab(tab_primary, "📈 Primary Trace & PSD Spectrum")
+        t1_layout.addWidget(self.trace_plot, stretch=1)
+        t1_layout.addWidget(self.psd_plot, stretch=1)
+        self.tabs.addTab(t1, "Primary Trace & PSD")
 
-        # Tab 2: 8-Channel 10-20 Oscilloscope Montage
-        self.multichannel_widget = MultiChannelViewerWidget()
-        self.tabs.addTab(self.multichannel_widget, "🧠 8-Channel 10-20 System Montage")
+        # Tab 2: 8-Channel 10-20 Oscilloscope View
+        self.multichannel_viewer = MultiChannelViewerWidget()
+        self.tabs.addTab(self.multichannel_viewer, "8-Channel 10-20 System Montage")
 
         # Tab 3: Time-Frequency Spectrogram Waterfall
         self.spectrogram_widget = SpectrogramWidget()
-        self.tabs.addTab(self.spectrogram_widget, "🌊 Time-Frequency Spectrogram Waterfall")
+        self.tabs.addTab(self.spectrogram_widget, "Time-Frequency Spectrogram Waterfall")
 
         layout.addWidget(self.tabs)
 
-    def set_window(self, sec):
+    def set_window_sec(self, sec):
         self.window_sec = sec
 
-    def update_monitor(self, wave_data, freqs, psd):
-        num_samples = int(250 * self.window_sec)
-        if len(wave_data) > 0:
-            self.wave_curve.setData(wave_data[-num_samples:])
-            self.multichannel_widget.update_channels(wave_data)
+    def update_monitor(self, signal_arr, freqs, psd):
+        if len(signal_arr) > 0:
+            num_samples = int(self.window_sec * 250)
+            disp_arr = signal_arr[-num_samples:] if len(signal_arr) >= num_samples else signal_arr
+            self.trace_curve.setData(disp_arr)
+            self.multichannel_viewer.update_channels(disp_arr)
+            self.spectrogram_widget.update_spectrogram(disp_arr)
 
         if len(freqs) > 0 and len(psd) > 0:
-            self.psd_curve.setData(freqs, psd)
-            self.spectrogram_widget.update_spectrogram(psd)
+            self.psd_curve.setData(freqs[freqs <= 40], psd[freqs <= 40])

@@ -1,10 +1,6 @@
 """
 Hardware Connection & Digital Workstation Screen Module ("Care" Style CAD Terminal)
-Displays:
-- Connection Status Panel (CONNECTED vs DISCONNECTED)
-- Interactive Digital Potentiometer Control Array (Delta 2Hz, Theta 6Hz, Alpha 10Hz, Beta 20Hz)
-- Real-time Voltage (0.00V - 3.30V) and ADC (0 - 4095) readouts
-- Serial Data Packet Terminal Stream
+Theme: Bright Frosted Glassmorphism
 """
 
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QFrame, QSlider, QTextEdit, QPushButton, QGridLayout
@@ -26,15 +22,15 @@ class HardwareScreen(QWidget):
 
         # Header Title & Status
         header_card = QFrame()
-        header_card.setStyleSheet(f"background: {COLOR_CARD_BG}; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px;")
+        header_card.setStyleSheet("background: rgba(255, 255, 255, 0.85); border: 1px solid #E2E8F0; border-radius: 12px; padding: 16px;")
         h_layout = QHBoxLayout(header_card)
 
         t_box = QVBoxLayout()
         title = QLabel("HARDWARE CONNECTION DIAGNOSTICS & VIRTUAL TERMINAL")
-        title.setStyleSheet("font-size: 15px; font-weight: 900; color: #F8FAFC; letter-spacing: 1px;")
+        title.setStyleSheet("font-size: 15px; font-weight: 900; color: #0F172A; letter-spacing: 1px;")
         
         sub = QLabel("Care Biomedical Workstation Engine • 115200 Baud • 250 Hz USB Serial Stream")
-        sub.setStyleSheet("font-size: 11px; color: #94A3B8;")
+        sub.setStyleSheet("font-size: 11px; color: #64748B;")
         
         t_box.addWidget(title)
         t_box.addWidget(sub)
@@ -42,7 +38,7 @@ class HardwareScreen(QWidget):
         h_layout.addStretch()
 
         self.status_badge = QLabel("● HARDWARE CONNECTED (AUTO-LOCK)")
-        self.status_badge.setStyleSheet("background: rgba(16,185,129,0.15); color: #10B981; border: 1px solid #10B981; padding: 6px 14px; border-radius: 12px; font-weight: 800; font-size: 11px;")
+        self.status_badge.setStyleSheet("background: rgba(5,150,105,0.12); color: #059669; border: 1px solid #059669; padding: 6px 14px; border-radius: 12px; font-weight: 800; font-size: 11px;")
         h_layout.addWidget(self.status_badge)
 
         layout.addWidget(header_card)
@@ -53,11 +49,11 @@ class HardwareScreen(QWidget):
 
         # Left: Interactive Digital Potentiometer Control Array
         pots_card = QFrame()
-        pots_card.setStyleSheet(f"background: {COLOR_CARD_BG}; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px;")
+        pots_card.setStyleSheet("background: rgba(255, 255, 255, 0.85); border: 1px solid #E2E8F0; border-radius: 12px; padding: 16px;")
         p_layout = QVBoxLayout(pots_card)
 
         p_title = QLabel("NEURAL SENSOR POTENTIOMETER CONTROLS")
-        p_title.setStyleSheet("font-size: 11px; font-weight: 800; color: #06B6D4; letter-spacing: 1px; margin-bottom: 12px;")
+        p_title.setStyleSheet("font-size: 11px; font-weight: 800; color: #0284C7; letter-spacing: 1px; margin-bottom: 12px;")
         p_layout.addWidget(p_title)
 
         self.sld_delta, self.val_delta_v, self.val_delta_adc = self._create_pot_control("POT 1: DELTA (2 Hz)", 30, p_layout)
@@ -69,16 +65,16 @@ class HardwareScreen(QWidget):
 
         # Right: Live Serial Terminal Stream Monitor
         term_card = QFrame()
-        term_card.setStyleSheet(f"background: {COLOR_CARD_BG}; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px;")
+        term_card.setStyleSheet("background: rgba(255, 255, 255, 0.85); border: 1px solid #E2E8F0; border-radius: 12px; padding: 16px;")
         t_layout = QVBoxLayout(term_card)
 
         t_title = QLabel("SERIAL PACKET TERMINAL MONITOR")
-        t_title.setStyleSheet("font-size: 11px; font-weight: 800; color: #06B6D4; letter-spacing: 1px;")
+        t_title.setStyleSheet("font-size: 11px; font-weight: 800; color: #0284C7; letter-spacing: 1px;")
         t_layout.addWidget(t_title)
 
         self.terminal = QTextEdit()
         self.terminal.setReadOnly(True)
-        self.terminal.setStyleSheet("background: #0B0F19; color: #10B981; font-family: 'Consolas', 'Courier New', monospace; font-size: 11px; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px;")
+        self.terminal.setStyleSheet("background: #0F172A; color: #38BDF8; font-family: 'Consolas', 'Courier New', monospace; font-size: 11px; border: 1px solid #334155; border-radius: 8px;")
         self.terminal.setText("[00:00:01] USB Serial Auto-Scanner Initialized...\n[00:00:01] Listening on 115200 Baud...\n[00:00:02] SAMPLE, 1.65 V | ADC: 2048 | 250Hz Sync OK\n[00:00:02] SAMPLE, 1.68 V | ADC: 2085 | 250Hz Sync OK\n[00:00:03] SAMPLE, 1.72 V | ADC: 2135 | 250Hz Sync OK")
         
         t_layout.addWidget(self.terminal)
@@ -88,19 +84,19 @@ class HardwareScreen(QWidget):
 
     def _create_pot_control(self, title, default_val, parent_layout):
         row_frame = QFrame()
-        row_frame.setStyleSheet("background: rgba(15,23,42,0.8); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; padding: 10px;")
+        row_frame.setStyleSheet("background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 10px;")
         l = QVBoxLayout(row_frame)
         l.setSpacing(6)
 
         header = QHBoxLayout()
         t_lbl = QLabel(title)
-        t_lbl.setStyleSheet("font-size: 11px; font-weight: 800; color: #F8FAFC;")
+        t_lbl.setStyleSheet("font-size: 11px; font-weight: 800; color: #0F172A;")
         
         v_lbl = QLabel(f"{(default_val / 100.0) * 3.3:.2f} V")
-        v_lbl.setStyleSheet("font-size: 12px; font-weight: 900; color: #06B6D4;")
+        v_lbl.setStyleSheet("font-size: 12px; font-weight: 900; color: #0284C7;")
 
         adc_lbl = QLabel(f"ADC: {int((default_val / 100.0) * 4095)}")
-        adc_lbl.setStyleSheet("font-size: 10px; color: #94A3B8;")
+        adc_lbl.setStyleSheet("font-size: 10px; color: #64748B;")
 
         header.addWidget(t_lbl)
         header.addStretch()
@@ -112,9 +108,9 @@ class HardwareScreen(QWidget):
         slider.setRange(0, 100)
         slider.setValue(default_val)
         slider.setStyleSheet("""
-            QSlider::groove:horizontal { height: 6px; background: #0B0F19; border-radius: 3px; }
-            QSlider::sub-page:horizontal { background: #06B6D4; border-radius: 3px; }
-            QSlider::handle:horizontal { background: #F8FAFC; border: 2px solid #06B6D4; width: 14px; height: 14px; margin: -4px 0; border-radius: 7px; }
+            QSlider::groove:horizontal { height: 6px; background: #E2E8F0; border-radius: 3px; }
+            QSlider::sub-page:horizontal { background: #0284C7; border-radius: 3px; }
+            QSlider::handle:horizontal { background: #FFFFFF; border: 2px solid #0284C7; width: 14px; height: 14px; margin: -4px 0; border-radius: 7px; }
         """)
         
         slider.valueChanged.connect(lambda val, vl=v_lbl, al=adc_lbl: self.on_slider_changed(val, vl, al))
@@ -144,7 +140,7 @@ class HardwareScreen(QWidget):
         self.is_connected = is_connected
         if is_connected:
             self.status_badge.setText(f"● {status_text}")
-            self.status_badge.setStyleSheet("background: rgba(16,185,129,0.15); color: #10B981; border: 1px solid #10B981; padding: 6px 14px; border-radius: 12px; font-weight: 800; font-size: 11px;")
+            self.status_badge.setStyleSheet("background: rgba(5,150,105,0.12); color: #059669; border: 1px solid #059669; padding: 6px 14px; border-radius: 12px; font-weight: 800; font-size: 11px;")
         else:
             self.status_badge.setText(f"● {status_text}")
-            self.status_badge.setStyleSheet("background: rgba(245,158,11,0.15); color: #F59E0B; border: 1px solid #F59E0B; padding: 6px 14px; border-radius: 12px; font-weight: 800; font-size: 11px;")
+            self.status_badge.setStyleSheet("background: rgba(217,119,6,0.12); color: #D97706; border: 1px solid #D97706; padding: 6px 14px; border-radius: 12px; font-weight: 800; font-size: 11px;")

@@ -1,6 +1,7 @@
 """
 NeuroSim Configuration Module — Medical-Grade Research Standard
 Centralized application settings, medical-grade styling tokens, and branding constants.
+Theme: Bright Frosted Glassmorphism & Light Medical Aesthetic
 """
 
 # Platform Branding & Identity
@@ -48,21 +49,21 @@ BANDS = {
     'beta': (13.0, 30.0)
 }
 
-# Color Palette (Dark Medical & Glassmorphism Theme)
-COLOR_BACKGROUND = "#0B0F19"
-COLOR_CARD_BG = "rgba(21, 29, 42, 0.75)"
-COLOR_SIDEBAR_BG = "#0F172A"
-COLOR_BORDER = "rgba(255, 255, 255, 0.08)"
-COLOR_BORDER_GLOW = "rgba(6, 182, 212, 0.3)"
+# Color Palette — Bright Frosted Glassmorphism Theme
+COLOR_BACKGROUND = "#F8FAFC"
+COLOR_CARD_BG = "rgba(255, 255, 255, 0.85)"
+COLOR_SIDEBAR_BG = "#FFFFFF"
+COLOR_BORDER = "rgba(226, 232, 240, 0.9)"
+COLOR_BORDER_GLOW = "rgba(2, 132, 199, 0.3)"
 
-# Accent Colors
-COLOR_CYAN = "#06B6D4"      # Primary / Waveform
-COLOR_EMERALD = "#10B981"   # Theta / Signal Quality / Pass
-COLOR_PURPLE = "#8B5CF6"    # Alpha / Relaxation
-COLOR_AMBER = "#F59E0B"     # Beta / Moderate
-COLOR_ROSE = "#EF4444"      # High Load / Warning / Fail
-COLOR_TEXT_MAIN = "#F8FAFC"
-COLOR_TEXT_MUTED = "#94A3B8"
+# Accent Colors (Vivid Medical Tones)
+COLOR_CYAN = "#0284C7"      # Primary / Waveform Ocean Blue
+COLOR_EMERALD = "#059669"   # Theta / Signal Quality / Pass
+COLOR_PURPLE = "#7C3AED"    # Alpha / Relaxation
+COLOR_AMBER = "#D97706"     # Beta / Moderate
+COLOR_ROSE = "#E11D48"      # High Load / Warning / Fail
+COLOR_TEXT_MAIN = "#0F172A" # Dark Slate
+COLOR_TEXT_MUTED = "#64748B" # Medium Slate
 
 # Universal COLORS Dictionary for Stylesheet & Widget Compatibility
 COLORS = {

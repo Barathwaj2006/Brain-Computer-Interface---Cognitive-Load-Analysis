@@ -5,6 +5,7 @@ Executive single-view unified research platform combining:
 - Band Power Breakdown Matrix
 - Cognitive Load & Stress Index Assessment
 - One-Click PDF Report Exporter
+Theme: Bright Frosted Glassmorphism
 """
 
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QFrame, QPushButton, QGridLayout
@@ -26,19 +27,19 @@ class ResultsScreen(QWidget):
 
         # Header Title
         h_card = QFrame()
-        h_card.setStyleSheet(f"background: {COLOR_CARD_BG}; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px;")
+        h_card.setStyleSheet("background: rgba(255, 255, 255, 0.85); border: 1px solid #E2E8F0; border-radius: 12px; padding: 16px;")
         h_layout = QHBoxLayout(h_card)
 
         t_box = QVBoxLayout()
         title = QLabel("UNIFIED RESULTS & RESEARCH ANALYTICS PLATFORM")
-        title.setStyleSheet("font-size: 15px; font-weight: 900; color: #F8FAFC; letter-spacing: 1px;")
+        title.setStyleSheet("font-size: 15px; font-weight: 900; color: #0F172A; letter-spacing: 1px;")
         sub = QLabel("Comprehensive Single-View Analytical Summary & Report Generator")
-        sub.setStyleSheet("font-size: 11px; color: #94A3B8;")
+        sub.setStyleSheet("font-size: 11px; color: #64748B;")
         t_box.addWidget(title)
         t_box.addWidget(sub)
 
         btn_export = QPushButton("📄 EXPORT PDF REPORT")
-        btn_export.setStyleSheet("background: linear-gradient(135deg, #06B6D4, #0284C7); color: white; font-weight: 800; font-size: 12px; padding: 12px 20px; border-radius: 8px; border: none;")
+        btn_export.setStyleSheet("background: linear-gradient(135deg, #0284C7, #0369A1); color: white; font-weight: 800; font-size: 12px; padding: 12px 20px; border-radius: 8px; border: none;")
         btn_export.setCursor(Qt.PointingHandCursor)
         btn_export.clicked.connect(self.export_pdf_report)
 
@@ -49,7 +50,7 @@ class ResultsScreen(QWidget):
 
         # Main Grid Layout
         grid_card = QFrame()
-        grid_card.setStyleSheet(f"background: {COLOR_CARD_BG}; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 20px;")
+        grid_card.setStyleSheet("background: rgba(255, 255, 255, 0.85); border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px;")
         g_layout = QGridLayout(grid_card)
         g_layout.setSpacing(16)
 
@@ -69,11 +70,11 @@ class ResultsScreen(QWidget):
 
     def _create_result_box(self, title, val, color, grid_layout, row, col):
         frame = QFrame()
-        frame.setStyleSheet("background: rgba(15,23,42,0.8); border: 1px solid rgba(255,255,255,0.05); border-radius: 10px; padding: 14px;")
+        frame.setStyleSheet("background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 14px;")
         l = QVBoxLayout(frame)
         
         t = QLabel(title)
-        t.setStyleSheet("font-size: 10px; font-weight: 800; color: #94A3B8; letter-spacing: 1px;")
+        t.setStyleSheet("font-size: 10px; font-weight: 800; color: #64748B; letter-spacing: 1px;")
         
         v = QLabel(val)
         v.setStyleSheet(f"font-size: 20px; font-weight: 900; color: {color}; margin-top: 4px;")

@@ -2,6 +2,7 @@
 Topographic Brain Heatmap Module
 Custom QPainter 2D widget displaying 10-20 International System electrode positions
 (Fp1, Fp2, C3, C4, P3, P4, O1, O2) and spatial spectral power density gradients.
+Theme: Bright Frosted Glassmorphism
 """
 
 from PySide6.QtWidgets import QWidget
@@ -14,6 +15,10 @@ class TopographicMapWidget(QWidget):
         super().__init__(parent)
         self.setMinimumSize(220, 220)
         self.band_powers = {'delta_rel': 25.0, 'theta_rel': 25.0, 'alpha_rel': 25.0, 'beta_rel': 25.0}
+
+    def update_power_levels(self, power_dict):
+        """Update individual electrode power levels."""
+        self.update()
 
     def update_powers(self, band_powers):
         self.band_powers = band_powers
@@ -29,10 +34,10 @@ class TopographicMapWidget(QWidget):
         cy = h / 2.0
         r = min(w, h) * 0.40
 
-        # Background Head Contour (Circle + Nose + Ears)
-        pen_head = QPen(QColor(148, 163, 184, 120), 2)
+        # Background Head Contour — Clean Light Slate (Circle + Nose + Ears)
+        pen_head = QPen(QColor(100, 116, 139, 180), 2)
         painter.setPen(pen_head)
-        painter.setBrush(QColor(15, 23, 42, 200))
+        painter.setBrush(QColor(241, 245, 249, 230))
         painter.drawEllipse(QPointF(cx, cy), r, r)
 
         # Nose
@@ -44,7 +49,6 @@ class TopographicMapWidget(QWidget):
         painter.drawArc(int(cx + r - 4), int(cy - 12), 12, 24, -90 * 16, 180 * 16)
 
         # 8 Electrode Coordinates (10-20 System)
-        # Fp1, Fp2 (Frontal), C3, C4 (Central), P3, P4 (Parietal), O1, O2 (Occipital)
         electrodes = [
             ("Fp1", cx - r * 0.35, cy - r * 0.65, self.band_powers.get('beta_rel', 25.0), COLOR_AMBER),
             ("Fp2", cx + r * 0.35, cy - r * 0.65, self.band_powers.get('beta_rel', 25.0), COLOR_AMBER),
@@ -60,23 +64,22 @@ class TopographicMapWidget(QWidget):
         font = QFont("Segoe UI", 8, QFont.Bold)
         painter.setFont(font)
 
-        for name, ex, ey, power, hex_color in electrodes:
-            # Heatmap Glow Gradient
-            radial = QRadialGradient(QPointF(ex, ey), 32)
+        for name, ex, ey, pwr, hex_color in electrodes:
+            # Gradient aura
+            grad = QRadialGradient(ex, ey, r * 0.35)
             c = QColor(hex_color)
-            alpha_val = int(min(220, max(40, power * 4.5)))
-            radial.setColorAt(0.0, QColor(c.red(), c.green(), c.blue(), alpha_val))
-            radial.setColorAt(1.0, QColor(c.red(), c.green(), c.blue(), 0))
-            
+            c.setAlpha(120)
+            grad.setColorAt(0, c)
+            grad.setColorAt(1, QColor(0, 0, 0, 0))
+            painter.setBrush(QBrush(grad))
             painter.setPen(Qt.NoPen)
-            painter.setBrush(QBrush(radial))
-            painter.drawEllipse(QPointF(ex, ey), 32, 32)
+            painter.drawEllipse(QPointF(ex, ey), r * 0.35, r * 0.35)
 
-            # Node Center Circle
-            painter.setPen(QPen(QColor(248, 250, 252), 1.5))
-            painter.setBrush(QColor(15, 23, 42))
-            painter.drawEllipse(QPointF(ex, ey), 6, 6)
+            # Node Core
+            painter.setBrush(QColor(hex_color))
+            painter.setPen(QPen(QColor(255, 255, 255), 1.5))
+            painter.drawEllipse(QPointF(ex, ey), 7, 7)
 
             # Label
-            painter.setPen(QColor(248, 250, 252))
-            painter.drawText(int(ex - 12), int(ey - 10), 24, 12, Qt.AlignCenter, name)
+            painter.setPen(QColor(15, 23, 42))
+            painter.drawText(int(ex - 14), int(ey + 18), 28, 14, Qt.AlignCenter, name)

@@ -22,18 +22,18 @@ def verify():
     analyzer = PSDAnalyzer()
     val_res = analyzer.run_validation_test('alpha')
     assert val_res['passed'], "Alpha validation failed"
-    print("✓ PSD & Validation Center test passed.")
+    print("[OK] PSD & Validation Center test passed.")
 
     interp = AIInterpreter.generate_session_interpretation({'dominant_band': 'ALPHA', 'load_class': 'RELAXED', 'alpha_rel': 45.0, 'beta_rel': 15.0, 'theta_rel': 20.0, 'delta_rel': 20.0})
     assert len(interp) > 50
-    print("✓ AI Interpretation Engine passed.")
+    print("[OK] AI Interpretation Engine passed.")
 
     pdf_gen = PDFReportGenerator()
     report_path = pdf_gen.generate_report({'id': 'VERIFY-001', 'load_class': 'RELAXED', 'alpha': 45.0, 'beta': 15.0, 'theta': 20.0, 'delta': 20.0})
     assert os.path.exists(report_path)
-    print("✓ PDF Report Generation passed.")
+    print("[OK] PDF Report Generation passed.")
 
-    print("\nALL MEDICAL-GRADE MODULES VERIFIED SUCCESSFULLY WITH 0 ERRORS! ✅")
+    print("\nALL MEDICAL-GRADE MODULES VERIFIED SUCCESSFULLY WITH 0 ERRORS!")
 
 if __name__ == '__main__':
     verify()

@@ -2,6 +2,7 @@
 Main Window Controller Module
 Manages application architecture, sidebar navigation, screen switching,
 live DSP thread data dispatch, and global telemetry.
+Theme: Bright Frosted Glassmorphism
 """
 
 import os
@@ -55,10 +56,10 @@ class MainWindow(QMainWindow):
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
 
-        # Left Sidebar Navigation
+        # Left Sidebar Navigation — Bright Glassy White
         self.sidebar = QFrame()
         self.sidebar.setFixedWidth(260)
-        self.sidebar.setStyleSheet(f"background: {COLOR_SIDEBAR_BG}; border-right: 1px solid rgba(255,255,255,0.08);")
+        self.sidebar.setStyleSheet("background: #FFFFFF; border-right: 1px solid #E2E8F0;")
         sb_layout = QVBoxLayout(self.sidebar)
         sb_layout.setContentsMargins(16, 16, 16, 16)
         sb_layout.setSpacing(8)
@@ -69,7 +70,7 @@ class MainWindow(QMainWindow):
             img_lbl = QLabel()
             pixmap = QPixmap(logo_path)
             if not pixmap.isNull():
-                img_lbl.setPixmap(pixmap.scaled(220, 140, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+                img_lbl.setPixmap(pixmap.scaled(220, 130, Qt.KeepAspectRatio, Qt.SmoothTransformation))
                 img_lbl.setAlignment(Qt.AlignCenter)
                 img_lbl.setStyleSheet("border-radius: 10px; margin-bottom: 4px;")
                 sb_layout.addWidget(img_lbl)
@@ -79,43 +80,44 @@ class MainWindow(QMainWindow):
         logo_lbl.setStyleSheet(f"font-size: 20px; font-weight: 900; color: {COLOR_CYAN}; letter-spacing: 1.5px;")
         
         tag_lbl = QLabel("Neural Intelligence Platform")
-        tag_lbl.setStyleSheet("font-size: 9px; font-weight: 700; color: #94A3B8; letter-spacing: 1px;")
+        tag_lbl.setStyleSheet("font-size: 9px; font-weight: 700; color: #475569; letter-spacing: 1px;")
 
         sb_layout.addWidget(logo_lbl)
         sb_layout.addWidget(tag_lbl)
 
         badge_lbl = QLabel(STATUS_BADGE)
-        badge_lbl.setStyleSheet("background: rgba(6,182,212,0.12); color: #06B6D4; border: 1px solid rgba(6,182,212,0.3); padding: 4px 10px; border-radius: 10px; font-size: 9px; font-weight: 800; margin-top: 2px;")
+        badge_lbl.setStyleSheet("background: rgba(2,132,199,0.08); color: #0284C7; border: 1px solid rgba(2,132,199,0.25); padding: 4px 10px; border-radius: 10px; font-size: 9px; font-weight: 800; margin-top: 2px;")
         sb_layout.addWidget(badge_lbl)
 
         # Divider
         div1 = QFrame()
         div1.setFrameShape(QFrame.HLine)
-        div1.setStyleSheet("border: none; background: rgba(255,255,255,0.08); height: 1px; margin: 4px 0;")
+        div1.setStyleSheet("border: none; background: #E2E8F0; height: 1px; margin: 4px 0;")
         sb_layout.addWidget(div1)
 
-        # Nav List — Clean Unnumbered Labels with Light Background Selection Highlighting
+        # Nav List — Bright Glassy Selection Highlighting
         self.nav_list = QListWidget()
         self.nav_list.setStyleSheet("""
             QListWidget { background: transparent; border: none; outline: none; }
             QListWidget::item {
                 padding: 9px 12px;
-                border-radius: 6px;
-                color: #94A3B8;
+                border-radius: 8px;
+                color: #475569;
                 font-weight: 700;
                 font-size: 12px;
                 margin-bottom: 2px;
                 border-left: 3px solid transparent;
             }
             QListWidget::item:hover {
-                background: rgba(255, 255, 255, 0.05);
-                color: #F8FAFC;
+                background: rgba(2, 132, 199, 0.06);
+                color: #0F172A;
             }
             QListWidget::item:selected {
-                background: rgba(255, 255, 255, 0.12);
-                color: #06B6D4;
+                background: rgba(2, 255, 255, 0.18);
+                background: rgba(2, 132, 199, 0.12);
+                color: #0284C7;
                 font-weight: 900;
-                border-left: 3px solid #06B6D4;
+                border-left: 3px solid #0284C7;
             }
         """)
 
@@ -145,7 +147,7 @@ class MainWindow(QMainWindow):
 
         # Expo Demo Button
         btn_expo = QPushButton("⚡ PRESENTATION MODE")
-        btn_expo.setStyleSheet("background: linear-gradient(135deg, #8B5CF6, #6D28D9); color: white; font-weight: 800; font-size: 11px; padding: 10px; border-radius: 8px; border: none;")
+        btn_expo.setStyleSheet("background: linear-gradient(135deg, #0284C7, #0369A1); color: white; font-weight: 800; font-size: 11px; padding: 10px; border-radius: 8px; border: none;")
         btn_expo.setCursor(Qt.PointingHandCursor)
         btn_expo.clicked.connect(self.open_presentation_mode)
         sb_layout.addWidget(btn_expo)
