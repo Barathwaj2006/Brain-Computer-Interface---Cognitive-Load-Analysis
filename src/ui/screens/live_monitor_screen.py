@@ -11,7 +11,7 @@ import pyqtgraph as pg
 
 from src.app.config import COLOR_CARD_BG, COLOR_CYAN, COLOR_EMERALD, COLOR_PURPLE, COLOR_AMBER
 from src.visualization.multichannel_viewer import MultiChannelViewerWidget
-from src.visualization.spectrogram_view import SpectrogramWidget
+from src.visualization.spectrogram_widget import SpectrogramWidget
 
 class LiveMonitorScreen(QWidget):
     def __init__(self, parent=None):
