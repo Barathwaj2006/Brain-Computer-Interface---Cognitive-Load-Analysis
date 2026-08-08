@@ -1,6 +1,7 @@
 """
 Hardware Connection & Device Discovery Workstation Screen Module
-Scans real system Bluetooth (SPP / Virtual COM), USB Serial, and local Wi-Fi network streams.
+Scans real system Bluetooth (SPP / Virtual COM), USB Serial, local Wi-Fi network streams,
+and Pokidex Android EEG Stimulator Dual Stream (Wi-Fi WebSocket JSON SignalFrame + BLE GATT).
 No made-up or fake hardware auto-connections.
 Theme: Bright Frosted Glassmorphism
 """
@@ -14,8 +15,10 @@ from src.app.config import COLOR_CARD_BG, COLOR_CYAN, COLOR_EMERALD, COLOR_AMBER
 from src.acquisition.device_scanner import DeviceScanner
 
 class HardwareScreen(QWidget):
-    connect_port_requested = Signal(str)        # Request connection to serial/bluetooth COM port
-    connect_wifi_requested = Signal(str, int, str) # Request connection to Wi-Fi stream (ip, port, protocol)
+    connect_port_requested = Signal(str)            # Request connection to serial/bluetooth COM port
+    connect_wifi_requested = Signal(str, int, str)     # Request connection to Wi-Fi stream (ip, port, protocol)
+    connect_pokidex_wifi_requested = Signal(str, int)  # Request Pokidex WebSocket connection (host, port)
+    connect_pokidex_ble_requested = Signal(str)        # Request Pokidex BLE connection (address)
     disconnect_requested = Signal()
 
     def __init__(self, parent=None):
@@ -38,7 +41,7 @@ class HardwareScreen(QWidget):
         title = QLabel("HARDWARE DEVICE SCANNER & CONNECTION CENTER")
         title.setStyleSheet("font-size: 15px; font-weight: 900; color: #0F172A; letter-spacing: 1px;")
         
-        sub = QLabel("Real Bluetooth SPP • USB Serial COM Ports • Wi-Fi UDP/TCP Network Endpoints")
+        sub = QLabel("Real Bluetooth SPP • USB Serial • Pokidex Dual Stream (Wi-Fi WS + BLE GATT)")
         sub.setStyleSheet("font-size: 11px; color: #64748B;")
         
         t_box.addWidget(title)
@@ -56,11 +59,11 @@ class HardwareScreen(QWidget):
 
         layout.addWidget(header_card)
 
-        # Main Body: Tabs for Bluetooth/Serial vs Wi-Fi Stream + Terminal Log
+        # Main Body: Tabs for Bluetooth/Serial vs Wi-Fi Stream vs Pokidex Dual Stream + Terminal Log
         body_layout = QHBoxLayout()
         body_layout.setSpacing(16)
 
-        # Left Panel: Tabbed Scanner (Bluetooth/Serial vs Wi-Fi)
+        # Left Panel: Tabbed Scanner
         self.scanner_tabs = QTabWidget()
         self.scanner_tabs.setStyleSheet("""
             QTabWidget::pane { border: 1px solid #E2E8F0; border-radius: 10px; background: #FFFFFF; }
@@ -99,17 +102,16 @@ class HardwareScreen(QWidget):
 
         self.scanner_tabs.addTab(tab_bt, "🔵 Bluetooth & Serial")
 
-        # Tab 2: Wi-Fi Network Stream Scanner
+        # Tab 2: ESP32 Wi-Fi Network Stream Scanner
         tab_wifi = QWidget()
         wf_layout = QVBoxLayout(tab_wifi)
         wf_layout.setContentsMargins(14, 14, 14, 14)
         wf_layout.setSpacing(12)
 
-        wf_title = QLabel("WI-FI NETWORK EEG STREAM ENDPOINT")
+        wf_title = QLabel("ESP32 WI-FI NETWORK EEG STREAM (UDP/TCP CSV)")
         wf_title.setStyleSheet("font-size: 11px; font-weight: 800; color: #0284C7; letter-spacing: 1px;")
         wf_layout.addWidget(wf_title)
 
-        # Wi-Fi Config Form
         form_frame = QFrame()
         form_frame.setStyleSheet("background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 12px;")
         f_layout = QVBoxLayout(form_frame)
@@ -118,7 +120,6 @@ class HardwareScreen(QWidget):
         r1 = QHBoxLayout()
         r1.addWidget(QLabel("IP Address:"))
         self.txt_wifi_ip = QLineEdit("0.0.0.0")
-        self.txt_wifi_ip.setPlaceholderText("e.g. 192.168.1.100 or 0.0.0.0 for broadcast")
         self.txt_wifi_ip.setStyleSheet("background: #FFFFFF; color: #0F172A; border: 1px solid #CBD5E1; padding: 5px; border-radius: 4px; font-size: 11px;")
         r1.addWidget(self.txt_wifi_ip)
         f_layout.addLayout(r1)
@@ -152,7 +153,74 @@ class HardwareScreen(QWidget):
         wf_layout.addLayout(wf_btn_layout)
 
         wf_layout.addStretch()
-        self.scanner_tabs.addTab(tab_wifi, "📶 Wi-Fi Stream")
+        self.scanner_tabs.addTab(tab_wifi, "📶 ESP32 Wi-Fi")
+
+        # Tab 3: Pokidex Dual Stream (Wi-Fi WS + BLE GATT)
+        tab_pokidex = QWidget()
+        pk_layout = QVBoxLayout(tab_pokidex)
+        pk_layout.setContentsMargins(14, 14, 14, 14)
+        pk_layout.setSpacing(10)
+
+        pk_title = QLabel("POKIDEX STIMULATOR DUAL STREAM (WI-FI WS + BLE GATT)")
+        pk_title.setStyleSheet("font-size: 11px; font-weight: 800; color: #7C3AED; letter-spacing: 1px;")
+        pk_layout.addWidget(pk_title)
+
+        pk_frame = QFrame()
+        pk_frame.setStyleSheet("background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 12px;")
+        pk_form = QVBoxLayout(pk_frame)
+        pk_form.setSpacing(8)
+
+        pr1 = QHBoxLayout()
+        pr1.addWidget(QLabel("Pokidex WS Host:"))
+        self.txt_pk_host = QLineEdit("127.0.0.1")
+        self.txt_pk_host.setStyleSheet("background: #FFFFFF; color: #0F172A; border: 1px solid #CBD5E1; padding: 5px; border-radius: 4px; font-size: 11px;")
+        pr1.addWidget(self.txt_pk_host)
+
+        pr1.addWidget(QLabel("WS Port:"))
+        self.txt_pk_port = QLineEdit("8765")
+        self.txt_pk_port.setStyleSheet("background: #FFFFFF; color: #0F172A; border: 1px solid #CBD5E1; padding: 5px; border-radius: 4px; font-size: 11px;")
+        pr1.addWidget(self.txt_pk_port)
+        pk_form.addLayout(pr1)
+
+        pr2 = QHBoxLayout()
+        pr2.addWidget(QLabel("BLE GATT Service UUID:"))
+        self.lbl_gatt_uuid = QLabel("0000fe40-0000-1000-8000-00805f9b34fb")
+        self.lbl_gatt_uuid.setStyleSheet("color: #7C3AED; font-weight: 700; font-size: 10px; font-family: monospace;")
+        pr2.addWidget(self.lbl_gatt_uuid)
+        pr2.addStretch()
+        pk_form.addLayout(pr2)
+
+        pk_layout.addWidget(pk_frame)
+
+        pk_btns = QHBoxLayout()
+        self.btn_connect_pk_wifi = QPushButton("🌐 CONNECT POKIDEX WI-FI (WS)")
+        self.btn_connect_pk_wifi.setStyleSheet("background: #7C3AED; color: white; font-weight: 800; font-size: 10px; padding: 8px 12px; border-radius: 6px; border: none;")
+        self.btn_connect_pk_wifi.clicked.connect(self.connect_pokidex_wifi)
+
+        self.btn_connect_pk_ble = QPushButton("📡 CONNECT POKIDEX BLE (GATT)")
+        self.btn_connect_pk_ble.setStyleSheet("background: #0284C7; color: white; font-weight: 800; font-size: 10px; padding: 8px 12px; border-radius: 6px; border: none;")
+        self.btn_connect_pk_ble.clicked.connect(self.connect_pokidex_ble)
+
+        pk_btns.addWidget(self.btn_connect_pk_wifi)
+        pk_btns.addWidget(self.btn_connect_pk_ble)
+        pk_layout.addLayout(pk_btns)
+
+        # Dual Telemetry Comparison Table
+        self.table_pk_telemetry = QTableWidget(2, 5)
+        self.table_pk_telemetry.setHorizontalHeaderLabels(["Transport", "Packets", "Dropped", "Drop %", "Latency (ms)"])
+        self.table_pk_telemetry.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.table_pk_telemetry.setStyleSheet("""
+            QTableWidget { background: #FFFFFF; border: 1px solid #E2E8F0; gridline-color: #E2E8F0; color: #0F172A; font-size: 11px; border-radius: 6px; }
+            QHeaderView::section { background: #F8FAFC; color: #475569; font-weight: 800; font-size: 10px; padding: 6px; border: none; border-bottom: 1px solid #E2E8F0; }
+        """)
+        self.table_pk_telemetry.setItem(0, 0, QTableWidgetItem("Wi-Fi WebSocket"))
+        self.table_pk_telemetry.setItem(1, 0, QTableWidgetItem("BLE GATT"))
+        for r in range(2):
+            for c in range(1, 5):
+                self.table_pk_telemetry.setItem(r, c, QTableWidgetItem("0"))
+
+        pk_layout.addWidget(self.table_pk_telemetry)
+        self.scanner_tabs.addTab(tab_pokidex, "📱 Pokidex Dual Stream")
 
         body_layout.addWidget(self.scanner_tabs, stretch=3)
 
@@ -168,7 +236,7 @@ class HardwareScreen(QWidget):
         self.terminal = QTextEdit()
         self.terminal.setReadOnly(True)
         self.terminal.setStyleSheet("background: #0F172A; color: #38BDF8; font-family: 'Consolas', 'Courier New', monospace; font-size: 11px; border: 1px solid #334155; border-radius: 8px;")
-        self.terminal.setText("[SYSTEM] Hardware Connection Center Ready.\n[SYSTEM] No device automatically forced. Click SCAN to discover Bluetooth / USB / Wi-Fi devices.")
+        self.terminal.setText("[SYSTEM] Hardware Connection Center Ready.\n[SYSTEM] Supports ESP32 Serial/Wi-Fi and Pokidex WebSocket/BLE streams.\n[SYSTEM] No device automatically forced. Click SCAN or CONNECT.")
         t_layout.addWidget(self.terminal)
 
         # Disconnect Action Button
@@ -178,10 +246,9 @@ class HardwareScreen(QWidget):
         t_layout.addWidget(self.btn_disconnect)
 
         body_layout.addWidget(term_card, stretch=2)
-
         layout.addLayout(body_layout)
         
-        # Run initial scan on startup
+        # Initial scan
         self.scan_bluetooth_devices()
 
     def scan_bluetooth_devices(self):
@@ -226,6 +293,18 @@ class HardwareScreen(QWidget):
         self.terminal.append(f"[CONNECT] Connecting to {self.active_device_name}...")
         self.connect_wifi_requested.emit(ip, port, proto)
 
+    def connect_pokidex_wifi(self):
+        host = self.txt_pk_host.text().strip() or "127.0.0.1"
+        port = int(self.txt_pk_port.text()) if self.txt_pk_port.text().isdigit() else 8765
+        self.active_device_name = f"Pokidex Wi-Fi WS ({host}:{port})"
+        self.terminal.append(f"[CONNECT] Connecting Pokidex WebSocket: ws://{host}:{port}...")
+        self.connect_pokidex_wifi_requested.emit(host, port)
+
+    def connect_pokidex_ble(self):
+        self.active_device_name = "Pokidex BLE GATT"
+        self.terminal.append("[CONNECT] Scanning & connecting Pokidex BLE GATT Peripheral...")
+        self.connect_pokidex_ble_requested.emit(None)
+
     def disconnect_hardware(self):
         self.terminal.append("[DISCONNECT] Disconnecting active hardware interface...")
         self.disconnect_requested.emit()
@@ -233,6 +312,22 @@ class HardwareScreen(QWidget):
 
     def update_packet_stats(self, total, dropped, pct):
         self.stats_badge.setText(f"Packets: {total} | Dropped: {dropped} ({pct:.1f}%)")
+
+    def update_dual_pokidex_telemetry(self, stats_dict):
+        wifi = stats_dict.get("wifi", {})
+        ble = stats_dict.get("ble", {})
+
+        if wifi:
+            self.table_pk_telemetry.setItem(0, 1, QTableWidgetItem(str(wifi.get("total_packets", 0))))
+            self.table_pk_telemetry.setItem(0, 2, QTableWidgetItem(str(wifi.get("dropped_packets", 0))))
+            self.table_pk_telemetry.setItem(0, 3, QTableWidgetItem(f"{wifi.get('drop_pct', 0.0):.1f}%"))
+            self.table_pk_telemetry.setItem(0, 4, QTableWidgetItem(f"{wifi.get('latency_ms', 0.0):.1f} ms"))
+
+        if ble:
+            self.table_pk_telemetry.setItem(1, 1, QTableWidgetItem(str(ble.get("total_packets", 0))))
+            self.table_pk_telemetry.setItem(1, 2, QTableWidgetItem(str(ble.get("dropped_packets", 0))))
+            self.table_pk_telemetry.setItem(1, 3, QTableWidgetItem(f"{ble.get('drop_pct', 0.0):.1f}%"))
+            self.table_pk_telemetry.setItem(1, 4, QTableWidgetItem(f"{ble.get('latency_ms', 0.0):.1f} ms"))
 
     def set_hardware_status(self, is_connected, status_text):
         self.is_connected = is_connected

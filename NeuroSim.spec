@@ -34,7 +34,10 @@ a = Analysis(
         'src.visualization.spectrogram_widget',
         'src.visualization.spectrogram_view',
         'src.acquisition.device_scanner',
-        'src.ui.screens.results_screen'
+        'src.ui.screens.results_screen',
+        'websockets',
+        'bleak',
+        'src.acquisition.pokidex_client'
     ],
     hookspath=[],
     hooksconfig={},

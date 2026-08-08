@@ -35,6 +35,7 @@ from src.ui.screens.hardware_screen import HardwareScreen
 from src.ui.screens.results_screen import ResultsScreen
 from src.acquisition.serial_reader import HardwareSerialThread
 from src.acquisition.device_scanner import WifiStreamThread
+from src.acquisition.pokidex_client import PokidexDualStreamManager
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -49,6 +50,7 @@ class MainWindow(QMainWindow):
 
         self.hw_serial_thread = None
         self.hw_wifi_thread = None
+        self.pokidex_manager = PokidexDualStreamManager()
         self.active_hardware_source = "SIMULATOR"
 
         self.signal_buffer = []
@@ -186,7 +188,15 @@ class MainWindow(QMainWindow):
         # Connect hardware screen connection request signals
         self.screen_hardware.connect_port_requested.connect(self.connect_serial_port)
         self.screen_hardware.connect_wifi_requested.connect(self.connect_wifi_stream)
+        self.screen_hardware.connect_pokidex_wifi_requested.connect(self.connect_pokidex_wifi)
+        self.screen_hardware.connect_pokidex_ble_requested.connect(self.connect_pokidex_ble)
         self.screen_hardware.disconnect_requested.connect(self.disconnect_all_hardware)
+
+        # Connect Pokidex Manager signals
+        self.pokidex_manager.sample_received.connect(self.on_pokidex_sample)
+        self.pokidex_manager.wifi_connection_changed.connect(self.on_hardware_connection_changed)
+        self.pokidex_manager.ble_connection_changed.connect(self.on_hardware_connection_changed)
+        self.pokidex_manager.dual_telemetry_updated.connect(self.screen_hardware.update_dual_pokidex_telemetry)
 
         self.stacked_widget.addWidget(self.screen_overview)       # 0
         self.stacked_widget.addWidget(self.screen_monitor)        # 1
@@ -236,6 +246,14 @@ class MainWindow(QMainWindow):
         self.hw_wifi_thread.stats_updated.connect(self.screen_hardware.update_packet_stats)
         self.hw_wifi_thread.start()
 
+    def connect_pokidex_wifi(self, host, port):
+        self.active_hardware_source = "POKIDEX"
+        self.pokidex_manager.start_wifi_stream(host=host, port=port)
+
+    def connect_pokidex_ble(self, address=None):
+        self.active_hardware_source = "POKIDEX"
+        self.pokidex_manager.start_ble_stream(address=address)
+
     def disconnect_all_hardware(self):
         if self.hw_serial_thread:
             self.hw_serial_thread.stop()
@@ -243,10 +261,18 @@ class MainWindow(QMainWindow):
         if self.hw_wifi_thread:
             self.hw_wifi_thread.stop()
             self.hw_wifi_thread = None
+        if self.pokidex_manager:
+            self.pokidex_manager.stop_all()
         self.active_hardware_source = "SIMULATOR"
 
     def on_hardware_data(self, val):
         self.active_hardware_source = "HARDWARE"
+        self.signal_buffer.append(val)
+        if len(self.signal_buffer) > 1250:
+            self.signal_buffer = self.signal_buffer[-1250:]
+
+    def on_pokidex_sample(self, val, frame_meta):
+        self.active_hardware_source = "POKIDEX"
         self.signal_buffer.append(val)
         if len(self.signal_buffer) > 1250:
             self.signal_buffer = self.signal_buffer[-1250:]

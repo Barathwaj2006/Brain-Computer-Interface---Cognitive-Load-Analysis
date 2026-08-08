@@ -83,6 +83,45 @@ class DeviceScanner:
 
         return endpoints
 
+    @staticmethod
+    def scan_pokidex_devices(ws_host="127.0.0.1", ws_port=8765):
+        """
+        Scans for Pokidex Android EEG Stimulator instances over WebSocket and BLE.
+        """
+        pokidex_endpoints = []
+        
+        # Check WebSocket Server Port 8765
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(0.5)
+        try:
+            res = sock.connect_ex((ws_host, ws_port))
+            if res == 0:
+                status = "Pokidex WebSocket Server Active (0.0.0.0:8765)"
+            else:
+                status = "Listening / Standby (Port 8765)"
+        except Exception as e:
+            status = f"Offline ({str(e)})"
+        finally:
+            sock.close()
+
+        pokidex_endpoints.append({
+            "name": "Pokidex Android Stimulator (Wi-Fi WebSocket)",
+            "type": "WebSocket JSON Stream",
+            "endpoint": f"ws://{ws_host}:{ws_port}",
+            "schema": "SignalFrame (metadata+data+events)",
+            "status": status
+        })
+
+        pokidex_endpoints.append({
+            "name": "Pokidex Android Stimulator (BLE GATT Peripheral)",
+            "type": "BLE GATT Service",
+            "endpoint": "GATT: 0000fe40-0000-1000-8000-00805f9b34fb",
+            "schema": "BLE SignalFrame Notification",
+            "status": "Ready to Scan"
+        })
+
+        return pokidex_endpoints
+
 
 class WifiStreamThread(QThread):
     data_received = Signal(float)
