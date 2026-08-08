@@ -2,6 +2,7 @@
 Settings Screen Module — Medical-Grade Calibration Standard
 Provides Neural Signal Synthesizer calibration, active digital filter toggles,
 sampling rate controls, and hardware interface status.
+Theme: Bright Frosted Glassmorphism
 """
 
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QFrame, QSlider, QCheckBox, QComboBox
@@ -22,19 +23,19 @@ class SettingsScreen(QWidget):
         layout.setSpacing(16)
 
         title_lbl = QLabel("SYSTEM CONFIGURATION & FILTER CALIBRATION")
-        title_lbl.setStyleSheet("font-size: 16px; font-weight: 900; color: #F8FAFC; letter-spacing: 1px;")
+        title_lbl.setStyleSheet("font-size: 16px; font-weight: 900; color: #0F172A; letter-spacing: 1px;")
         layout.addWidget(title_lbl)
 
         # Card 1: Signal Interface & Acquisition Configuration
         card_interface = QFrame()
-        card_interface.setStyleSheet(f"background: {COLOR_CARD_BG}; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px;")
+        card_interface.setStyleSheet(f"background: {COLOR_CARD_BG}; border: 1px solid #E2E8F0; border-radius: 12px; padding: 16px;")
         ci_layout = QVBoxLayout(card_interface)
 
         t1 = QLabel("ACQUISITION INTERFACE STATUS")
         t1.setStyleSheet(f"font-size: 11px; font-weight: 800; color: {COLOR_CYAN}; letter-spacing: 1px;")
         
         status_lbl = QLabel(f"• Interface Name: {INTERFACE_NAME}\n• Primary Data Stream: Auto-Locking Active Stream (250 Hz)\n• Physical Protocol: High-Speed Biomedical Serial USB")
-        status_lbl.setStyleSheet("font-size: 12px; color: #94A3B8; line-height: 1.6; margin-top: 6px;")
+        status_lbl.setStyleSheet("font-size: 12px; color: #64748B; line-height: 1.6; margin-top: 6px;")
 
         ci_layout.addWidget(t1)
         ci_layout.addWidget(status_lbl)
@@ -42,7 +43,7 @@ class SettingsScreen(QWidget):
 
         # Card 2: Active Digital Filter Configuration
         card_filters = QFrame()
-        card_filters.setStyleSheet(f"background: {COLOR_CARD_BG}; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px;")
+        card_filters.setStyleSheet(f"background: {COLOR_CARD_BG}; border: 1px solid #E2E8F0; border-radius: 12px; padding: 16px;")
         cf_layout = QVBoxLayout(card_filters)
 
         t2 = QLabel("ACTIVE BIOMEDICAL DIGITAL FILTERS")
@@ -51,15 +52,15 @@ class SettingsScreen(QWidget):
 
         chk1 = QCheckBox(f"Enable {NOTCH_FILTER_STATUS} (Powerline Interference Suppression)")
         chk1.setChecked(True)
-        chk1.setStyleSheet("color: #F8FAFC; font-weight: 700; font-size: 12px; margin-top: 8px;")
+        chk1.setStyleSheet("color: #0F172A; font-weight: 700; font-size: 12px; margin-top: 8px;")
         
         chk2 = QCheckBox(f"Enable {EOG_FILTER_STATUS} (Blink & Ocular Movement Attenuation)")
         chk2.setChecked(True)
-        chk2.setStyleSheet("color: #F8FAFC; font-weight: 700; font-size: 12px; margin-top: 6px;")
+        chk2.setStyleSheet("color: #0F172A; font-weight: 700; font-size: 12px; margin-top: 6px;")
 
         chk3 = QCheckBox(f"Enable {EMG_FILTER_STATUS} (High-Frequency Muscle Noise Filter)")
         chk3.setChecked(True)
-        chk3.setStyleSheet("color: #F8FAFC; font-weight: 700; font-size: 12px; margin-top: 6px;")
+        chk3.setStyleSheet("color: #0F172A; font-weight: 700; font-size: 12px; margin-top: 6px;")
 
         cf_layout.addWidget(chk1)
         cf_layout.addWidget(chk2)

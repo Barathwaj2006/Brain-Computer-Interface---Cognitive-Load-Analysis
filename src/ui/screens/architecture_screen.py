@@ -2,6 +2,7 @@
 System Architecture Screen Module
 Renders interactive pipeline architecture diagram:
 Signal Source -> 250 Hz Sampling -> Butterworth Filter -> Welch PSD -> Band Extraction -> Feature Engine -> Classifier -> AI Interpretation -> Session Report
+Theme: Bright Frosted Glassmorphism
 """
 
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QFrame, QGridLayout
@@ -19,11 +20,11 @@ class ArchitectureScreen(QWidget):
         layout.setSpacing(16)
 
         title_lbl = QLabel("NEUROSIM PIPELINE ARCHITECTURE — SYSTEM FLOW")
-        title_lbl.setStyleSheet("font-size: 16px; font-weight: 900; color: #F8FAFC; letter-spacing: 1px;")
+        title_lbl.setStyleSheet("font-size: 16px; font-weight: 900; color: #0F172A; letter-spacing: 1px;")
         layout.addWidget(title_lbl)
 
         grid_card = QFrame()
-        grid_card.setStyleSheet(f"background: {COLOR_CARD_BG}; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 20px;")
+        grid_card.setStyleSheet(f"background: {COLOR_CARD_BG}; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px;")
         g_layout = QGridLayout(grid_card)
         g_layout.setSpacing(16)
 
@@ -43,17 +44,17 @@ class ArchitectureScreen(QWidget):
             row = i // 3
             col = i % 3
             block_frame = QFrame()
-            block_frame.setStyleSheet("background: rgba(15,23,42,0.8); border: 1px solid rgba(6,182,212,0.3); border-radius: 10px; padding: 14px;")
+            block_frame.setStyleSheet("background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 14px;")
             b_l = QVBoxLayout(block_frame)
             
             t = QLabel(b_title)
             t.setStyleSheet(f"font-size: 12px; font-weight: 900; color: {COLOR_CYAN};")
             
             s = QLabel(b_sub)
-            s.setStyleSheet("font-size: 11px; font-weight: 700; color: #F8FAFC; margin-top: 2px;")
+            s.setStyleSheet("font-size: 11px; font-weight: 700; color: #0F172A; margin-top: 2px;")
             
             d = QLabel(b_desc)
-            d.setStyleSheet("font-size: 10px; color: #94A3B8; margin-top: 4px;")
+            d.setStyleSheet("font-size: 10px; color: #64748B; margin-top: 4px;")
             d.setWordWrap(True)
 
             b_l.addWidget(t)

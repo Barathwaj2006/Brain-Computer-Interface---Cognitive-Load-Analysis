@@ -1,18 +1,27 @@
 """
-Hardware Connection & Digital Workstation Screen Module ("Care" Style CAD Terminal)
+Hardware Connection & Device Discovery Workstation Screen Module
+Scans real system Bluetooth (SPP / Virtual COM), USB Serial, and local Wi-Fi network streams.
+No made-up or fake hardware auto-connections.
 Theme: Bright Frosted Glassmorphism
 """
 
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QFrame, QSlider, QTextEdit, QPushButton, QGridLayout
+from PySide6.QtWidgets import (
+    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QFrame, QPushButton, QLineEdit, QComboBox,
+    QTableWidget, QTableWidgetItem, QHeaderView, QTextEdit, QTabWidget
+)
 from PySide6.QtCore import Qt, Signal
 from src.app.config import COLOR_CARD_BG, COLOR_CYAN, COLOR_EMERALD, COLOR_AMBER, COLOR_ROSE
+from src.acquisition.device_scanner import DeviceScanner
 
 class HardwareScreen(QWidget):
-    sim_params_changed = Signal(float, float, float, float)
+    connect_port_requested = Signal(str)        # Request connection to serial/bluetooth COM port
+    connect_wifi_requested = Signal(str, int, str) # Request connection to Wi-Fi stream (ip, port, protocol)
+    disconnect_requested = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self.is_connected = False
+        self.active_device_name = "None"
         self.init_ui()
 
     def init_ui(self):
@@ -20,16 +29,16 @@ class HardwareScreen(QWidget):
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(16)
 
-        # Header Title & Status
+        # Header Title & Telemetry Badges
         header_card = QFrame()
         header_card.setStyleSheet("background: rgba(255, 255, 255, 0.85); border: 1px solid #E2E8F0; border-radius: 12px; padding: 16px;")
         h_layout = QHBoxLayout(header_card)
 
         t_box = QVBoxLayout()
-        title = QLabel("HARDWARE CONNECTION DIAGNOSTICS & VIRTUAL TERMINAL")
+        title = QLabel("HARDWARE DEVICE SCANNER & CONNECTION CENTER")
         title.setStyleSheet("font-size: 15px; font-weight: 900; color: #0F172A; letter-spacing: 1px;")
         
-        sub = QLabel("Care Biomedical Workstation Engine • 115200 Baud • NEUROSIM_HELLO Handshake")
+        sub = QLabel("Real Bluetooth SPP • USB Serial COM Ports • Wi-Fi UDP/TCP Network Endpoints")
         sub.setStyleSheet("font-size: 11px; color: #64748B;")
         
         t_box.addWidget(title)
@@ -41,104 +50,186 @@ class HardwareScreen(QWidget):
         self.stats_badge.setStyleSheet("background: rgba(2,132,199,0.08); color: #0284C7; border: 1px solid rgba(2,132,199,0.25); padding: 6px 12px; border-radius: 10px; font-weight: 700; font-size: 10px;")
         h_layout.addWidget(self.stats_badge)
 
-        self.status_badge = QLabel("● HARDWARE CONNECTED (AUTO-LOCK)")
-        self.status_badge.setStyleSheet("background: rgba(5,150,105,0.12); color: #059669; border: 1px solid #059669; padding: 6px 14px; border-radius: 12px; font-weight: 800; font-size: 11px;")
+        self.status_badge = QLabel("● DISCONNECTED (NO ACTIVE HARDWARE)")
+        self.status_badge.setStyleSheet("background: rgba(239,68,68,0.12); color: #EF4444; border: 1px solid #EF4444; padding: 6px 14px; border-radius: 12px; font-weight: 800; font-size: 11px;")
         h_layout.addWidget(self.status_badge)
 
         layout.addWidget(header_card)
 
-        # Main Split: Left Potentiometers Array + Right Terminal
-        main_grid = QHBoxLayout()
-        main_grid.setSpacing(16)
+        # Main Body: Tabs for Bluetooth/Serial vs Wi-Fi Stream + Terminal Log
+        body_layout = QHBoxLayout()
+        body_layout.setSpacing(16)
 
-        # Left: Interactive Digital Potentiometer Control Array
-        pots_card = QFrame()
-        pots_card.setStyleSheet("background: rgba(255, 255, 255, 0.85); border: 1px solid #E2E8F0; border-radius: 12px; padding: 16px;")
-        p_layout = QVBoxLayout(pots_card)
+        # Left Panel: Tabbed Scanner (Bluetooth/Serial vs Wi-Fi)
+        self.scanner_tabs = QTabWidget()
+        self.scanner_tabs.setStyleSheet("""
+            QTabWidget::pane { border: 1px solid #E2E8F0; border-radius: 10px; background: #FFFFFF; }
+            QTabBar::tab { background: #F1F5F9; color: #64748B; font-weight: 800; font-size: 11px; padding: 8px 16px; border-top-left-radius: 6px; border-top-right-radius: 6px; margin-right: 2px; }
+            QTabBar::tab:selected { background: #0284C7; color: #FFFFFF; }
+        """)
 
-        p_title = QLabel("NEURAL SENSOR POTENTIOMETER CONTROLS")
-        p_title.setStyleSheet("font-size: 11px; font-weight: 800; color: #0284C7; letter-spacing: 1px; margin-bottom: 12px;")
-        p_layout.addWidget(p_title)
+        # Tab 1: Bluetooth & Serial Scanner
+        tab_bt = QWidget()
+        bt_layout = QVBoxLayout(tab_bt)
+        bt_layout.setContentsMargins(14, 14, 14, 14)
+        bt_layout.setSpacing(10)
 
-        self.sld_delta, self.val_delta_v, self.val_delta_adc = self._create_pot_control("POT 1: DELTA (2 Hz)", 30, p_layout)
-        self.sld_theta, self.val_theta_v, self.val_theta_adc = self._create_pot_control("POT 2: THETA (6 Hz)", 40, p_layout)
-        self.sld_alpha, self.val_alpha_v, self.val_alpha_adc = self._create_pot_control("POT 3: ALPHA (10 Hz)", 80, p_layout)
-        self.sld_beta,  self.val_beta_v,  self.val_beta_adc  = self._create_pot_control("POT 4: BETA (20 Hz)", 30, p_layout)
+        bt_header = QHBoxLayout()
+        bt_title = QLabel("BLUETOOTH & SERIAL COM DEVICES")
+        bt_title.setStyleSheet("font-size: 11px; font-weight: 800; color: #0284C7; letter-spacing: 1px;")
+        
+        self.btn_scan_bt = QPushButton("🔍 SCAN DEVICES")
+        self.btn_scan_bt.setStyleSheet("background: #0284C7; color: white; font-weight: 800; font-size: 11px; padding: 6px 14px; border-radius: 6px; border: none;")
+        self.btn_scan_bt.setCursor(Qt.PointingHandCursor)
+        self.btn_scan_bt.clicked.connect(self.scan_bluetooth_devices)
 
-        main_grid.addWidget(pots_card, stretch=3)
+        bt_header.addWidget(bt_title)
+        bt_header.addStretch()
+        bt_header.addWidget(self.btn_scan_bt)
+        bt_layout.addLayout(bt_header)
 
-        # Right: Live Serial Terminal Stream Monitor
+        self.table_bt = QTableWidget(0, 5)
+        self.table_bt.setHorizontalHeaderLabels(["Device Name", "Type", "Port", "Hardware ID", "Action"])
+        self.table_bt.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.table_bt.setStyleSheet("""
+            QTableWidget { background: #FFFFFF; border: 1px solid #E2E8F0; gridline-color: #E2E8F0; color: #0F172A; font-size: 11px; border-radius: 6px; }
+            QHeaderView::section { background: #F8FAFC; color: #475569; font-weight: 800; font-size: 10px; padding: 6px; border: none; border-bottom: 1px solid #E2E8F0; }
+        """)
+        bt_layout.addWidget(self.table_bt)
+
+        self.scanner_tabs.addTab(tab_bt, "🔵 Bluetooth & Serial")
+
+        # Tab 2: Wi-Fi Network Stream Scanner
+        tab_wifi = QWidget()
+        wf_layout = QVBoxLayout(tab_wifi)
+        wf_layout.setContentsMargins(14, 14, 14, 14)
+        wf_layout.setSpacing(12)
+
+        wf_title = QLabel("WI-FI NETWORK EEG STREAM ENDPOINT")
+        wf_title.setStyleSheet("font-size: 11px; font-weight: 800; color: #0284C7; letter-spacing: 1px;")
+        wf_layout.addWidget(wf_title)
+
+        # Wi-Fi Config Form
+        form_frame = QFrame()
+        form_frame.setStyleSheet("background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 12px;")
+        f_layout = QVBoxLayout(form_frame)
+        f_layout.setSpacing(8)
+
+        r1 = QHBoxLayout()
+        r1.addWidget(QLabel("IP Address:"))
+        self.txt_wifi_ip = QLineEdit("0.0.0.0")
+        self.txt_wifi_ip.setPlaceholderText("e.g. 192.168.1.100 or 0.0.0.0 for broadcast")
+        self.txt_wifi_ip.setStyleSheet("background: #FFFFFF; color: #0F172A; border: 1px solid #CBD5E1; padding: 5px; border-radius: 4px; font-size: 11px;")
+        r1.addWidget(self.txt_wifi_ip)
+        f_layout.addLayout(r1)
+
+        r2 = QHBoxLayout()
+        r2.addWidget(QLabel("Port:"))
+        self.txt_wifi_port = QLineEdit("8080")
+        self.txt_wifi_port.setStyleSheet("background: #FFFFFF; color: #0F172A; border: 1px solid #CBD5E1; padding: 5px; border-radius: 4px; font-size: 11px;")
+        r2.addWidget(self.txt_wifi_port)
+
+        r2.addWidget(QLabel("Protocol:"))
+        self.combo_wifi_proto = QComboBox()
+        self.combo_wifi_proto.addItems(["UDP Socket", "TCP Stream"])
+        self.combo_wifi_proto.setStyleSheet("background: #FFFFFF; color: #0F172A; border: 1px solid #CBD5E1; padding: 5px; border-radius: 4px; font-size: 11px;")
+        r2.addWidget(self.combo_wifi_proto)
+        f_layout.addLayout(r2)
+
+        wf_layout.addWidget(form_frame)
+
+        wf_btn_layout = QHBoxLayout()
+        self.btn_scan_wifi = QPushButton("📡 DISCOVER LOCAL NETWORK")
+        self.btn_scan_wifi.setStyleSheet("background: #F1F5F9; color: #0F172A; font-weight: 700; font-size: 11px; padding: 8px 14px; border-radius: 6px; border: 1px solid #CBD5E1;")
+        self.btn_scan_wifi.clicked.connect(self.scan_wifi_endpoints)
+
+        self.btn_connect_wifi = QPushButton("⚡ CONNECT WI-FI STREAM")
+        self.btn_connect_wifi.setStyleSheet("background: #0284C7; color: white; font-weight: 800; font-size: 11px; padding: 8px 14px; border-radius: 6px; border: none;")
+        self.btn_connect_wifi.clicked.connect(self.connect_wifi_stream)
+
+        wf_btn_layout.addWidget(self.btn_scan_wifi)
+        wf_btn_layout.addWidget(self.btn_connect_wifi)
+        wf_layout.addLayout(wf_btn_layout)
+
+        wf_layout.addStretch()
+        self.scanner_tabs.addTab(tab_wifi, "📶 Wi-Fi Stream")
+
+        body_layout.addWidget(self.scanner_tabs, stretch=3)
+
+        # Right Panel: Live Terminal Monitor
         term_card = QFrame()
         term_card.setStyleSheet("background: rgba(255, 255, 255, 0.85); border: 1px solid #E2E8F0; border-radius: 12px; padding: 16px;")
         t_layout = QVBoxLayout(term_card)
 
-        t_title = QLabel("SERIAL PACKET TERMINAL MONITOR")
+        t_title = QLabel("HARDWARE TERMINAL LOG")
         t_title.setStyleSheet("font-size: 11px; font-weight: 800; color: #0284C7; letter-spacing: 1px;")
         t_layout.addWidget(t_title)
 
         self.terminal = QTextEdit()
         self.terminal.setReadOnly(True)
         self.terminal.setStyleSheet("background: #0F172A; color: #38BDF8; font-family: 'Consolas', 'Courier New', monospace; font-size: 11px; border: 1px solid #334155; border-radius: 8px;")
-        self.terminal.setText("[00:00:01] USB Serial Auto-Scanner Initialized...\n[00:00:01] Listening on 115200 Baud...\n[00:00:02] Recv: NEUROSIM_HELLO,v1 Handshake OK\n[00:00:02] SAMPLE, 1.65 V | SEQ: 1 | CHK: 166 (OK)\n[00:00:03] SAMPLE, 1.68 V | SEQ: 2 | CHK: 170 (OK)")
-        
+        self.terminal.setText("[SYSTEM] Hardware Connection Center Ready.\n[SYSTEM] No device automatically forced. Click SCAN to discover Bluetooth / USB / Wi-Fi devices.")
         t_layout.addWidget(self.terminal)
-        main_grid.addWidget(term_card, stretch=2)
 
-        layout.addLayout(main_grid)
+        # Disconnect Action Button
+        self.btn_disconnect = QPushButton("✖ DISCONNECT HARDWARE")
+        self.btn_disconnect.setStyleSheet("background: rgba(239, 68, 68, 0.15); color: #E11D48; border: 1px solid #E11D48; font-weight: 800; font-size: 11px; padding: 8px; border-radius: 6px;")
+        self.btn_disconnect.clicked.connect(self.disconnect_hardware)
+        t_layout.addWidget(self.btn_disconnect)
 
-    def _create_pot_control(self, title, default_val, parent_layout):
-        row_frame = QFrame()
-        row_frame.setStyleSheet("background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 10px;")
-        l = QVBoxLayout(row_frame)
-        l.setSpacing(6)
+        body_layout.addWidget(term_card, stretch=2)
 
-        header = QHBoxLayout()
-        t_lbl = QLabel(title)
-        t_lbl.setStyleSheet("font-size: 11px; font-weight: 800; color: #0F172A;")
+        layout.addLayout(body_layout)
         
-        v_lbl = QLabel(f"{(default_val / 100.0) * 3.3:.2f} V")
-        v_lbl.setStyleSheet("font-size: 12px; font-weight: 900; color: #0284C7;")
+        # Run initial scan on startup
+        self.scan_bluetooth_devices()
 
-        adc_lbl = QLabel(f"ADC: {int((default_val / 100.0) * 4095)}")
-        adc_lbl.setStyleSheet("font-size: 10px; color: #64748B;")
-
-        header.addWidget(t_lbl)
-        header.addStretch()
-        header.addWidget(v_lbl)
-        header.addWidget(adc_lbl)
-        l.addLayout(header)
-
-        slider = QSlider(Qt.Horizontal)
-        slider.setRange(0, 100)
-        slider.setValue(default_val)
-        slider.setStyleSheet("""
-            QSlider::groove:horizontal { height: 6px; background: #E2E8F0; border-radius: 3px; }
-            QSlider::sub-page:horizontal { background: #0284C7; border-radius: 3px; }
-            QSlider::handle:horizontal { background: #FFFFFF; border: 2px solid #0284C7; width: 14px; height: 14px; margin: -4px 0; border-radius: 7px; }
-        """)
+    def scan_bluetooth_devices(self):
+        self.terminal.append("[SCAN] Scanning host system for Bluetooth SPP and USB Serial devices...")
+        devices = DeviceScanner.scan_bluetooth_and_serial_devices()
         
-        slider.valueChanged.connect(lambda val, vl=v_lbl, al=adc_lbl: self.on_slider_changed(val, vl, al))
-        l.addWidget(slider)
+        self.table_bt.setRowCount(len(devices))
+        if len(devices) == 0:
+            self.terminal.append("[SCAN] No physical Bluetooth or USB Serial devices found on host system.")
+            return
 
-        parent_layout.addWidget(row_frame)
-        return slider, v_lbl, adc_lbl
+        for row, dev in enumerate(devices):
+            self.table_bt.setItem(row, 0, QTableWidgetItem(dev['name']))
+            self.table_bt.setItem(row, 1, QTableWidgetItem(dev['type']))
+            self.table_bt.setItem(row, 2, QTableWidgetItem(dev['port']))
+            self.table_bt.setItem(row, 3, QTableWidgetItem(dev['hwid'][:25]))
 
-    def on_slider_changed(self, val, v_lbl, adc_lbl):
-        v = (val / 100.0) * 3.3
-        adc = int((val / 100.0) * 4095)
-        v_lbl.setText(f"{v:.2f} V")
-        adc_lbl.setText(f"ADC: {adc}")
+            btn_conn = QPushButton("CONNECT")
+            btn_conn.setStyleSheet("background: #0284C7; color: white; font-weight: bold; font-size: 10px; padding: 4px 8px; border-radius: 4px; border: none;")
+            btn_conn.clicked.connect(lambda _, p=dev['port'], n=dev['name']: self.connect_serial_device(p, n))
+            self.table_bt.setCellWidget(row, 4, btn_conn)
 
-        # Emit updated values
-        self.sim_params_changed.emit(
-            self.sld_delta.value() / 100.0,
-            self.sld_theta.value() / 100.0,
-            self.sld_alpha.value() / 100.0,
-            self.sld_beta.value() / 100.0
-        )
+        self.terminal.append(f"[SCAN] Found {len(devices)} physical hardware COM port(s).")
 
-        # Log to terminal
-        self.terminal.append(f"[LIVE] Potentiometer Input Changed -> Voltage: {v:.2f}V | ADC: {adc}")
+    def scan_wifi_endpoints(self):
+        self.terminal.append("[SCAN] Discovering local Wi-Fi network endpoints...")
+        port = int(self.txt_wifi_port.text()) if self.txt_wifi_port.text().isdigit() else 8080
+        endpoints = DeviceScanner.scan_wifi_network_endpoints(port=port)
+        for ep in endpoints:
+            self.terminal.append(f"[WI-FI] Endpoint: {ep['name']} | IP: {ep['ip']}:{ep['port']} | Status: {ep['status']}")
+
+    def connect_serial_device(self, port, name):
+        self.active_device_name = f"{name} ({port})"
+        self.terminal.append(f"[CONNECT] Attempting connection to {self.active_device_name}...")
+        self.connect_port_requested.emit(port)
+
+    def connect_wifi_stream(self):
+        ip = self.txt_wifi_ip.text().strip() or "0.0.0.0"
+        port = int(self.txt_wifi_port.text()) if self.txt_wifi_port.text().isdigit() else 8080
+        proto = "UDP" if "UDP" in self.combo_wifi_proto.currentText() else "TCP"
+        self.active_device_name = f"Wi-Fi {proto} ({ip}:{port})"
+        self.terminal.append(f"[CONNECT] Connecting to {self.active_device_name}...")
+        self.connect_wifi_requested.emit(ip, port, proto)
+
+    def disconnect_hardware(self):
+        self.terminal.append("[DISCONNECT] Disconnecting active hardware interface...")
+        self.disconnect_requested.emit()
+        self.set_hardware_status(False, "DISCONNECTED (USER REQUEST)")
 
     def update_packet_stats(self, total, dropped, pct):
         self.stats_badge.setText(f"Packets: {total} | Dropped: {dropped} ({pct:.1f}%)")
@@ -150,4 +241,4 @@ class HardwareScreen(QWidget):
             self.status_badge.setStyleSheet("background: rgba(5,150,105,0.12); color: #059669; border: 1px solid #059669; padding: 6px 14px; border-radius: 12px; font-weight: 800; font-size: 11px;")
         else:
             self.status_badge.setText(f"● {status_text}")
-            self.status_badge.setStyleSheet("background: rgba(217,119,6,0.12); color: #D97706; border: 1px solid #D97706; padding: 6px 14px; border-radius: 12px; font-weight: 800; font-size: 11px;")
+            self.status_badge.setStyleSheet("background: rgba(239,68,68,0.12); color: #EF4444; border: 1px solid #EF4444; padding: 6px 14px; border-radius: 12px; font-weight: 800; font-size: 11px;")

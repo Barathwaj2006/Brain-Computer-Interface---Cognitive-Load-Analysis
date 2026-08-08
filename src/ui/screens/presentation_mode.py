@@ -3,6 +3,7 @@ Presentation Mode Screen Module
 Fullscreen Expo demonstration mode for 3-minute judge presentations.
 Focuses purely on high-impact visuals:
 Live Signal -> Band Power Cards -> Cognitive Analytics -> AI Interpretation
+Theme: Bright Frosted Glassmorphism
 """
 
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QFrame, QPushButton
@@ -25,10 +26,10 @@ class PresentationModeScreen(QWidget):
         # Header
         h_layout = QHBoxLayout()
         title_lbl = QLabel("◉╱╲◉ NEUROSIM — EXPO DEMONSTRATION MODE")
-        title_lbl.setStyleSheet("font-size: 20px; font-weight: 900; color: #06B6D4; letter-spacing: 2px;")
+        title_lbl.setStyleSheet("font-size: 20px; font-weight: 900; color: #0284C7; letter-spacing: 2px;")
         
         btn_exit = QPushButton("✖ EXIT PRESENTATION")
-        btn_exit.setStyleSheet("background: rgba(239,68,68,0.2); color: #EF4444; border: 1px solid #EF4444; font-weight: 800; font-size: 11px; padding: 8px 16px; border-radius: 8px;")
+        btn_exit.setStyleSheet("background: rgba(239,68,68,0.2); color: #E11D48; border: 1px solid #E11D48; font-weight: 800; font-size: 11px; padding: 8px 16px; border-radius: 8px;")
         btn_exit.setCursor(Qt.PointingHandCursor)
         btn_exit.clicked.connect(self.exit_presentation.emit)
 
@@ -39,7 +40,7 @@ class PresentationModeScreen(QWidget):
 
         # Live Waveform Showcase
         wave_card = QFrame()
-        wave_card.setStyleSheet(f"background: {COLOR_CARD_BG}; border: 2px solid rgba(6,182,212,0.4); border-radius: 16px; padding: 16px;")
+        wave_card.setStyleSheet(f"background: {COLOR_CARD_BG}; border: 2px solid rgba(2,132,199,0.4); border-radius: 16px; padding: 16px;")
         w_layout = QVBoxLayout(wave_card)
 
         self.plot_widget = pg.PlotWidget()
@@ -68,11 +69,11 @@ class PresentationModeScreen(QWidget):
 
     def _make_card(self, title, val, color):
         frame = QFrame()
-        frame.setStyleSheet(f"background: {COLOR_CARD_BG}; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px;")
+        frame.setStyleSheet(f"background: {COLOR_CARD_BG}; border: 1px solid #E2E8F0; border-radius: 12px; padding: 16px;")
         l = QVBoxLayout(frame)
         
         t = QLabel(title)
-        t.setStyleSheet("font-size: 10px; font-weight: 800; color: #94A3B8; letter-spacing: 1px;")
+        t.setStyleSheet("font-size: 10px; font-weight: 800; color: #64748B; letter-spacing: 1px;")
         
         v = QLabel(val)
         v.setStyleSheet(f"font-size: 24px; font-weight: 900; color: {color}; margin-top: 4px;")

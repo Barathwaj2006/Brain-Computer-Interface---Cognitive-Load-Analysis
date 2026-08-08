@@ -1,21 +1,15 @@
 """
-Live Monitor Screen Module — Medical Research Standard
-Integrates:
-- 8-Channel Stacked Oscilloscope Trace Viewer (Fp1, Fp2, C3, C4, P3, P4, O1, O2)
-- Time-Frequency 2D Spectrogram / Waterfall Plot
-- Time-Window Selection (1s | 5s | 10s | 30s)
-- Telemetry & Filter Badges
+Live Monitor Screen Module
+Real-time neural signal visualization, multi-channel 10-20 montage,
+Welch PSD frequency spectrum, and view window scaling (1s, 5s, 10s, 30s).
 Theme: Bright Frosted Glassmorphism
 """
 
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QFrame, QPushButton, QButtonGroup, QTabWidget
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QFrame, QPushButton, QTabWidget, QButtonGroup
 from PySide6.QtCore import Qt
 import pyqtgraph as pg
 
-from src.app.config import (
-    COLOR_CARD_BG, COLOR_CYAN, COLOR_EMERALD, COLOR_PURPLE, COLOR_AMBER,
-    EOG_FILTER_STATUS, EMG_FILTER_STATUS, NOTCH_FILTER_STATUS
-)
+from src.app.config import COLOR_CARD_BG, COLOR_CYAN, COLOR_EMERALD, COLOR_PURPLE, COLOR_AMBER
 from src.visualization.multichannel_viewer import MultiChannelViewerWidget
 from src.visualization.spectrogram_widget import SpectrogramWidget
 
@@ -30,16 +24,16 @@ class LiveMonitorScreen(QWidget):
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(16)
 
-        # Header with Telemetry & Filter Status
+        # Header & Time Window Selection Bar
         h_card = QFrame()
-        h_card.setStyleSheet("background: rgba(255, 255, 255, 0.85); border: 1px solid #E2E8F0; border-radius: 12px; padding: 12px 18px;")
+        h_card.setStyleSheet(f"background: {COLOR_CARD_BG}; border: 1px solid #E2E8F0; border-radius: 12px; padding: 14px;")
         h_layout = QHBoxLayout(h_card)
 
         t_box = QVBoxLayout()
-        title = QLabel("LIVE NEURAL SIGNAL MONITOR — 10-20 SYSTEM")
+        title = QLabel("LIVE MONITOR & SPECTRUM OSCILLOSCOPE")
         title.setStyleSheet("font-size: 15px; font-weight: 900; color: #0F172A; letter-spacing: 1px;")
         
-        self.telemetry_lbl = QLabel("LIVE STREAM • 250 Hz • Latency: 12.4 ms • Active Filter Stack: 50Hz Notch + EOG + EMG")
+        self.telemetry_lbl = QLabel("LIVE STREAM • 250 Hz • Latency: 1.4 ms • Active Filter Stack: 50Hz Notch + EOG + EMG")
         self.telemetry_lbl.setStyleSheet("font-size: 11px; color: #0284C7; font-weight: 700;")
         
         t_box.addWidget(title)
@@ -70,12 +64,12 @@ class LiveMonitorScreen(QWidget):
 
         layout.addWidget(h_card)
 
-        # Tabbed View Containers (Primary Waveform & PSD | 8-Channel Oscilloscope | Spectrogram Waterfall)
+        # Tab Widget Container
         self.tabs = QTabWidget()
         self.tabs.setStyleSheet("""
-            QTabWidget::pane { border: 1px solid #E2E8F0; background: rgba(255, 255, 255, 0.85); border-radius: 10px; }
+            QTabWidget::pane { border: 1px solid #E2E8F0; border-radius: 12px; background: #FFFFFF; }
             QTabBar::tab { background: #F1F5F9; color: #64748B; font-weight: 800; font-size: 12px; padding: 10px 20px; border-top-left-radius: 8px; border-top-right-radius: 8px; margin-right: 4px; }
-            QTabBar::tab:selected { background: #FFFFFF; color: #0284C7; border: 1px solid #E2E8F0; border-bottom: none; }
+            QTabBar::tab:selected { background: #0284C7; color: #FFFFFF; }
         """)
 
         # Tab 1: Primary Trace & Welch PSD
@@ -85,11 +79,14 @@ class LiveMonitorScreen(QWidget):
         self.trace_plot = pg.PlotWidget(title="PRIMARY WAVEFORM TRACE (Fp1)")
         self.trace_plot.setBackground('#FFFFFF')
         self.trace_plot.showGrid(x=True, y=True, alpha=0.15)
+        self.trace_plot.setYRange(-80, 80, padding=0)  # Stabilize Y-axis range
         self.trace_curve = self.trace_plot.plot(pen=pg.mkPen(color='#0284C7', width=2))
 
         self.psd_plot = pg.PlotWidget(title="WELCH POWER SPECTRAL DENSITY (0-40 Hz)")
         self.psd_plot.setBackground('#FFFFFF')
         self.psd_plot.showGrid(x=True, y=True, alpha=0.15)
+        self.psd_plot.setXRange(0, 40, padding=0)
+        self.psd_plot.setYRange(0, 100, padding=0)   # Stabilize PSD Y-axis range
         self.psd_curve = self.psd_plot.plot(pen=pg.mkPen(color='#7C3AED', width=2))
 
         t1_layout.addWidget(self.trace_plot, stretch=1)
@@ -118,4 +115,5 @@ class LiveMonitorScreen(QWidget):
             self.spectrogram_widget.update_spectrogram(disp_arr)
 
         if len(freqs) > 0 and len(psd) > 0:
-            self.psd_curve.setData(freqs[freqs <= 40], psd[freqs <= 40])
+            idx = freqs <= 40.0
+            self.psd_curve.setData(freqs[idx], psd[idx])

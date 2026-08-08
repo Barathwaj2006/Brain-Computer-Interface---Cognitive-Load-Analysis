@@ -2,6 +2,7 @@
 Validation Center Screen Module
 Executes automated DSP self-tests across Delta (2Hz), Theta (6Hz), Alpha (10Hz), and Beta (20Hz).
 Outputs target vs detected frequency, frequency error (Hz), band match, and PASS/FAIL verdict.
+Theme: Bright Frosted Glassmorphism
 """
 
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QFrame, QPushButton, QTableWidget, QTableWidgetItem, QHeaderView
@@ -22,19 +23,19 @@ class ValidationScreen(QWidget):
 
         # Header Card
         header_card = QFrame()
-        header_card.setStyleSheet(f"background: {COLOR_CARD_BG}; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px;")
+        header_card.setStyleSheet(f"background: {COLOR_CARD_BG}; border: 1px solid #E2E8F0; border-radius: 12px; padding: 16px;")
         h_layout = QHBoxLayout(header_card)
         
         v_title_box = QVBoxLayout()
         v_title = QLabel("SYSTEM VALIDATION CENTER — AUTOMATED DSP VERIFICATION")
-        v_title.setStyleSheet("font-size: 15px; font-weight: 900; color: #F8FAFC; letter-spacing: 1px;")
+        v_title.setStyleSheet("font-size: 15px; font-weight: 900; color: #0F172A; letter-spacing: 1px;")
         v_sub = QLabel("Executes frequency accuracy tests to prove signal filtering, FFT PSD, and band classification precision.")
-        v_sub.setStyleSheet("font-size: 11px; color: #94A3B8;")
+        v_sub.setStyleSheet("font-size: 11px; color: #64748B;")
         v_title_box.addWidget(v_title)
         v_title_box.addWidget(v_sub)
 
         self.btn_run_all = QPushButton("⚡ RUN ALL VALIDATION TESTS")
-        self.btn_run_all.setStyleSheet("background: linear-gradient(135deg, #06B6D4, #0284C7); color: white; font-weight: 800; font-size: 12px; padding: 12px 20px; border-radius: 8px; border: none;")
+        self.btn_run_all.setStyleSheet("background: linear-gradient(135deg, #0284C7, #0369A1); color: white; font-weight: 800; font-size: 12px; padding: 12px 20px; border-radius: 8px; border: none;")
         self.btn_run_all.setCursor(Qt.PointingHandCursor)
         self.btn_run_all.clicked.connect(self.run_all_tests)
 
@@ -46,7 +47,7 @@ class ValidationScreen(QWidget):
 
         # Test Results Table
         table_card = QFrame()
-        table_card.setStyleSheet(f"background: {COLOR_CARD_BG}; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px;")
+        table_card.setStyleSheet(f"background: {COLOR_CARD_BG}; border: 1px solid #E2E8F0; border-radius: 12px; padding: 16px;")
         t_layout = QVBoxLayout(table_card)
 
         self.table = QTableWidget(4, 6)
@@ -55,8 +56,8 @@ class ValidationScreen(QWidget):
         ])
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.table.setStyleSheet("""
-            QTableWidget { background: transparent; border: none; gridline-color: rgba(255,255,255,0.05); color: #F8FAFC; font-size: 12px; }
-            QHeaderView::section { background: rgba(15,23,42,0.8); color: #94A3B8; font-weight: 800; font-size: 11px; padding: 8px; border: none; }
+            QTableWidget { background: #FFFFFF; border: 1px solid #E2E8F0; gridline-color: #E2E8F0; color: #0F172A; font-size: 12px; border-radius: 8px; }
+            QHeaderView::section { background: #F8FAFC; color: #475569; font-weight: 800; font-size: 11px; padding: 8px; border: none; border-bottom: 1px solid #E2E8F0; }
         """)
 
         t_layout.addWidget(self.table)
