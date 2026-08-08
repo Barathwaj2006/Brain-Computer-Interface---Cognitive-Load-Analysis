@@ -29,13 +29,17 @@ class HardwareScreen(QWidget):
         title = QLabel("HARDWARE CONNECTION DIAGNOSTICS & VIRTUAL TERMINAL")
         title.setStyleSheet("font-size: 15px; font-weight: 900; color: #0F172A; letter-spacing: 1px;")
         
-        sub = QLabel("Care Biomedical Workstation Engine • 115200 Baud • 250 Hz USB Serial Stream")
+        sub = QLabel("Care Biomedical Workstation Engine • 115200 Baud • NEUROSIM_HELLO Handshake")
         sub.setStyleSheet("font-size: 11px; color: #64748B;")
         
         t_box.addWidget(title)
         t_box.addWidget(sub)
         h_layout.addLayout(t_box)
         h_layout.addStretch()
+
+        self.stats_badge = QLabel("Packets: 0 | Dropped: 0 (0.0%)")
+        self.stats_badge.setStyleSheet("background: rgba(2,132,199,0.08); color: #0284C7; border: 1px solid rgba(2,132,199,0.25); padding: 6px 12px; border-radius: 10px; font-weight: 700; font-size: 10px;")
+        h_layout.addWidget(self.stats_badge)
 
         self.status_badge = QLabel("● HARDWARE CONNECTED (AUTO-LOCK)")
         self.status_badge.setStyleSheet("background: rgba(5,150,105,0.12); color: #059669; border: 1px solid #059669; padding: 6px 14px; border-radius: 12px; font-weight: 800; font-size: 11px;")
@@ -75,7 +79,7 @@ class HardwareScreen(QWidget):
         self.terminal = QTextEdit()
         self.terminal.setReadOnly(True)
         self.terminal.setStyleSheet("background: #0F172A; color: #38BDF8; font-family: 'Consolas', 'Courier New', monospace; font-size: 11px; border: 1px solid #334155; border-radius: 8px;")
-        self.terminal.setText("[00:00:01] USB Serial Auto-Scanner Initialized...\n[00:00:01] Listening on 115200 Baud...\n[00:00:02] SAMPLE, 1.65 V | ADC: 2048 | 250Hz Sync OK\n[00:00:02] SAMPLE, 1.68 V | ADC: 2085 | 250Hz Sync OK\n[00:00:03] SAMPLE, 1.72 V | ADC: 2135 | 250Hz Sync OK")
+        self.terminal.setText("[00:00:01] USB Serial Auto-Scanner Initialized...\n[00:00:01] Listening on 115200 Baud...\n[00:00:02] Recv: NEUROSIM_HELLO,v1 Handshake OK\n[00:00:02] SAMPLE, 1.65 V | SEQ: 1 | CHK: 166 (OK)\n[00:00:03] SAMPLE, 1.68 V | SEQ: 2 | CHK: 170 (OK)")
         
         t_layout.addWidget(self.terminal)
         main_grid.addWidget(term_card, stretch=2)
@@ -135,6 +139,9 @@ class HardwareScreen(QWidget):
 
         # Log to terminal
         self.terminal.append(f"[LIVE] Potentiometer Input Changed -> Voltage: {v:.2f}V | ADC: {adc}")
+
+    def update_packet_stats(self, total, dropped, pct):
+        self.stats_badge.setText(f"Packets: {total} | Dropped: {dropped} ({pct:.1f}%)")
 
     def set_hardware_status(self, is_connected, status_text):
         self.is_connected = is_connected

@@ -11,7 +11,7 @@
  * Target Sampling Rate: 250 Hz (4000 microsecond timer loop)
  *
  * Output Stream Format:
- * SAMPLE,<waveform_microvolts>
+ * SAMPLE,<waveform_microvolts>,<sequence_number>,<checksum>
  */
 
 #include <Arduino.h>
@@ -32,6 +32,7 @@ const float FREQ_BETA  = 20.0;
 const unsigned long SAMPLE_INTERVAL_US = 4000; // 250 Hz = 4000 microseconds
 unsigned long lastSampleTime = 0;
 float timeSeconds = 0.0;
+unsigned long sequenceNumber = 0;
 
 void setup() {
   Serial.begin(115200);
@@ -43,6 +44,9 @@ void setup() {
   // Configure ADC resolution
   analogReadResolution(12); // 0 - 4095
   delay(500);
+
+  // Initial Handshake Banner
+  Serial.println("NEUROSIM_HELLO,v1");
 }
 
 void loop() {
@@ -51,6 +55,7 @@ void loop() {
   if (currentMicros - lastSampleTime >= SAMPLE_INTERVAL_US) {
     lastSampleTime = currentMicros;
     timeSeconds += 0.004; // 1 / 250 sec
+    sequenceNumber++;
 
     // Read potentiometer positions (0.0 to 1.0)
     float amp_delta = (float)analogRead(PIN_POT_DELTA) / 4095.0;
@@ -72,8 +77,15 @@ void loop() {
 
     float waveform = s_delta + s_theta + s_alpha + s_beta + noise;
 
-    // Send sample over USB Serial
+    // Checksum = (sequenceNumber + (unsigned int)(fabs(waveform) * 100.0)) % 256
+    unsigned int checksum = (sequenceNumber + (unsigned int)(fabs(waveform) * 100.0)) % 256;
+
+    // Send sample over USB Serial with packet integrity checksum
     Serial.print("SAMPLE,");
-    Serial.println(waveform, 3);
+    Serial.print(waveform, 3);
+    Serial.print(",");
+    Serial.print(sequenceNumber);
+    Serial.print(",");
+    Serial.println(checksum);
   }
 }
