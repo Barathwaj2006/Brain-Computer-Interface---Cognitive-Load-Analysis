@@ -32,6 +32,7 @@ from src.ui.screens.experiment_screen import ExperimentScreen
 from src.ui.screens.compare_screen import CompareScreen
 from src.ui.screens.presentation_mode import PresentationModeScreen
 from src.ui.screens.hardware_screen import HardwareScreen
+from src.ui.screens.results_screen import ResultsScreen
 from src.acquisition.serial_reader import HardwareSerialThread
 from src.acquisition.device_scanner import WifiStreamThread
 
