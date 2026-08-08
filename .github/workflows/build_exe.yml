@@ -5,11 +5,9 @@ on:
     branches: [ master, main ]
   pull_request:
     branches: [ master, main ]
-  workflow_dispatch:
 
 jobs:
-  build-exe:
-    name: Build & Package Windows Executable
+  build-windows-exe:
     runs-on: windows-latest
 
     steps:

@@ -1,33 +1,39 @@
-# Python
+# Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
+
+# C extensions
 *.so
-.Python
-env/
+
+# Virtual Environments
 venv/
+env/
 ENV/
+.venv/
+
+# PyInstaller / Build Output
 build/
-devel/
-dist/
-*.egg-info/
-.installed.cfg
-*.egg
-
-# Database / Local Session Data
-*.db
-*.sqlite
-*.sqlite3
-
-# PDF Reports generated during testing
-*.pdf
-
-# PyInstaller
 *.manifest
-*.spec
+*.spec.bak
 
-# IDE / OS
-.vscode/
-.idea/
+# Unit Test / Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Logs & Databases
+*.log
+*.sqlite
+*.db
+
+# OS Generated Files
 .DS_Store
 Thumbs.db
+ehthumbs.db
+
+# User Specific Settings
+.vscode/
+.idea/
+*.swp
+*.swo

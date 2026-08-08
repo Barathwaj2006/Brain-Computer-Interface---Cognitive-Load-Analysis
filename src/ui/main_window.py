@@ -4,8 +4,10 @@ Manages application architecture, sidebar navigation, screen switching,
 live DSP thread data dispatch, and global telemetry.
 """
 
+import os
 from PySide6.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QListWidget, QListWidgetItem, QStackedWidget, QLabel, QFrame, QPushButton
 from PySide6.QtCore import Qt, QTimer
+from PySide6.QtGui import QPixmap
 import numpy as np
 
 from src.app.config import APP_TITLE, APP_LOGO_TEXT, STATUS_BADGE, COLOR_BACKGROUND, COLOR_SIDEBAR_BG, COLOR_CYAN
@@ -58,12 +60,23 @@ class MainWindow(QMainWindow):
         self.sidebar.setFixedWidth(260)
         self.sidebar.setStyleSheet(f"background: {COLOR_SIDEBAR_BG}; border-right: 1px solid rgba(255,255,255,0.08);")
         sb_layout = QVBoxLayout(self.sidebar)
-        sb_layout.setContentsMargins(16, 20, 16, 20)
-        sb_layout.setSpacing(10)
+        sb_layout.setContentsMargins(16, 16, 16, 16)
+        sb_layout.setSpacing(8)
 
-        # Brand Header
+        # Logo Graphic Display
+        logo_path = os.path.join(os.path.dirname(__file__), "..", "assets", "logo.jpg")
+        if os.path.exists(logo_path):
+            img_lbl = QLabel()
+            pixmap = QPixmap(logo_path)
+            if not pixmap.isNull():
+                img_lbl.setPixmap(pixmap.scaled(220, 140, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+                img_lbl.setAlignment(Qt.AlignCenter)
+                img_lbl.setStyleSheet("border-radius: 10px; margin-bottom: 4px;")
+                sb_layout.addWidget(img_lbl)
+
+        # Brand Header Text
         logo_lbl = QLabel(APP_LOGO_TEXT)
-        logo_lbl.setStyleSheet(f"font-size: 22px; font-weight: 900; color: {COLOR_CYAN}; letter-spacing: 1.5px;")
+        logo_lbl.setStyleSheet(f"font-size: 20px; font-weight: 900; color: {COLOR_CYAN}; letter-spacing: 1.5px;")
         
         tag_lbl = QLabel("Neural Intelligence Platform")
         tag_lbl.setStyleSheet("font-size: 9px; font-weight: 700; color: #94A3B8; letter-spacing: 1px;")
@@ -72,7 +85,7 @@ class MainWindow(QMainWindow):
         sb_layout.addWidget(tag_lbl)
 
         badge_lbl = QLabel(STATUS_BADGE)
-        badge_lbl.setStyleSheet("background: rgba(6,182,212,0.12); color: #06B6D4; border: 1px solid rgba(6,182,212,0.3); padding: 4px 10px; border-radius: 10px; font-size: 9px; font-weight: 800; margin-top: 4px;")
+        badge_lbl.setStyleSheet("background: rgba(6,182,212,0.12); color: #06B6D4; border: 1px solid rgba(6,182,212,0.3); padding: 4px 10px; border-radius: 10px; font-size: 9px; font-weight: 800; margin-top: 2px;")
         sb_layout.addWidget(badge_lbl)
 
         # Divider
@@ -86,7 +99,7 @@ class MainWindow(QMainWindow):
         self.nav_list.setStyleSheet("""
             QListWidget { background: transparent; border: none; outline: none; }
             QListWidget::item {
-                padding: 10px 14px;
+                padding: 9px 12px;
                 border-radius: 6px;
                 color: #94A3B8;
                 font-weight: 700;
@@ -132,7 +145,7 @@ class MainWindow(QMainWindow):
 
         # Expo Demo Button
         btn_expo = QPushButton("⚡ PRESENTATION MODE")
-        btn_expo.setStyleSheet("background: linear-gradient(135deg, #8B5CF6, #6D28D9); color: white; font-weight: 800; font-size: 11px; padding: 12px; border-radius: 8px; border: none;")
+        btn_expo.setStyleSheet("background: linear-gradient(135deg, #8B5CF6, #6D28D9); color: white; font-weight: 800; font-size: 11px; padding: 10px; border-radius: 8px; border: none;")
         btn_expo.setCursor(Qt.PointingHandCursor)
         btn_expo.clicked.connect(self.open_presentation_mode)
         sb_layout.addWidget(btn_expo)
