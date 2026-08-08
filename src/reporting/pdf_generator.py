@@ -20,14 +20,29 @@ class PDFReportGenerator:
         self.output_dir = output_dir
         os.makedirs(self.output_dir, exist_ok=True)
 
-    def generate_report(self, session_data, filename=None):
+    @classmethod
+    def generate_report(cls, session_data, filename=None):
         """
         Generates PDF report from session data dictionary.
+        Supports both instance method calls and classmethod calls.
         """
+        if isinstance(cls, PDFReportGenerator):
+            output_dir = cls.output_dir
+        else:
+            output_dir = "reports"
+            os.makedirs(output_dir, exist_ok=True)
+
+        if not isinstance(session_data, dict):
+            session_data = {'id': str(session_data)}
+
         if filename is None:
-            filename = f"NeuroSim_Session_{session_data.get('id', 'DEMO')}.pdf"
+            filename = f"NeuroSim_Session_{session_data.get('session_id', session_data.get('id', 'DEMO'))}.pdf"
         
-        filepath = os.path.join(self.output_dir, filename)
+        if os.path.isabs(filename) or os.path.dirname(filename):
+            filepath = filename
+        else:
+            filepath = os.path.join(output_dir, filename)
+
         doc = SimpleDocTemplate(filepath, pagesize=letter, leftMargin=40, rightMargin=40, topMargin=40, bottomMargin=40)
         
         styles = getSampleStyleSheet()
@@ -39,69 +54,44 @@ class PDFReportGenerator:
 
         elements = []
 
-        # Header Branding
-        elements.append(Paragraph("NEUROSIM RESEARCH REPORT", title_style))
-        elements.append(Paragraph("INTELLIGENT EEG COGNITIVE ANALYTICS PLATFORM", subtitle_style))
-        elements.append(Spacer(1, 10))
-        elements.append(HRFlowable(width="100%", thickness=2, color=colors.HexColor('#06B6D4'), spaceAfter=15))
+        elements.append(Paragraph("NeuroSim Analytics Report", title_style))
+        elements.append(Paragraph("Intelligent EEG Cognitive Analytics Platform", subtitle_style))
+        elements.append(Spacer(1, 12))
+        elements.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor('#E2E8F0'), spaceBefore=0, spaceAfter=12))
 
-        # Session Metadata Table
-        meta_data = [
-            [Paragraph("<b>Session ID:</b>", body_style), Paragraph(str(session_data.get('id', 'SESS-001')), body_style),
-             Paragraph("<b>Date:</b>", body_style), Paragraph(str(session_data.get('date', '2026-08-02')), body_style)],
-            [Paragraph("<b>Duration:</b>", body_style), Paragraph(str(session_data.get('duration', '05:00')), body_style),
-             Paragraph("<b>Sampling Freq:</b>", body_style), Paragraph("250 Hz", body_style)],
-            [Paragraph("<b>Signal Source:</b>", body_style), Paragraph("Signal Simulator", body_style),
-             Paragraph("<b>Classification:</b>", body_style), Paragraph(str(session_data.get('load_class', 'MODERATE')), body_style)]
+        # Overview Table
+        data_summary = [
+            [Paragraph("<b>Parameter</b>", body_style), Paragraph("<b>Value</b>", body_style)],
+            ["Session ID", str(session_data.get('session_id', session_data.get('id', 'N/A')))],
+            ["Classified Cognitive Load", str(session_data.get('cognitive_state', session_data.get('load_class', 'MODERATE')))],
+            ["Spectral Stress Index", f"{session_data.get('stress_index', 0.5):.2f}"],
+            ["Dominant Frequency Rhythm", str(session_data.get('dominant_band', 'ALPHA'))],
+            ["Alpha Relative Power", f"{session_data.get('rel_alpha', session_data.get('alpha_rel', session_data.get('alpha', 25.0))):.1f} %"],
+            ["Beta Relative Power", f"{session_data.get('rel_beta', session_data.get('beta_rel', session_data.get('beta', 25.0))):.1f} %"],
+            ["Theta Relative Power", f"{session_data.get('rel_theta', session_data.get('theta_rel', session_data.get('theta', 25.0))):.1f} %"],
+            ["Delta Relative Power", f"{session_data.get('rel_delta', session_data.get('delta_rel', session_data.get('delta', 25.0))):.1f} %"],
         ]
 
-        t_meta = Table(meta_data, colWidths=[100, 160, 100, 160])
-        t_meta.setStyle(TableStyle([
-            ('BACKGROUND', (0,0), (-1,-1), colors.HexColor('#F8FAFC')),
-            ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#E2E8F0')),
-            ('PADDING', (0,0), (-1,-1), 6),
-        ]))
-        elements.append(t_meta)
-        elements.append(Spacer(1, 15))
-
-        # Band Breakdown Table
-        elements.append(Paragraph("SPECTRAL BAND POWER BREAKDOWN", h2_style))
-        band_table_data = [
-            ["Band", "Frequency Range", "Relative Power (%)", "Clinical Context"],
-            ["Delta (δ)", "0.5 – 4.0 Hz", f"{session_data.get('delta', 25.0):.1f}%", "Deep sleep, slow-wave activity"],
-            ["Theta (θ)", "4.0 – 8.0 Hz", f"{session_data.get('theta', 25.0):.1f}%", "Drowsiness, meditation, memory"],
-            ["Alpha (α)", "8.0 – 13.0 Hz", f"{session_data.get('alpha', 25.0):.1f}%", "Relaxed alertness, calm focus"],
-            ["Beta (β)", "13.0 – 30.0 Hz", f"{session_data.get('beta', 25.0):.1f}%", "Active concentration, stress"]
-        ]
-        
-        t_bands = Table(band_table_data, colWidths=[90, 110, 120, 200])
-        t_bands.setStyle(TableStyle([
-            ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#06B6D4')),
-            ('TEXTCOLOR', (0,0), (-1,0), colors.white),
+        t_summary = Table(data_summary, colWidths=[200, 300])
+        t_summary.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#F8FAFC')),
+            ('TEXTCOLOR', (0,0), (-1,0), colors.HexColor('#0F172A')),
+            ('ALIGN', (0,0), (-1,-1), 'LEFT'),
             ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
-            ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#CBD5E1')),
-            ('PADDING', (0,0), (-1,-1), 6),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 6),
+            ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#E2E8F0')),
         ]))
-        elements.append(t_bands)
-        elements.append(Spacer(1, 15))
 
-        # AI Session Narrative Interpretation
-        elements.append(Paragraph("AI NARRATIVE INTERPRETATION", h2_style))
-        ai_narrative = session_data.get('ai_interpretation', (
-            "The recorded synthetic signal showed predominantly alpha-band activity throughout the session, "
-            "with moderate beta activity. The calculated feature profile remained stable, while the cognitive-load "
-            "classifier remained within the moderate category."
-        ))
+        elements.append(t_summary)
+        elements.append(Spacer(1, 16))
+
+        elements.append(Paragraph("AI Narrative & Clinical Summary", h2_style))
+        ai_narrative = session_data.get('ai_interpretation', "The session exhibited stable spectral power dynamics across alpha (8-13 Hz) and beta (13-30 Hz) bands. Spectral stress index remained within baseline research limits.")
         elements.append(Paragraph(ai_narrative, body_style))
-        elements.append(Spacer(1, 20))
 
-        # Research Disclaimer
-        elements.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor('#EF4444'), spaceAfter=10))
-        disclaimer_text = (
-            "<b>RESEARCH SYSTEM DISCLAIMER:</b> NeuroSim processes synthetic EEG-like signals for research, "
-            "simulation, and analytical modeling. Analytical metrics do not constitute a medical diagnosis."
-        )
-        elements.append(Paragraph(disclaimer_text, body_style))
+        elements.append(Spacer(1, 20))
+        elements.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor('#E2E8F0'), spaceBefore=0, spaceAfter=12))
+        elements.append(Paragraph("<b>Disclaimer:</b> NeuroSim is an educational neural signal processing research simulation environment. Not intended for clinical diagnostic use.", ParagraphStyle('Foot', parent=styles['Normal'], fontSize=8, textColor=colors.HexColor('#94A3B8'))))
 
         doc.build(elements)
         return filepath

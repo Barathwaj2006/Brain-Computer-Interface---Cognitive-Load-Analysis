@@ -106,6 +106,18 @@ class PSDAnalyzer:
             'calc_latency_ms': float(calc_time_ms)
         }
 
+    def analyze_bands(self, freqs, psd):
+        """
+        Unified helper method analyzing spectral band powers and clinical metrics.
+        Used by test suite and external modules.
+        """
+        band_powers = self.extract_band_powers(freqs, psd)
+        metrics = self.compute_metrics(band_powers, freqs, psd)
+        combined = {}
+        combined.update(band_powers)
+        combined.update(metrics)
+        return combined
+
     def run_validation_test(self, test_band):
         """
         Runs automated DSP validation self-test for a specified band.
