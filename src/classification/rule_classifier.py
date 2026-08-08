@@ -12,7 +12,8 @@ class RuleBasedClassifier:
         Classify synthetic EEG features using clinical rules.
         Returns:
             cognitive_state (str): 'LOW', 'MODERATE', or 'HIGH'
-            confidence (float): Percentage confidence (0-100%)
+            confidence (float): Heuristic rule margin (0-100%)
+            rule_margin (float): Explicit user-facing heuristic score
             stress_level (str): 'RELAXED', 'BALANCED', or 'HIGH STRESS'
             signal_quality (str): 'EXCELLENT', 'GOOD', 'FAIR', or 'POOR'
             description (str): Clinical state interpretation
@@ -54,10 +55,16 @@ class RuleBasedClassifier:
         else:
             signal_quality = 'EXCELLENT'
 
+        rule_margin_val = round(max(60.0, base_confidence), 1)
+
         return {
             'cognitive_state': cognitive_state,
-            'confidence': round(max(60.0, base_confidence), 1),
+            'confidence': rule_margin_val,
+            'rule_margin': rule_margin_val,
+            'metric_label': 'Rule Margin',
+            'tooltip': 'Heuristic threshold score (0-100), not a statistical probability.',
             'stress_level': stress_level,
             'signal_quality': signal_quality,
-            'description': description
+            'description': description,
+            'is_ml': False
         }
