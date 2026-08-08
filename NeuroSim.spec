@@ -32,7 +32,8 @@ a = Analysis(
         'serial',
         'sqlite3',
         'src.visualization.spectrogram_widget',
-        'src.visualization.spectrogram_view'
+        'src.visualization.spectrogram_view',
+        'src.acquisition.device_scanner'
     ],
     hookspath=[],
     hooksconfig={},

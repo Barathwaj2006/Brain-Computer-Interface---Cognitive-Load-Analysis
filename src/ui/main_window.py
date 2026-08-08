@@ -32,7 +32,8 @@ from src.ui.screens.experiment_screen import ExperimentScreen
 from src.ui.screens.compare_screen import CompareScreen
 from src.ui.screens.presentation_mode import PresentationModeScreen
 from src.ui.screens.hardware_screen import HardwareScreen
-from src.ui.screens.results_screen import ResultsScreen
+from src.acquisition.serial_reader import HardwareSerialThread
+from src.acquisition.device_scanner import WifiStreamThread
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -44,6 +45,10 @@ class MainWindow(QMainWindow):
         self.psd_analyzer = PSDAnalyzer()
         self.rule_classifier = RuleBasedClassifier()
         self.ml_classifier = MLClassifier()
+
+        self.hw_serial_thread = None
+        self.hw_wifi_thread = None
+        self.active_hardware_source = "SIMULATOR"
 
         self.signal_buffer = []
         self.init_ui()
@@ -177,8 +182,10 @@ class MainWindow(QMainWindow):
         self.screen_presentation = PresentationModeScreen()
         self.screen_presentation.exit_presentation.connect(self.close_presentation_mode)
 
-        # Connect hardware simulator sliders to EEG generator
-        self.screen_hardware.sim_params_changed.connect(self.generator.set_amplitudes)
+        # Connect hardware screen connection request signals
+        self.screen_hardware.connect_port_requested.connect(self.connect_serial_port)
+        self.screen_hardware.connect_wifi_requested.connect(self.connect_wifi_stream)
+        self.screen_hardware.disconnect_requested.connect(self.disconnect_all_hardware)
 
         self.stacked_widget.addWidget(self.screen_overview)       # 0
         self.stacked_widget.addWidget(self.screen_monitor)        # 1
@@ -212,19 +219,57 @@ class MainWindow(QMainWindow):
         self.sidebar.show()
         self.stacked_widget.setCurrentIndex(0)
 
+    def connect_serial_port(self, port):
+        self.disconnect_all_hardware()
+        self.hw_serial_thread = HardwareSerialThread(target_port=port, baudrate=115200)
+        self.hw_serial_thread.data_received.connect(self.on_hardware_data)
+        self.hw_serial_thread.connection_changed.connect(self.on_hardware_connection_changed)
+        self.hw_serial_thread.stats_updated.connect(self.screen_hardware.update_packet_stats)
+        self.hw_serial_thread.start()
+
+    def connect_wifi_stream(self, ip, port, protocol):
+        self.disconnect_all_hardware()
+        self.hw_wifi_thread = WifiStreamThread(ip=ip, port=port, protocol=protocol)
+        self.hw_wifi_thread.data_received.connect(self.on_hardware_data)
+        self.hw_wifi_thread.connection_changed.connect(self.on_hardware_connection_changed)
+        self.hw_wifi_thread.stats_updated.connect(self.screen_hardware.update_packet_stats)
+        self.hw_wifi_thread.start()
+
+    def disconnect_all_hardware(self):
+        if self.hw_serial_thread:
+            self.hw_serial_thread.stop()
+            self.hw_serial_thread = None
+        if self.hw_wifi_thread:
+            self.hw_wifi_thread.stop()
+            self.hw_wifi_thread = None
+        self.active_hardware_source = "SIMULATOR"
+
+    def on_hardware_data(self, val):
+        self.active_hardware_source = "HARDWARE"
+        self.signal_buffer.append(val)
+        if len(self.signal_buffer) > 1250:
+            self.signal_buffer = self.signal_buffer[-1250:]
+
+    def on_hardware_connection_changed(self, is_connected, status_text):
+        self.screen_hardware.set_hardware_status(is_connected, status_text)
+
     def init_dsp_timer(self):
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.process_dsp_frame)
         self.timer.start(40)  # 25 FPS update rate
 
     def process_dsp_frame(self):
-        # Generate new synthetic chunk
-        chunk, _ = self.generator.generate_chunk(num_samples=10)
-        self.signal_buffer.extend(chunk)
-        if len(self.signal_buffer) > 1250:
-            self.signal_buffer = self.signal_buffer[-1250:]
+        # Generate new synthetic chunk if hardware is not active
+        if self.active_hardware_source == "SIMULATOR":
+            chunk, _ = self.generator.generate_chunk(num_samples=10)
+            self.signal_buffer.extend(chunk)
+            if len(self.signal_buffer) > 1250:
+                self.signal_buffer = self.signal_buffer[-1250:]
 
         signal_arr = np.array(self.signal_buffer)
+        if len(signal_arr) < 32:
+            return
+
         freqs, psd = self.psd_analyzer.compute_psd(signal_arr)
         band_powers = self.psd_analyzer.extract_band_powers(freqs, psd)
         metrics = self.psd_analyzer.compute_metrics(band_powers, freqs, psd)
