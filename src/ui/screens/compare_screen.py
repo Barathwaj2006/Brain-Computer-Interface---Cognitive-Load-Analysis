@@ -1,6 +1,7 @@
 """
 Session Comparison Screen Module
 Compares Session A vs Session B spectral band metrics and cognitive load classifications.
+Theme: Bright Frosted Glassmorphism
 """
 
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QFrame, QTableWidget, QTableWidgetItem, QHeaderView
@@ -18,19 +19,19 @@ class CompareScreen(QWidget):
         layout.setSpacing(16)
 
         title_lbl = QLabel("SESSION COMPARISON MATRIX — SESSION A vs SESSION B")
-        title_lbl.setStyleSheet("font-size: 16px; font-weight: 900; color: #F8FAFC; letter-spacing: 1px;")
+        title_lbl.setStyleSheet("font-size: 16px; font-weight: 900; color: #0F172A; letter-spacing: 1px;")
         layout.addWidget(title_lbl)
 
         card = QFrame()
-        card.setStyleSheet(f"background: {COLOR_CARD_BG}; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px;")
+        card.setStyleSheet(f"background: {COLOR_CARD_BG}; border: 1px solid #E2E8F0; border-radius: 12px; padding: 16px;")
         c_layout = QVBoxLayout(card)
 
         self.table = QTableWidget(6, 4)
         self.table.setHorizontalHeaderLabels(["Analytical Metric", "Session A (Baseline)", "Session B (Experimental)", "Variance Delta"])
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.table.setStyleSheet("""
-            QTableWidget { background: transparent; border: none; gridline-color: rgba(255,255,255,0.05); color: #F8FAFC; font-size: 12px; }
-            QHeaderView::section { background: rgba(15,23,42,0.8); color: #94A3B8; font-weight: 800; font-size: 11px; padding: 8px; border: none; }
+            QTableWidget { background: #FFFFFF; border: 1px solid #E2E8F0; gridline-color: #E2E8F0; color: #0F172A; font-size: 12px; border-radius: 8px; }
+            QHeaderView::section { background: #F8FAFC; color: #475569; font-weight: 800; font-size: 11px; padding: 8px; border: none; border-bottom: 1px solid #E2E8F0; }
         """)
 
         metrics = [
