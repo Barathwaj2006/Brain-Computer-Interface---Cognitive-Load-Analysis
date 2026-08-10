@@ -12,6 +12,7 @@ NEUROSIM 2.0 — PHASE 0: FORENSIC AUDIT + ARCHITECTURE FREEZE
 ## Branch & Baseline
 - **Current Branch**: `audit/neurosim-phase-0`
 - **Baseline Commit**: `0f07bb8b146f17539d1546c1f1a824b876648984`
+- **Audit Commit**: `2bb0c6a0aafc9e27dcde3a98da07c99284b7a2a0`
 - **Working Tree**: Clean (`nothing to commit, working tree clean`)
 
 ## Files Inspected
