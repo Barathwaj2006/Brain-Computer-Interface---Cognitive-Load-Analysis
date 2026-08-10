@@ -1,30 +1,47 @@
 # Current Development Status
 
 ## Phase & Agent
-PHASE=0
+PHASE=1A
 AGENT=ANTIGRAVITY
-STATUS=COMPLETE
-TESTS=24/24 PASS
-COMMIT=0f07bb8b146f17539d1546c1f1a824b876648984
+REPOSITORY=NEUROSIM
+BRANCH=rebuild/neurosim-v2
+TASK=canonical signal contract
+COMMIT=c8669427ce7aee70c1e84aa6bd66d15655bd5be2
+TESTS=34/34 PASS
 POKIDEX=FROZEN
-POKIDEX_WORK=NONE
-NEXT_PHASE=1
+WORKTREE=CLEAN
 
-## Repository & Branch Information
-- **Repository**: `Brain-Computer-Interface---Cognitive-Load-Analysis`
-- **Path**: `C:\Users\barat\OneDrive\Documents\neurosim-eeg-cognitive-analysis`
-- **Current Branch**: `rebuild/neurosim-v2`
-- **Baseline Commit**: `0f07bb8b146f17539d1546c1f1a824b876648984`
-- **Remote**: `https://github.com/Barathwaj2006/Brain-Computer-Interface---Cognitive-Load-Analysis.git`
-- **Working Tree**: Clean (`nothing to commit, working tree clean`)
+## Canonical Signal Contract Specification
+- **Contract Location**: [`src/core/signal_contract.py`](file:///C:/Users/barat/OneDrive/Documents/neurosim-eeg-cognitive-analysis/src/core/signal_contract.py)
+- **Source Enum Location**: [`src/core/enums.py`](file:///C:/Users/barat/OneDrive/Documents/neurosim-eeg-cognitive-analysis/src/core/enums.py)
+- **Fields**:
+  - `timestamp`: `float` (positive epoch timestamp)
+  - `sequence`: `int` (non-negative monotonically increasing integer)
+  - `sampling_rate`: `int` (positive integer Hz)
+  - `channel_count`: `int` (positive integer channel count)
+  - `channels`: `Tuple[str, ...]` (tuple of channel label strings matching `channel_count`)
+  - `data`: `Tuple[Tuple[float, ...], ...]` (2D tuple of float sample values `(channel_count, num_samples)`)
+  - `source`: `SignalSourceType` (`SIMULATOR`, `ESP32_USB`, `ESP32_WIFI`, `EEG_HARDWARE`, `UNKNOWN`)
+  - `metadata`: `MappingProxyType[str, Any]` (frozen immutable dictionary)
+- **Validation Rules**:
+  - `sampling_rate` > 0
+  - `channel_count` > 0
+  - `sequence` >= 0
+  - `timestamp` > 0
+  - `channels` length matches `channel_count`
+  - `data` channel length matches `channel_count`
+  - All sample values must be finite numbers (rejects NaN, Inf, non-numeric strings, and booleans)
+  - All channels must contain equal sample lengths
+- **Serialization Behavior**:
+  - `to_dict()` / `from_dict()` for dictionary mapping
+  - `to_json()` / `from_json()` for deterministic JSON string representations
+- **Files Owned by Task**:
+  - `src/core/__init__.py`
+  - `src/core/enums.py`
+  - `src/core/signal_contract.py`
+  - `tests/test_signal_contract.py`
 
-## Phase 0 Specification Deliverables
-1. [`NEUROSIM_V2_PRODUCT_SPEC.md`](file:///C:/Users/barat/OneDrive/Documents/neurosim-eeg-cognitive-analysis/NEUROSIM_V2_PRODUCT_SPEC.md): Complete product vision, 20 features, mathematical DSP metrics, cognitive engine, signal quality states, session lifecycle, database schema, quantitative PDF report spec, and UI/UX navigation structure.
-2. [`NEUROSIM_V2_ARCHITECTURE.md`](file:///C:/Users/barat/OneDrive/Documents/neurosim-eeg-cognitive-analysis/NEUROSIM_V2_ARCHITECTURE.md): Complete 14-layer architecture blueprint, boundaries, data flow diagram, and protected scientific baseline files.
-3. [`NEUROSIM_V2_ROADMAP.md`](file:///C:/Users/barat/OneDrive/Documents/neurosim-eeg-cognitive-analysis/NEUROSIM_V2_ROADMAP.md): 11-phase implementation roadmap with detailed task breakdowns and acceptance criteria.
-4. [`DEVELOPMENT_STATUS.md`](file:///C:/Users/barat/OneDrive/Documents/neurosim-eeg-cognitive-analysis/DEVELOPMENT_STATUS.md): Multi-agent handoff status file.
-
-## Absolute Boundaries Verification
-- `SOURCE_CODE_MODIFIED=NO`
-- `POKIDEX_WORK=NONE` (Pokidex repository completely frozen & untouched)
-- `TESTS_STATUS=24/24 PASS` (`venv\Scripts\python.exe -m pytest`)
+## Integration Notes for Next Agent (Google AI Studio)
+1. Build quantitative analysis foundation against this canonical signal contract ([`src/core/signal_contract.py`](file:///C:/Users/barat/OneDrive/Documents/neurosim-eeg-cognitive-analysis/src/core/signal_contract.py)).
+2. Do not modify `src/core/` files unless a blocking defect is discovered.
+3. Keep Pokidex completely frozen.
