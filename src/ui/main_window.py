@@ -51,7 +51,7 @@ class MainWindow(QMainWindow):
         self.hw_serial_thread = None
         self.hw_wifi_thread = None
         self.pokidex_manager = PokidexDualStreamManager()
-        self.active_hardware_source = "SIMULATOR"
+        self.active_hardware_source = "IDLE"
 
         self.signal_buffer = []
         self.init_ui()
@@ -190,6 +190,7 @@ class MainWindow(QMainWindow):
         self.screen_hardware.connect_wifi_requested.connect(self.connect_wifi_stream)
         self.screen_hardware.connect_pokidex_wifi_requested.connect(self.connect_pokidex_wifi)
         self.screen_hardware.connect_pokidex_ble_requested.connect(self.connect_pokidex_ble)
+        self.screen_hardware.start_simulator_requested.connect(self.start_simulator)
         self.screen_hardware.disconnect_requested.connect(self.disconnect_all_hardware)
 
         # Connect Pokidex Manager signals
@@ -254,6 +255,11 @@ class MainWindow(QMainWindow):
         self.active_hardware_source = "POKIDEX"
         self.pokidex_manager.start_ble_stream(address=address)
 
+    def start_simulator(self):
+        self.disconnect_all_hardware()
+        self.active_hardware_source = "SIMULATOR"
+        self.screen_hardware.set_hardware_status(True, "SIMULATOR ACTIVE (SYNTHETIC MODE)")
+
     def disconnect_all_hardware(self):
         if self.hw_serial_thread:
             self.hw_serial_thread.stop()
@@ -263,7 +269,8 @@ class MainWindow(QMainWindow):
             self.hw_wifi_thread = None
         if self.pokidex_manager:
             self.pokidex_manager.stop_all()
-        self.active_hardware_source = "SIMULATOR"
+        self.active_hardware_source = "IDLE"
+        self.signal_buffer.clear()
 
     def on_hardware_data(self, val):
         self.active_hardware_source = "HARDWARE"

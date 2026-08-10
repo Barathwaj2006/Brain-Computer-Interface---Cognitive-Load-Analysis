@@ -19,6 +19,7 @@ class HardwareScreen(QWidget):
     connect_wifi_requested = Signal(str, int, str)     # Request connection to Wi-Fi stream (ip, port, protocol)
     connect_pokidex_wifi_requested = Signal(str, int)  # Request Pokidex WebSocket connection (host, port)
     connect_pokidex_ble_requested = Signal(str)        # Request Pokidex BLE connection (address)
+    start_simulator_requested = Signal()              # Explicit request to start synthetic simulator
     disconnect_requested = Signal()
 
     def __init__(self, parent=None):
@@ -239,11 +240,19 @@ class HardwareScreen(QWidget):
         self.terminal.setText("[SYSTEM] Hardware Connection Center Ready.\n[SYSTEM] Supports ESP32 Serial/Wi-Fi and Pokidex WebSocket/BLE streams.\n[SYSTEM] No device automatically forced. Click SCAN or CONNECT.")
         t_layout.addWidget(self.terminal)
 
-        # Disconnect Action Button
+        # Action Buttons Layout (Disconnect + Explicit Simulator Mode)
+        act_btns = QHBoxLayout()
+        self.btn_simulator = QPushButton("🎮 START DEMO SIMULATOR")
+        self.btn_simulator.setStyleSheet("background: rgba(2, 132, 199, 0.15); color: #0284C7; border: 1px solid #0284C7; font-weight: 800; font-size: 11px; padding: 8px; border-radius: 6px;")
+        self.btn_simulator.clicked.connect(self.start_simulator_requested.emit)
+
         self.btn_disconnect = QPushButton("✖ DISCONNECT HARDWARE")
         self.btn_disconnect.setStyleSheet("background: rgba(239, 68, 68, 0.15); color: #E11D48; border: 1px solid #E11D48; font-weight: 800; font-size: 11px; padding: 8px; border-radius: 6px;")
         self.btn_disconnect.clicked.connect(self.disconnect_hardware)
-        t_layout.addWidget(self.btn_disconnect)
+
+        act_btns.addWidget(self.btn_simulator)
+        act_btns.addWidget(self.btn_disconnect)
+        t_layout.addLayout(act_btns)
 
         body_layout.addWidget(term_card, stretch=2)
         layout.addLayout(body_layout)
