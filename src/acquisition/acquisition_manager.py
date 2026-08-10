@@ -1,14 +1,15 @@
 """
-Centralized Acquisition Manager for NeuroSim 2.0 (Phase 2 Connection Core)
-Decouples UI screens from low-level transport mechanisms.
-Orchestrates unified transport adapters and streams NormalizedFrames into BoundedSignalBuffer.
+Centralized Acquisition Manager for NeuroSim 2.0 (Phase 2 Acquisition Core)
+Decouples UI screens and DSP pipeline from specific transport sources.
+Manages generic SignalSource instances, routes SignalFrames to SignalBuffer, and tracks acquisition telemetry.
 """
 
 from typing import Optional, Dict
 from PySide6.QtCore import QObject, Signal
 from src.app.state import CentralStateManager, ConnectionState, InputSource, ConnectionTelemetry
-from src.processing.signal_buffer import BoundedSignalBuffer
-from src.acquisition.contracts import BaseConnectionAdapter, NormalizedFrame
+from src.processing.signal_buffer import BoundedSignalBuffer, SignalBuffer
+from src.acquisition.contracts import BaseConnectionAdapter, BaseSignalSource, SignalFrame, NormalizedFrame
+from src.acquisition.synthetic_source import SyntheticSignalSource
 from src.acquisition.pokidex_client import PokidexDualStreamManager
 from src.acquisition.adapters import (
     PokidexWifiAdapter,
@@ -20,10 +21,10 @@ from src.acquisition.adapters import (
 
 class AcquisitionManager(QObject):
     """
-    Centralized acquisition manager orchestrating unified transport adapters.
-    Routes NormalizedFrame objects to BoundedSignalBuffer and updates state_manager.
+    Centralized acquisition manager orchestrating generic SignalSource objects and transport adapters.
+    Routes SignalFrame / NormalizedFrame objects to BoundedSignalBuffer and updates state_manager.
     """
-    normalized_frame_received = Signal(object)  # Emits NormalizedFrame
+    normalized_frame_received = Signal(object)  # Emits SignalFrame / NormalizedFrame
     normalized_sample_received = Signal(float, dict) # Backward-compatible sample signal
 
     def __init__(self, state_manager: CentralStateManager, signal_buffer: BoundedSignalBuffer, parent=None):
@@ -31,8 +32,16 @@ class AcquisitionManager(QObject):
         self.state_manager = state_manager
         self.signal_buffer = signal_buffer
         self.active_adapter: Optional[BaseConnectionAdapter] = None
+        self.active_source: Optional[BaseSignalSource] = None
         
-        # Instantiate available adapters
+        # Generic SignalSource registry (Task 2.5)
+        self._sources: Dict[str, BaseSignalSource] = {}
+        
+        # Instantiate synthetic source
+        self.synthetic_source = SyntheticSignalSource(sampling_rate=signal_buffer.sampling_rate, parent=self)
+        self.register_source("synthetic", self.synthetic_source)
+        
+        # Instantiate available transport adapters
         self.pokidex_wifi_adapter = PokidexWifiAdapter(parent=self)
         self.pokidex_ble_adapter = PokidexBleAdapter(parent=self)
         self.esp32_serial_adapter = ESP32SerialAdapter(parent=self)
@@ -56,6 +65,56 @@ class AcquisitionManager(QObject):
     def hw_wifi_thread(self):
         return self.esp32_wifi_adapter._thread
 
+    # --- Generic SignalSource Registry Methods (Task 2.5) ---
+    def register_source(self, name: str, source: BaseSignalSource):
+        """Registers a generic SignalSource instance."""
+        self._sources[name] = source
+
+    def select_source(self, name: str) -> bool:
+        """Selects and binds an active generic SignalSource by name."""
+        if name not in self._sources:
+            return False
+
+        self.stop_all()
+        self.active_source = self._sources[name]
+        self.active_source.frame_received.connect(self._on_normalized_frame)
+        return True
+
+    def start(self) -> bool:
+        """Starts active generic SignalSource or transport adapter."""
+        if self.active_source:
+            res = self.active_source.start()
+            if res:
+                self.state_manager.set_source(InputSource.SIMULATOR)
+                self.state_manager.transition_to(ConnectionState.STREAMING, "● SIGNAL SOURCE RUNNING")
+            return res
+        elif self.active_adapter:
+            return self.active_adapter.start_stream()
+        return False
+
+    def stop(self) -> bool:
+        """Stops active generic SignalSource or transport adapter."""
+        return self.stop_all()
+
+    def pause(self) -> bool:
+        """Pauses active generic SignalSource."""
+        if self.active_source:
+            res = self.active_source.pause()
+            if res:
+                self.state_manager.transition_to(ConnectionState.PAUSED, "● SIGNAL SOURCE PAUSED")
+            return res
+        return False
+
+    def resume(self) -> bool:
+        """Resumes active generic SignalSource from paused state."""
+        if self.active_source:
+            res = self.active_source.resume()
+            if res:
+                self.state_manager.transition_to(ConnectionState.STREAMING, "● SIGNAL SOURCE RESUMED")
+            return res
+        return False
+
+    # --- Legacy Adapter Methods ---
     def _bind_adapter(self, adapter: BaseConnectionAdapter):
         """Binds Qt signals from the active adapter."""
         if self.active_adapter:
@@ -101,27 +160,36 @@ class AcquisitionManager(QObject):
     def start_simulator(self):
         """Explicitly starts synthetic simulator mode (User Action Only)."""
         self.stop_all()
-        self._bind_adapter(self.simulator_adapter)
+        self.select_source("synthetic")
+        self.synthetic_source.start()
         self.state_manager.set_source(InputSource.SIMULATOR)
-        self.simulator_adapter.connect_adapter()
-        self.simulator_adapter.start_stream()
         self.state_manager.transition_to(ConnectionState.STREAMING, "● SIMULATOR ACTIVE (SYNTHETIC MODE)")
 
     def generate_simulator_chunk(self, num_samples: int = 10):
         """Generates synthetic chunk ONLY if SIMULATOR is explicitly active."""
         if self.state_manager.source == InputSource.SIMULATOR and self.state_manager.state == ConnectionState.STREAMING:
-            self.simulator_adapter.generate_chunk(num_samples=num_samples)
+            frame = self.synthetic_source.generate_frame(num_samples=num_samples)
+            self._on_normalized_frame(frame)
 
-    def stop_all(self):
+    def stop_all(self) -> bool:
         """
-        Disconnection Safety (Task 12):
-        Stops all active adapters, clears signal buffer, resets connection state to IDLE.
+        Disconnection Safety:
+        Stops all active sources and adapters, clears signal buffer, resets connection state to IDLE.
         NO automatic synthetic fallback.
         """
+        if self.active_source:
+            self.active_source.stop()
+            try:
+                self.active_source.frame_received.disconnect(self._on_normalized_frame)
+            except RuntimeError:
+                pass
+            self.active_source = None
+
         if self.active_adapter:
             self.active_adapter.disconnect_adapter()
             self.active_adapter = None
 
+        self.synthetic_source.stop()
         self.pokidex_wifi_adapter.disconnect_adapter()
         self.pokidex_ble_adapter.disconnect_adapter()
         self.esp32_serial_adapter.disconnect_adapter()
@@ -130,11 +198,12 @@ class AcquisitionManager(QObject):
 
         self.signal_buffer.clear()
         self.state_manager.reset_to_idle("● DISCONNECTED / IDLE (AWAITING INPUT SOURCE)")
+        return True
 
-    def _on_normalized_frame(self, frame: NormalizedFrame):
-        """Ingests a validated NormalizedFrame into signal_buffer and notifies subscribers."""
+    def _on_normalized_frame(self, frame: SignalFrame):
+        """Ingests a validated SignalFrame into signal_buffer and notifies subscribers."""
         if frame.data is not None and len(frame.data) > 0:
-            self.signal_buffer.extend(frame.data, source=frame.source, metadata=frame.metadata)
+            self.signal_buffer.append_frame(frame)
             for val in frame.data:
                 self.normalized_sample_received.emit(float(val), {"source": frame.source, "device": frame.device_id})
         self.normalized_frame_received.emit(frame)
