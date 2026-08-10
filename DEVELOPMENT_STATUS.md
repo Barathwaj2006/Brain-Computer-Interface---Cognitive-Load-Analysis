@@ -1,47 +1,28 @@
 # Current Development Status
 
 ## Phase & Agent
-PHASE=1A
+PHASE=1C
 AGENT=ANTIGRAVITY
 REPOSITORY=NEUROSIM
 BRANCH=rebuild/neurosim-v2
-TASK=canonical signal contract
-COMMIT=c8669427ce7aee70c1e84aa6bd66d15655bd5be2
-TESTS=34/34 PASS
+BASELINE=895cc945eb9d0e2e2a2205fe2fe31e3d3ddcc145
+FINAL_COMMIT=895cc945eb9d0e2e2a2205fe2fe31e3d3ddcc145
+TESTS=50/50 PASS
 POKIDEX=FROZEN
 WORKTREE=CLEAN
 
-## Canonical Signal Contract Specification
+## Phase 1C Signal Acquisition Core & Rolling Buffer
+- **Acquisition Interface**: Generic `BaseSignalSource` ([`src/acquisition/base_acquirer.py`](file:///C:/Users/barat/OneDrive/Documents/neurosim-eeg-cognitive-analysis/src/acquisition/base_acquirer.py)) with standard lifecycle methods (`start`, `stop`, `pause`, `resume`, `is_running`, `is_paused`, `status`) emitting canonical `SignalFrame` payloads.
+- **Synthetic Signal Source**: `SyntheticSignalSource` ([`src/acquisition/synthetic_source.py`](file:///C:/Users/barat/OneDrive/Documents/neurosim-eeg-cognitive-analysis/src/acquisition/synthetic_source.py)) wrapping `SyntheticEEGGenerator` for single-channel and multi-channel 250 Hz EEG waveform synthesis (Delta 2Hz, Theta 6Hz, Alpha 10Hz, Beta 20Hz) with random seed determinism.
+- **Rolling Signal Buffer**: Thread-safe `BoundedSignalBuffer` / `SignalBuffer` ([`src/processing/signal_buffer.py`](file:///C:/Users/barat/OneDrive/Documents/neurosim-eeg-cognitive-analysis/src/processing/signal_buffer.py)) managing 1250 samples @ 250 Hz (5-second window), preserving channel alignment (`("F3", "F4", "C3", "C4")`), timestamps, sequence numbers, and FIFO eviction.
+- **Acquisition Manager**: `AcquisitionManager` ([`src/acquisition/acquisition_manager.py`](file:///C:/Users/barat/OneDrive/Documents/neurosim-eeg-cognitive-analysis/src/acquisition/acquisition_manager.py)) orchestrating generic `SignalSource` instances, managing acquisition state (`IDLE`, `STREAMING`, `PAUSED`, `STOPPED`), tracking telemetry, and routing frames to `BoundedSignalBuffer`.
+- **Test Suite**: 16 new unit & end-to-end integration tests in [`tests/test_acquisition_core.py`](file:///C:/Users/barat/OneDrive/Documents/neurosim-eeg-cognitive-analysis/tests/test_acquisition_core.py) (50 total suite tests passing cleanly).
+
+## Historical Record: Phase 1A Canonical Signal Contract
 - **Contract Location**: [`src/core/signal_contract.py`](file:///C:/Users/barat/OneDrive/Documents/neurosim-eeg-cognitive-analysis/src/core/signal_contract.py)
 - **Source Enum Location**: [`src/core/enums.py`](file:///C:/Users/barat/OneDrive/Documents/neurosim-eeg-cognitive-analysis/src/core/enums.py)
-- **Fields**:
-  - `timestamp`: `float` (positive epoch timestamp)
-  - `sequence`: `int` (non-negative monotonically increasing integer)
-  - `sampling_rate`: `int` (positive integer Hz)
-  - `channel_count`: `int` (positive integer channel count)
-  - `channels`: `Tuple[str, ...]` (tuple of channel label strings matching `channel_count`)
-  - `data`: `Tuple[Tuple[float, ...], ...]` (2D tuple of float sample values `(channel_count, num_samples)`)
-  - `source`: `SignalSourceType` (`SIMULATOR`, `ESP32_USB`, `ESP32_WIFI`, `EEG_HARDWARE`, `UNKNOWN`)
-  - `metadata`: `MappingProxyType[str, Any]` (frozen immutable dictionary)
-- **Validation Rules**:
-  - `sampling_rate` > 0
-  - `channel_count` > 0
-  - `sequence` >= 0
-  - `timestamp` > 0
-  - `channels` length matches `channel_count`
-  - `data` channel length matches `channel_count`
-  - All sample values must be finite numbers (rejects NaN, Inf, non-numeric strings, and booleans)
-  - All channels must contain equal sample lengths
-- **Serialization Behavior**:
-  - `to_dict()` / `from_dict()` for dictionary mapping
-  - `to_json()` / `from_json()` for deterministic JSON string representations
-- **Files Owned by Task**:
-  - `src/core/__init__.py`
-  - `src/core/enums.py`
-  - `src/core/signal_contract.py`
-  - `tests/test_signal_contract.py`
+- **Fields**: `timestamp`, `sequence`, `sampling_rate`, `channel_count`, `channels`, `data`, `source`, `metadata`
 
-## Integration Notes for Next Agent (Google AI Studio)
-1. Build quantitative analysis foundation against this canonical signal contract ([`src/core/signal_contract.py`](file:///C:/Users/barat/OneDrive/Documents/neurosim-eeg-cognitive-analysis/src/core/signal_contract.py)).
-2. Do not modify `src/core/` files unless a blocking defect is discovered.
-3. Keep Pokidex completely frozen.
+## Known Limitations & Next Integration Point
+- Physical hardware transport adapters (ESP32 USB/Wi-Fi) will be integrated in Phase 8 (`BaseConnectionAdapter` hierarchy).
+- Next Step: NeuroSim integration checkpoint & quantitative DSP integration against `BoundedSignalBuffer`.
