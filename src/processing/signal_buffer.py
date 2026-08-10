@@ -69,9 +69,9 @@ class BoundedSignalBuffer(QObject):
 
         self.buffer_updated.emit(count)
 
-    def extend(self, samples: List[float], source: InputSource = InputSource.NONE, metadata: Optional[Dict] = None):
+    def extend(self, samples, source: InputSource = InputSource.NONE, metadata: Optional[Dict] = None):
         """Extends the buffer with a chunk of samples."""
-        if not samples:
+        if samples is None or len(samples) == 0:
             return
         with self._lock:
             for s in samples:

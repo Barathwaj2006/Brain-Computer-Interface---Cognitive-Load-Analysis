@@ -37,25 +37,79 @@ from src.acquisition.serial_reader import HardwareSerialThread
 from src.acquisition.device_scanner import WifiStreamThread
 from src.acquisition.pokidex_client import PokidexDualStreamManager
 
+from src.app.state import CentralStateManager, ConnectionState, InputSource
+from src.processing.signal_buffer import BoundedSignalBuffer
+from src.acquisition.acquisition_manager import AcquisitionManager
+
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle(APP_TITLE)
         self.resize(1360, 860)
 
-        self.generator = SyntheticEEGGenerator()
+        # Centralized App Foundation
+        self.state_manager = CentralStateManager()
+        self.bounded_buffer = BoundedSignalBuffer(capacity=1250, sampling_rate=250)
+        self.acquisition_manager = AcquisitionManager(self.state_manager, self.bounded_buffer)
+
         self.psd_analyzer = PSDAnalyzer()
         self.rule_classifier = RuleBasedClassifier()
         self.ml_classifier = MLClassifier()
 
-        self.hw_serial_thread = None
-        self.hw_wifi_thread = None
-        self.pokidex_manager = PokidexDualStreamManager()
-        self.active_hardware_source = "IDLE"
+        # Connect status badge updates
+        self.state_manager.status_text_changed.connect(self.on_hardware_connection_status)
 
-        self.signal_buffer = []
         self.init_ui()
         self.init_dsp_timer()
+
+    @property
+    def generator(self):
+        return self.acquisition_manager.generator
+
+    @property
+    def pokidex_manager(self):
+        return self.acquisition_manager.pokidex_manager
+
+    @property
+    def hw_serial_thread(self):
+        return self.acquisition_manager.hw_serial_thread
+
+    @property
+    def hw_wifi_thread(self):
+        return self.acquisition_manager.hw_wifi_thread
+
+    @property
+    def active_hardware_source(self):
+        src = self.state_manager.source
+        if src == InputSource.SIMULATOR:
+            return "SIMULATOR"
+        elif src in (InputSource.POKIDEX_WIFI, InputSource.POKIDEX_BLE):
+            return "POKIDEX"
+        elif src in (InputSource.ESP32_USB, InputSource.ESP32_WIFI):
+            return "HARDWARE"
+        return "IDLE"
+
+    @active_hardware_source.setter
+    def active_hardware_source(self, val):
+        if val == "SIMULATOR":
+            self.state_manager.set_source(InputSource.SIMULATOR)
+        elif val == "POKIDEX":
+            self.state_manager.set_source(InputSource.POKIDEX_WIFI)
+        elif val == "HARDWARE":
+            self.state_manager.set_source(InputSource.ESP32_USB)
+        else:
+            self.state_manager.set_source(InputSource.NONE)
+
+    @property
+    def signal_buffer(self):
+        # Provides list-compatible view/access
+        return list(self.bounded_buffer.get_samples())
+
+    @signal_buffer.setter
+    def signal_buffer(self, val):
+        self.bounded_buffer.clear()
+        if val:
+            self.bounded_buffer.extend(list(val))
 
     def init_ui(self):
         central_widget = QWidget()
@@ -232,60 +286,35 @@ class MainWindow(QMainWindow):
         self.stacked_widget.setCurrentIndex(0)
 
     def connect_serial_port(self, port):
-        self.disconnect_all_hardware()
-        self.hw_serial_thread = HardwareSerialThread(target_port=port, baudrate=115200)
-        self.hw_serial_thread.data_received.connect(self.on_hardware_data)
-        self.hw_serial_thread.connection_changed.connect(self.on_hardware_connection_changed)
-        self.hw_serial_thread.stats_updated.connect(self.screen_hardware.update_packet_stats)
-        self.hw_serial_thread.start()
+        self.acquisition_manager.start_serial(port)
 
     def connect_wifi_stream(self, ip, port, protocol):
-        self.disconnect_all_hardware()
-        self.hw_wifi_thread = WifiStreamThread(ip=ip, port=port, protocol=protocol)
-        self.hw_wifi_thread.data_received.connect(self.on_hardware_data)
-        self.hw_wifi_thread.connection_changed.connect(self.on_hardware_connection_changed)
-        self.hw_wifi_thread.stats_updated.connect(self.screen_hardware.update_packet_stats)
-        self.hw_wifi_thread.start()
+        self.acquisition_manager.start_wifi_stream(ip, port, protocol)
 
     def connect_pokidex_wifi(self, host, port):
-        self.active_hardware_source = "POKIDEX"
-        self.pokidex_manager.start_wifi_stream(host=host, port=port)
+        self.acquisition_manager.start_pokidex_wifi(host, port)
 
     def connect_pokidex_ble(self, address=None):
-        self.active_hardware_source = "POKIDEX"
-        self.pokidex_manager.start_ble_stream(address=address)
+        self.acquisition_manager.start_pokidex_ble(address)
 
     def start_simulator(self):
-        self.disconnect_all_hardware()
-        self.active_hardware_source = "SIMULATOR"
-        self.screen_hardware.set_hardware_status(True, "SIMULATOR ACTIVE (SYNTHETIC MODE)")
+        self.acquisition_manager.start_simulator()
 
     def disconnect_all_hardware(self):
-        if self.hw_serial_thread:
-            self.hw_serial_thread.stop()
-            self.hw_serial_thread = None
-        if self.hw_wifi_thread:
-            self.hw_wifi_thread.stop()
-            self.hw_wifi_thread = None
-        if self.pokidex_manager:
-            self.pokidex_manager.stop_all()
-        self.active_hardware_source = "IDLE"
-        self.signal_buffer.clear()
+        self.acquisition_manager.stop_all()
 
     def on_hardware_data(self, val):
-        self.active_hardware_source = "HARDWARE"
-        self.signal_buffer.append(val)
-        if len(self.signal_buffer) > 1250:
-            self.signal_buffer = self.signal_buffer[-1250:]
+        pass  # Managed by AcquisitionManager
 
     def on_pokidex_sample(self, val, frame_meta):
-        self.active_hardware_source = "POKIDEX"
-        self.signal_buffer.append(val)
-        if len(self.signal_buffer) > 1250:
-            self.signal_buffer = self.signal_buffer[-1250:]
+        pass  # Managed by AcquisitionManager
 
     def on_hardware_connection_changed(self, is_connected, status_text):
         self.screen_hardware.set_hardware_status(is_connected, status_text)
+
+    def on_hardware_connection_status(self, status_text):
+        is_conn = ("CONNECTED" in status_text or "ACTIVE" in status_text or "STREAM" in status_text)
+        self.screen_hardware.set_hardware_status(is_conn, status_text)
 
     def init_dsp_timer(self):
         self.timer = QTimer(self)
@@ -293,14 +322,10 @@ class MainWindow(QMainWindow):
         self.timer.start(40)  # 25 FPS update rate
 
     def process_dsp_frame(self):
-        # Generate new synthetic chunk if hardware is not active
-        if self.active_hardware_source == "SIMULATOR":
-            chunk, _ = self.generator.generate_chunk(num_samples=10)
-            self.signal_buffer.extend(chunk)
-            if len(self.signal_buffer) > 1250:
-                self.signal_buffer = self.signal_buffer[-1250:]
+        # Generate new synthetic chunk if simulator is active
+        self.acquisition_manager.generate_simulator_chunk(num_samples=10)
 
-        signal_arr = np.array(self.signal_buffer)
+        signal_arr = self.bounded_buffer.get_samples()
         if len(signal_arr) < 32:
             return
 
