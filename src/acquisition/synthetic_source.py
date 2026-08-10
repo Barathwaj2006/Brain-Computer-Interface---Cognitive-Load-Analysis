@@ -40,10 +40,14 @@ class SyntheticSignalSource(BaseSignalSource):
             self.set_seed(seed)
 
     def set_seed(self, seed: int):
-        """Sets numpy random seed for deterministic generation across all channels."""
+        """Sets numpy random seed and resets generators for deterministic generation across all channels."""
         with self._lock:
             self.seed = seed
             np.random.seed(seed)
+            self._sequence = 0
+            self._generators = [
+                SyntheticEEGGenerator(sampling_rate=self.sampling_rate) for _ in range(self.channel_count)
+            ]
 
     def set_amplitudes(self, delta: float, theta: float, alpha: float, beta: float, channel_idx: Optional[int] = None):
         """Updates wave amplitudes for specific channel or all channels."""

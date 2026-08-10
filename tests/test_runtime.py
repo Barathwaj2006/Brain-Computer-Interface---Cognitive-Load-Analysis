@@ -1,0 +1,169 @@
+"""
+Phase 2A Product Runtime Foundation Test Suite for NeuroSim 2.0
+Validates RuntimeController orchestration, SessionModel tracking, zero-input safety,
+explicit simulator control, controlled analysis cadence, and error handling.
+"""
+
+import unittest
+import time
+import numpy as np
+from PySide6.QtWidgets import QApplication
+
+from src.core.enums import SignalSourceType
+from src.runtime.session_model import SessionModel, SessionState
+from src.runtime.runtime_controller import RuntimeController, NeuroSimRuntime
+
+app = QApplication.instance() or QApplication([])
+
+class TestRuntimeFoundation(unittest.TestCase):
+
+    def setUp(self):
+        self.runtime = RuntimeController(buffer_capacity=1250, sampling_rate=250, channels=("Ch1",))
+
+    def test_01_startup_idle_state(self):
+        """1. Startup idle state: no active session, zero samples, zero metrics."""
+        status = self.runtime.get_runtime_status()
+        self.assertEqual(status["state"], "IDLE")
+        self.assertFalse(status["session_active"])
+        self.assertIsNone(status["session_id"])
+        self.assertEqual(status["samples_received"], 0)
+        self.assertEqual(status["frames_received"], 0)
+        self.assertEqual(status["buffer_count"], 0)
+        self.assertFalse(status["has_latest_analysis"])
+        self.assertIsNone(self.runtime.get_latest_analysis())
+
+    def test_02_explicit_simulator_start(self):
+        """2. Explicit simulator start: session created and recording activated."""
+        session = self.runtime.start_simulator(seed=42)
+        self.assertIsNotNone(session)
+        self.assertEqual(session.state, SessionState.RECORDING)
+        self.assertEqual(session.source_name, "synthetic")
+        self.assertEqual(session.source_type, SignalSourceType.SIMULATOR)
+
+        status = self.runtime.get_runtime_status()
+        self.assertEqual(status["state"], "RECORDING")
+        self.assertTrue(status["session_active"])
+
+    def test_03_samples_received_tracking(self):
+        """3. Samples received tracking: samples and frames increment upon data ingestion."""
+        self.runtime.start_simulator(seed=100)
+        
+        # Manually generate 5 frames of 50 samples = 250 samples
+        for _ in range(5):
+            frame = self.runtime.synthetic_source.generate_frame(num_samples=50)
+            self.runtime.acq_mgr._process_incoming_frame(frame)
+
+        status = self.runtime.get_runtime_status()
+        self.assertGreaterEqual(status["samples_received"], 250)
+        self.assertGreaterEqual(status["frames_received"], 5)
+
+    def test_04_buffer_population(self):
+        """4. Buffer population: rolling buffer holds ingested frames."""
+        self.runtime.start_simulator(seed=101)
+        for _ in range(3):
+            frame = self.runtime.synthetic_source.generate_frame(num_samples=100)
+            self.runtime.acq_mgr._process_incoming_frame(frame)
+
+        self.assertEqual(len(self.runtime.signal_buffer), 300)
+
+    def test_05_analysis_result_generation(self):
+        """5. Analysis result generation: quantitative PSD analysis generated when samples >= 32."""
+        self.runtime.start_simulator(seed=200)
+        for _ in range(5):
+            frame = self.runtime.synthetic_source.generate_frame(num_samples=50)
+            self.runtime.acq_mgr._process_incoming_frame(frame)
+
+        analysis = self.runtime.run_analysis_tick()
+        self.assertIsNotNone(analysis)
+        self.assertIn("metrics", analysis)
+        self.assertIn("features", analysis)
+        self.assertEqual(len(analysis["features"]), 8)
+
+        latest = self.runtime.get_latest_analysis()
+        self.assertIsNotNone(latest)
+        self.assertIn("metrics", latest)
+
+    def test_06_session_timing(self):
+        """6. Session timing: duration increases over time."""
+        session = self.runtime.start_simulator(seed=300)
+        time.sleep(0.05)
+        duration = session.update_duration()
+        self.assertGreaterEqual(duration, 0.04)
+
+    def test_07_pause_session(self):
+        """7. Pause session: state updates to PAUSED."""
+        self.runtime.start_simulator(seed=400)
+        self.assertTrue(self.runtime.pause_session())
+        status = self.runtime.get_runtime_status()
+        self.assertEqual(status["state"], "PAUSED")
+        self.assertFalse(status["session_active"])
+
+    def test_08_resume_session(self):
+        """8. Resume session: state updates back to RECORDING."""
+        self.runtime.start_simulator(seed=500)
+        self.runtime.pause_session()
+        self.assertTrue(self.runtime.resume_session())
+        status = self.runtime.get_runtime_status()
+        self.assertEqual(status["state"], "RECORDING")
+        self.assertTrue(status["session_active"])
+
+    def test_09_stop_session(self):
+        """9. Stop session: halts acquisition, finalizes duration, returns model."""
+        self.runtime.start_simulator(seed=600)
+        stopped_session = self.runtime.stop_session()
+        self.assertIsNotNone(stopped_session)
+        self.assertEqual(stopped_session.state, SessionState.STOPPED)
+        self.assertIsNotNone(stopped_session.end_timestamp)
+
+        status = self.runtime.get_runtime_status()
+        self.assertEqual(status["state"], "STOPPED")
+        self.assertFalse(status["session_active"])
+
+    def test_10_zero_input_safety(self):
+        """10. Zero-input safety: no fake data or metrics created before explicit start."""
+        clean_runtime = RuntimeController(sampling_rate=250)
+        self.assertTrue(clean_runtime.is_idle())
+        self.assertEqual(len(clean_runtime.signal_buffer), 0)
+        self.assertIsNone(clean_runtime.get_latest_analysis())
+        self.assertIsNone(clean_runtime.run_analysis_tick())
+
+    def test_11_insufficient_data_behavior(self):
+        """11. Insufficient data behavior: < 32 samples returns None without exception."""
+        self.runtime.start_simulator(seed=700)
+        frame = self.runtime.synthetic_source.generate_frame(num_samples=10) # 10 samples < 32
+        self.runtime.acq_mgr._process_incoming_frame(frame)
+
+        result = self.runtime.run_analysis_tick()
+        self.assertIsNone(result)
+
+    def test_12_acquisition_error_handling(self):
+        """12. Acquisition error handling: invalid source selection raises error cleanly."""
+        with self.assertRaises(ValueError):
+            self.runtime.start_session(source_name="non_existent_source")
+        
+        status = self.runtime.get_runtime_status()
+        self.assertIn("non_existent_source", status["last_error"])
+
+    def test_13_deterministic_simulator_session(self):
+        """13. Deterministic simulator session: fixed seed yields reproducible analysis metrics."""
+        r1 = RuntimeController(sampling_rate=250)
+        r1.synthetic_source.set_seed(999)
+        for _ in range(5):
+            f = r1.synthetic_source.generate_frame(num_samples=100)
+            r1.acq_mgr._process_incoming_frame(f)
+        a1 = r1.run_analysis_tick()
+
+        r2 = RuntimeController(sampling_rate=250)
+        r2.synthetic_source.set_seed(999)
+        for _ in range(5):
+            f = r2.synthetic_source.generate_frame(num_samples=100)
+            r2.acq_mgr._process_incoming_frame(f)
+        a2 = r2.run_analysis_tick()
+
+        self.assertIsNotNone(a1)
+        self.assertIsNotNone(a2)
+        self.assertAlmostEqual(a1["metrics"]["dominant_frequency"], a2["metrics"]["dominant_frequency"])
+        np.testing.assert_allclose(a1["features"], a2["features"])
+
+if __name__ == "__main__":
+    unittest.main()
