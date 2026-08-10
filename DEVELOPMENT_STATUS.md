@@ -6,57 +6,51 @@ NeuroSim × Pokidex 2.0
 ## Last Agent
 Antigravity (Lead Engineer)
 
-## Task Completed
-NEUROSIM 2.0 — PHASE 0: FORENSIC AUDIT + ARCHITECTURE FREEZE
+## Phase
+PHASE 1 — NeuroSim Foundation
 
 ## Branch & Baseline
-- **Current Branch**: `audit/neurosim-phase-0`
-- **Baseline Commit**: `0f07bb8b146f17539d1546c1f1a824b876648984`
-- **Audit Commit**: `2bb0c6a0aafc9e27dcde3a98da07c99284b7a2a0`
+- **Current Branch**: `feature/neurosim-phase-1-foundation`
+- **Baseline Commit**: `67d65879c4f33a94cfab01cb4b515169f03aa64c`
 - **Working Tree**: Clean (`nothing to commit, working tree clean`)
 
-## Files Inspected
-- `src/main.py`
-- `src/ui/main_window.py`
-- `src/ui/screens/*.py` (All 15 screen files)
-- `src/acquisition/pokidex_client.py`
-- `src/acquisition/serial_reader.py`
-- `src/acquisition/device_scanner.py`
-- `src/processing/psd.py`
-- `src/processing/filter.py`
-- `src/classification/rule_classifier.py`
-- `src/classification/ml_classifier.py`
-- `src/reporting/pdf_generator.py`
-- `src/simulation/eeg_generator.py`
-- `NeuroSim.spec`
-- `scripts/build_executable.py`
-- `requirements.txt`
-- `tests/test_*.py` (All 8 test modules)
+## Tasks Completed (Phase 1)
+1. **TASK 1 — AppState Model**: Strongly-typed `ConnectionState` (`IDLE`, `CONNECTING`, `CONNECTED`, `STREAMING`, `PAUSED`, `ERROR`) and `InputSource` (`NONE`, `POKIDEX_WIFI`, `POKIDEX_BLE`, `ESP32_USB`, `ESP32_WIFI`, `SIMULATOR`) in `src/app/state.py`.
+2. **TASK 2 — Centralized State Machine**: `CentralStateManager` in `src/app/state.py` with valid transition guards and Qt signals.
+3. **TASK 3 — Acquisition Abstraction**: `AcquisitionManager` in `src/acquisition/acquisition_manager.py` decoupling UI from transport channels.
+4. **TASK 4 — Bounded Signal Buffer**: `BoundedSignalBuffer` in `src/processing/signal_buffer.py` (thread-safe, 1250 sample capacity @ 250 Hz).
+5. **TASK 5 — Strict IDLE Startup**: On launch `source = NONE`, `state = IDLE`, `buffer = EMPTY`. Zero automatic synthetic signal generation.
+6. **TASK 6 — MainWindow Refactoring**: MainWindow delegated acquisition management, signal buffering, and state transitions to dedicated services.
+7. **TASK 7 — DSP Execution Architecture Evaluation**: Evaluated moving DSP off UI thread. Determined that Welch FFT ($N \le 1250$) execution takes $< 0.1\text{ ms}$; retaining the 25 FPS `QTimer` architecture prevents multi-threaded GUI signal race conditions while maintaining 100% test stability.
+8. **TASK 8 — Foundation Regression Tests**: Created 14 foundation unit tests in `tests/test_foundation.py`.
 
-## Files Created / Modified
-- [`NEUROSIM_AUDIT.md`](file:///C:/Users/barat/OneDrive/Documents/neurosim-eeg-cognitive-analysis/NEUROSIM_AUDIT.md) `[NEW]` Complete Phase 0 Forensic Audit Document.
-- [`NEUROSIM_ARCHITECTURE.md`](file:///C:/Users/barat/OneDrive/Documents/neurosim-eeg-cognitive-analysis/NEUROSIM_ARCHITECTURE.md) `[NEW]` 10-Layer Target Architecture & 15-Phase Roadmap.
-- [`DEVELOPMENT_STATUS.md`](file:///C:/Users/barat/OneDrive/Documents/neurosim-eeg-cognitive-analysis/DEVELOPMENT_STATUS.md) `[MODIFY]` Agent handoff and status report.
+## Architecture Changes
+- Created `CentralStateManager` (`src/app/state.py`)
+- Created `BoundedSignalBuffer` (`src/processing/signal_buffer.py`)
+- Created `AcquisitionManager` (`src/acquisition/acquisition_manager.py`)
+- Refactored `MainWindow` (`src/ui/main_window.py`)
 
-## Summary of Architecture & Subsystems
-- **Current UI Architecture**: 15 modular screens managed by `QStackedWidget` inside `MainWindow`.
-- **Current Connection Architecture**: Parallel ingestion supporting ESP32 USB Serial (`115200 baud`), ESP32 Wi-Fi UDP/TCP, Pokidex Wi-Fi WebSocket (`ws://0.0.0.0:8765`), and Pokidex BLE GATT (`0000fe50-0000-1000-8000-00805f9b34fb`).
-- **Current Protocol**: JSON `SignalFrame` schema (`version`, `source`, `timestamp`, `sequence`, `data`, `metadata`, `events`) and 4-byte header BLE chunk reassembly (`[seq_hi, seq_lo, chunk_idx, total_chunks, JSON...]`).
-- **Current Signal Pipeline**: Ingest $\rightarrow$ 1D Ring Buffer (1250 max) $\rightarrow$ Butterworth Bandpass Filter (0.5–50 Hz) $\rightarrow$ Welch PSD (256 NFFT) $\rightarrow$ Dual Classifier (Rule-based $\frac{\theta+\alpha}{\beta}$ + Random Forest ML) $\rightarrow$ ReportLab PDF.
-- **Current Build Architecture**: PyInstaller v6.21.0 single executable [`dist/NeuroSim.exe`](file:///C:/Users/barat/OneDrive/Documents/neurosim-eeg-cognitive-analysis/dist/NeuroSim.exe) (**131.27 MB**).
+## Tests Summary
+- **Before Phase 1**: 24/24 PASS
+- **After Phase 1**: **38/38 PASS** (`venv\Scripts\python.exe -m pytest`) in 6.32s.
 
-## Test Results
-- **Command**: `venv\Scripts\python.exe -m pytest`
-- **Result**: **PASS** — 24 passed in 5.99 seconds (0 failures, 2406 joblib NumPy 2.5 warnings).
+## Manual Validation
+- Verified application launches cleanly in `IDLE` state (`active_hardware_source == "IDLE"`).
+- Verified `signal_buffer` is empty on startup with 0 samples.
+- Verified no synthetic signal generation occurs unless user explicitly clicks `🎮 START DEMO SIMULATOR`.
+- Verified `disconnect_all_hardware()` resets state to `IDLE` and clears `signal_buffer`.
 
-## Known Issues
-- None known.
+## Files Created
+- [`src/app/state.py`](file:///C:/Users/barat/OneDrive/Documents/neurosim-eeg-cognitive-analysis/src/app/state.py)
+- [`src/processing/signal_buffer.py`](file:///C:/Users/barat/OneDrive/Documents/neurosim-eeg-cognitive-analysis/src/processing/signal_buffer.py)
+- [`src/acquisition/acquisition_manager.py`](file:///C:/Users/barat/OneDrive/Documents/neurosim-eeg-cognitive-analysis/src/acquisition/acquisition_manager.py)
+- [`tests/test_foundation.py`](file:///C:/Users/barat/OneDrive/Documents/neurosim-eeg-cognitive-analysis/tests/test_foundation.py)
 
-## Risks & Considerations
-- Android OS background power optimization may close Pokidex WebSocket connections during long sessions; auto-reconnect logic must handle session state preservation.
-- Local network interfaces may include VirtualBox/Docker bridge IPs; QR pairing generator must select the active default gateway LAN adapter IP.
+## Files Modified
+- [`src/ui/main_window.py`](file:///C:/Users/barat/OneDrive/Documents/neurosim-eeg-cognitive-analysis/src/ui/main_window.py)
+- [`DEVELOPMENT_STATUS.md`](file:///C:/Users/barat/OneDrive/Documents/neurosim-eeg-cognitive-analysis/DEVELOPMENT_STATUS.md)
 
-## Files Currently Protected (DO NOT MODIFY)
+## Files Protected (DO NOT MODIFY)
 - `src/processing/psd.py` (DSP algorithms & Welch FFT)
 - `src/processing/filter.py` (Butterworth filter)
 - `src/classification/rule_classifier.py` (Rule-Based Heuristics)
@@ -64,11 +58,11 @@ NEUROSIM 2.0 — PHASE 0: FORENSIC AUDIT + ARCHITECTURE FREEZE
 - `src/reporting/pdf_generator.py` (ReportLab PDF exporter)
 - `firmware/esp32/neurosim_esp32.ino` (ESP32 firmware)
 
-## Recommended Phase 1 Task
-**Phase 1: NeuroSim Foundation** — Refactor `MainWindow` state management to create a thread-safe `CentralAppState` and decouple the top-level 25 FPS DSP timer into a dedicated worker thread.
+## Recommended Phase 2 Task
+**Phase 2: Connection Core** — Refactor transport adapters (`WifiStreamThread`, `PokidexWebSocketClient`, `PokidexBleClient`) into unified connection adapters with local LAN IP network adapter discovery for QR pairing readiness.
 
 ## Instructions to Google AI Studio
-1. Switch to branch `audit/neurosim-phase-0` or pull latest master before starting.
-2. Review [`NEUROSIM_AUDIT.md`](file:///C:/Users/barat/OneDrive/Documents/neurosim-eeg-cognitive-analysis/NEUROSIM_AUDIT.md) and [`NEUROSIM_ARCHITECTURE.md`](file:///C:/Users/barat/OneDrive/Documents/neurosim-eeg-cognitive-analysis/NEUROSIM_ARCHITECTURE.md) to understand the system layout.
-3. Do not modify protected files (`src/processing/psd.py`, `src/processing/filter.py`, `src/classification/rule_classifier.py`, `src/classification/ml_classifier.py`, `src/reporting/pdf_generator.py`).
-4. Proceed with **Phase 1: NeuroSim Foundation**.
+1. Checkout `feature/neurosim-phase-1-foundation` or pull latest branch before starting.
+2. Review [`src/app/state.py`](file:///C:/Users/barat/OneDrive/Documents/neurosim-eeg-cognitive-analysis/src/app/state.py) and [`src/acquisition/acquisition_manager.py`](file:///C:/Users/barat/OneDrive/Documents/neurosim-eeg-cognitive-analysis/src/acquisition/acquisition_manager.py).
+3. Do not modify protected files.
+4. Proceed with **Phase 2: Connection Core**.
