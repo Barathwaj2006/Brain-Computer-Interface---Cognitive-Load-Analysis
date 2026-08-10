@@ -338,6 +338,38 @@ class HardwareScreen(QWidget):
             self.table_pk_telemetry.setItem(1, 3, QTableWidgetItem(f"{ble.get('drop_pct', 0.0):.1f}%"))
             self.table_pk_telemetry.setItem(1, 4, QTableWidgetItem(f"{ble.get('latency_ms', 0.0):.1f} ms"))
 
+    def update_telemetry(self, telemetry):
+        """Renders real-time ConnectionTelemetry on Hardware Center badges and tables."""
+        if not telemetry:
+            return
+
+        state = telemetry.connection_state
+        state_name = state.name if hasattr(state, "name") else str(state)
+        
+        # Update stats badge
+        self.stats_badge.setText(
+            f"Packets: {telemetry.packets_received} | Dropped: {telemetry.packets_dropped} "
+            f"({telemetry.drop_percentage:.1f}%) | Latency: {telemetry.latency_ms:.1f}ms"
+        )
+
+        # Update main status badge styling dynamically
+        if state_name == "STREAMING":
+            self.status_badge.setText(f"● STREAMING LIVE ({telemetry.transport})")
+            self.status_badge.setStyleSheet("background: rgba(2,132,199,0.15); color: #0284C7; border: 1px solid #0284C7; padding: 6px 14px; border-radius: 12px; font-weight: 800; font-size: 11px;")
+        elif state_name == "CONNECTED":
+            self.status_badge.setText(f"● CONNECTED ({telemetry.transport})")
+            self.status_badge.setStyleSheet("background: rgba(5,150,105,0.15); color: #059669; border: 1px solid #059669; padding: 6px 14px; border-radius: 12px; font-weight: 800; font-size: 11px;")
+        elif state_name in ("CONNECTING", "SCANNING"):
+            self.status_badge.setText(f"● {state_name}...")
+            self.status_badge.setStyleSheet("background: rgba(217,119,6,0.15); color: #D97706; border: 1px solid #D97706; padding: 6px 14px; border-radius: 12px; font-weight: 800; font-size: 11px;")
+        elif state_name == "ERROR":
+            err_msg = telemetry.last_error or "CONNECTION ERROR"
+            self.status_badge.setText(f"● ERROR ({err_msg})")
+            self.status_badge.setStyleSheet("background: rgba(239,68,68,0.15); color: #EF4444; border: 1px solid #EF4444; padding: 6px 14px; border-radius: 12px; font-weight: 800; font-size: 11px;")
+        else:
+            self.status_badge.setText("● DISCONNECTED / IDLE")
+            self.status_badge.setStyleSheet("background: rgba(100,116,139,0.12); color: #64748B; border: 1px solid #64748B; padding: 6px 14px; border-radius: 12px; font-weight: 800; font-size: 11px;")
+
     def set_hardware_status(self, is_connected, status_text):
         self.is_connected = is_connected
         if is_connected:

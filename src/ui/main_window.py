@@ -247,11 +247,12 @@ class MainWindow(QMainWindow):
         self.screen_hardware.start_simulator_requested.connect(self.start_simulator)
         self.screen_hardware.disconnect_requested.connect(self.disconnect_all_hardware)
 
-        # Connect Pokidex Manager signals
+        # Connect Pokidex Manager & Telemetry signals
         self.pokidex_manager.sample_received.connect(self.on_pokidex_sample)
         self.pokidex_manager.wifi_connection_changed.connect(self.on_hardware_connection_changed)
         self.pokidex_manager.ble_connection_changed.connect(self.on_hardware_connection_changed)
         self.pokidex_manager.dual_telemetry_updated.connect(self.screen_hardware.update_dual_pokidex_telemetry)
+        self.state_manager.telemetry_updated.connect(self.screen_hardware.update_telemetry)
 
         self.stacked_widget.addWidget(self.screen_overview)       # 0
         self.stacked_widget.addWidget(self.screen_monitor)        # 1
