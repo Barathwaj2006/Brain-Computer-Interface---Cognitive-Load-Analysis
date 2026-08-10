@@ -1,73 +1,73 @@
 # Current Development Status
 
 ## Project
-NeuroSim × Pokidex
+NeuroSim × Pokidex 2.0
 
 ## Last Agent
-Antigravity
+Antigravity (Lead Engineer)
 
 ## Task Completed
-Prevent automatic synthetic signal generation.
+NEUROSIM 2.0 — PHASE 0: FORENSIC AUDIT + ARCHITECTURE FREEZE
 
-## Root Cause
-In `src/ui/main_window.py`, `self.active_hardware_source` defaulted to `"SIMULATOR"` in `MainWindow.__init__()`. Additionally, `MainWindow.init_dsp_timer()` starts a 25 FPS recurring `QTimer` firing `process_dsp_frame()`. Whenever `active_hardware_source == "SIMULATOR"`, `process_dsp_frame()` called `self.generator.generate_chunk()` to append synthetic samples into `signal_buffer` every 40 ms. Consequently, waveforms, PSD metrics, and cognitive load classifications were automatically generated and displayed on startup even when no input hardware was connected.
+## Branch & Baseline
+- **Current Branch**: `audit/neurosim-phase-0`
+- **Baseline Commit**: `0f07bb8b146f17539d1546c1f1a824b876648984`
+- **Working Tree**: Clean (`nothing to commit, working tree clean`)
 
-## Changes Made
-- [`src/ui/main_window.py`](file:///C:/Users/barat/.gemini/antigravity/scratch/neurosim-eeg-cognitive-analysis/src/ui/main_window.py): Changed default `active_hardware_source` to `"IDLE"`. Added early return in `process_dsp_frame()` when `signal_buffer` has fewer than 32 samples. Added `start_simulator()` method to allow explicit manual activation of simulator mode. Updated `disconnect_all_hardware()` to reset state to `"IDLE"` and clear `signal_buffer`.
-- [`src/ui/screens/hardware_screen.py`](file:///C:/Users/barat/.gemini/antigravity/scratch/neurosim-eeg-cognitive-analysis/src/ui/screens/hardware_screen.py): Added `start_simulator_requested` signal and added `🎮 START DEMO SIMULATOR` action button for manual simulator selection.
-- [`tests/test_idle_behavior.py`](file:///C:/Users/barat/.gemini/antigravity/scratch/neurosim-eeg-cognitive-analysis/tests/test_idle_behavior.py): Added unit tests verifying default IDLE launch state, sample prevention, manual simulator activation, and disconnect behavior.
-
-## Behavior Before
-NeuroSim defaulted to `SIMULATOR` and generated synthetic samples every 40 ms even when no input device was connected.
-
-## Behavior After
-NeuroSim starts in `IDLE` / `DISCONNECTED`.
-No external input:
-→ no samples
-→ no waveform
-→ no DSP
-→ no classification.
-Explicit simulator selection remains available when manually requested (`start_simulator()`).
-
-## Tests Executed
-```powershell
-venv\Scripts\python.exe -m pytest
-```
-
-## Test Result
-PASS — 24 passed in 7.42s.
-
-## Manual Validation
-- Launched application from source (`python src/main.py`). Verified `signal_buffer` is empty on startup and no waveform/PSD/classification is rendered.
-- Tested explicit click on `🎮 START DEMO SIMULATOR` button in Hardware Center UI; verified state transitions to `● SIMULATOR ACTIVE` and synthetic waveform begins streaming.
-- Tested disconnection; verified state resets to `IDLE` and `signal_buffer` is cleared.
-
-## Current Commit
-Commit Hash: `d2608c91b48b6955641f1563ec1d4d083718d9c4` (short: `d2608c9`)  
-Commit Message: `fix: prevent automatic synthetic signal generation`
-
-## Files Safe for Next Agent
+## Files Inspected
+- `src/main.py`
+- `src/ui/main_window.py`
+- `src/ui/screens/*.py` (All 15 screen files)
 - `src/acquisition/pokidex_client.py`
+- `src/acquisition/serial_reader.py`
 - `src/acquisition/device_scanner.py`
-- `src/ui/screens/hardware_screen.py`
-- `tests/test_pokidex_client.py`
+- `src/processing/psd.py`
+- `src/processing/filter.py`
+- `src/classification/rule_classifier.py`
+- `src/classification/ml_classifier.py`
+- `src/reporting/pdf_generator.py`
+- `src/simulation/eeg_generator.py`
+- `NeuroSim.spec`
+- `scripts/build_executable.py`
+- `requirements.txt`
+- `tests/test_*.py` (All 8 test modules)
 
-## Files Currently Protected
-- `src/processing/psd.py` (DSP algorithms & Welch FFT)
-- `src/processing/filter.py` (Butterworth filter)
-- `src/classification/rule_classifier.py` & `ml_classifier.py` (Classifiers)
-- `src/reporting/pdf_generator.py` & `ai_engine.py` (Reporting)
-- `firmware/esp32/neurosim_esp32.ino` (ESP32 firmware)
+## Files Created / Modified
+- [`NEUROSIM_AUDIT.md`](file:///C:/Users/barat/OneDrive/Documents/neurosim-eeg-cognitive-analysis/NEUROSIM_AUDIT.md) `[NEW]` Complete Phase 0 Forensic Audit Document.
+- [`NEUROSIM_ARCHITECTURE.md`](file:///C:/Users/barat/OneDrive/Documents/neurosim-eeg-cognitive-analysis/NEUROSIM_ARCHITECTURE.md) `[NEW]` 10-Layer Target Architecture & 15-Phase Roadmap.
+- [`DEVELOPMENT_STATUS.md`](file:///C:/Users/barat/OneDrive/Documents/neurosim-eeg-cognitive-analysis/DEVELOPMENT_STATUS.md) `[MODIFY]` Agent handoff and status report.
+
+## Summary of Architecture & Subsystems
+- **Current UI Architecture**: 15 modular screens managed by `QStackedWidget` inside `MainWindow`.
+- **Current Connection Architecture**: Parallel ingestion supporting ESP32 USB Serial (`115200 baud`), ESP32 Wi-Fi UDP/TCP, Pokidex Wi-Fi WebSocket (`ws://0.0.0.0:8765`), and Pokidex BLE GATT (`0000fe50-0000-1000-8000-00805f9b34fb`).
+- **Current Protocol**: JSON `SignalFrame` schema (`version`, `source`, `timestamp`, `sequence`, `data`, `metadata`, `events`) and 4-byte header BLE chunk reassembly (`[seq_hi, seq_lo, chunk_idx, total_chunks, JSON...]`).
+- **Current Signal Pipeline**: Ingest $\rightarrow$ 1D Ring Buffer (1250 max) $\rightarrow$ Butterworth Bandpass Filter (0.5–50 Hz) $\rightarrow$ Welch PSD (256 NFFT) $\rightarrow$ Dual Classifier (Rule-based $\frac{\theta+\alpha}{\beta}$ + Random Forest ML) $\rightarrow$ ReportLab PDF.
+- **Current Build Architecture**: PyInstaller v6.21.0 single executable [`dist/NeuroSim.exe`](file:///C:/Users/barat/OneDrive/Documents/neurosim-eeg-cognitive-analysis/dist/NeuroSim.exe) (**131.27 MB**).
+
+## Test Results
+- **Command**: `venv\Scripts\python.exe -m pytest`
+- **Result**: **PASS** — 24 passed in 5.99 seconds (0 failures, 2406 joblib NumPy 2.5 warnings).
 
 ## Known Issues
-None known.
+- None known.
 
-## Next Recommended Task
-Integrate and validate Pokidex BLE & Wi-Fi input streaming with real Android Pokidex app hardware.
+## Risks & Considerations
+- Android OS background power optimization may close Pokidex WebSocket connections during long sessions; auto-reconnect logic must handle session state preservation.
+- Local network interfaces may include VirtualBox/Docker bridge IPs; QR pairing generator must select the active default gateway LAN adapter IP.
+
+## Files Currently Protected (DO NOT MODIFY)
+- `src/processing/psd.py` (DSP algorithms & Welch FFT)
+- `src/processing/filter.py` (Butterworth filter)
+- `src/classification/rule_classifier.py` (Rule-Based Heuristics)
+- `src/classification/ml_classifier.py` (Random Forest ML)
+- `src/reporting/pdf_generator.py` (ReportLab PDF exporter)
+- `firmware/esp32/neurosim_esp32.ino` (ESP32 firmware)
+
+## Recommended Phase 1 Task
+**Phase 1: NeuroSim Foundation** — Refactor `MainWindow` state management to create a thread-safe `CentralAppState` and decouple the top-level 25 FPS DSP timer into a dedicated worker thread.
 
 ## Instructions to Google AI Studio
-Google AI Studio should first pull the latest master branch (`git pull origin master`) and verify commit `d2608c91b48b6955641f1563ec1d4d083718d9c4` before making changes.
-
-Do not modify protected files (`src/processing/psd.py`, `src/processing/filter.py`, `src/classification/rule_classifier.py`, `src/classification/ml_classifier.py`, `src/reporting/pdf_generator.py`) unless required.
-
-The next task is to validate and test live streaming from Pokidex over Wi-Fi WebSocket (`ws://<host>:8765`) and BLE GATT (`0000fe50-0000-1000-8000-00805f9b34fb`).
+1. Switch to branch `audit/neurosim-phase-0` or pull latest master before starting.
+2. Review [`NEUROSIM_AUDIT.md`](file:///C:/Users/barat/OneDrive/Documents/neurosim-eeg-cognitive-analysis/NEUROSIM_AUDIT.md) and [`NEUROSIM_ARCHITECTURE.md`](file:///C:/Users/barat/OneDrive/Documents/neurosim-eeg-cognitive-analysis/NEUROSIM_ARCHITECTURE.md) to understand the system layout.
+3. Do not modify protected files (`src/processing/psd.py`, `src/processing/filter.py`, `src/classification/rule_classifier.py`, `src/classification/ml_classifier.py`, `src/reporting/pdf_generator.py`).
+4. Proceed with **Phase 1: NeuroSim Foundation**.
