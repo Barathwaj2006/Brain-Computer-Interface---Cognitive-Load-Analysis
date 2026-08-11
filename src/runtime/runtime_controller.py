@@ -126,7 +126,7 @@ class RuntimeController(QObject):
     def start_session(self, source_name: str = "synthetic") -> SessionModel:
         """Starts a new recording session with specified source."""
         with self._lock:
-            if self.current_session and self.current_session.state == SessionState.RECORDING:
+            if self.current_session and self.current_session.state in (SessionState.RECORDING, SessionState.PAUSED):
                 self.stop_session()
 
             # Bind source
@@ -138,6 +138,7 @@ class RuntimeController(QObject):
 
             # Clear buffer and reset telemetry
             self.signal_buffer.clear()
+            self.acq_mgr.reset_telemetry()
             self._latest_analysis_result = None
             self._last_error = ""
 
@@ -166,8 +167,8 @@ class RuntimeController(QObject):
     def stop_session(self) -> Optional[SessionModel]:
         """Stops active recording session, halts acquisition, clears live state."""
         with self._lock:
-            if not self.current_session:
-                return None
+            if not self.current_session or self.current_session.state in (SessionState.IDLE, SessionState.STOPPED):
+                return self.current_session
 
             self.acq_mgr.stop()
             self.current_session.samples_received = self.acq_mgr.samples_received
@@ -186,7 +187,7 @@ class RuntimeController(QObject):
                 return False
             res = self.acq_mgr.pause()
             if res:
-                self.current_session.state = SessionState.PAUSED
+                self.current_session.pause_session()
                 self.session_state_changed.emit("PAUSED")
             return res
 
@@ -197,7 +198,7 @@ class RuntimeController(QObject):
                 return False
             res = self.acq_mgr.resume()
             if res:
-                self.current_session.state = SessionState.RECORDING
+                self.current_session.resume_session()
                 self.session_state_changed.emit("RECORDING")
             return res
 

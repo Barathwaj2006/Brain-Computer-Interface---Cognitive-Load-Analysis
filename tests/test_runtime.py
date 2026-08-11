@@ -20,6 +20,9 @@ class TestRuntimeFoundation(unittest.TestCase):
     def setUp(self):
         self.runtime = RuntimeController(buffer_capacity=1250, sampling_rate=250, channels=("Ch1",))
 
+    def tearDown(self):
+        self.runtime.stop_session()
+
     def test_01_startup_idle_state(self):
         """1. Startup idle state: no active session, zero samples, zero metrics."""
         status = self.runtime.get_runtime_status()
@@ -164,6 +167,65 @@ class TestRuntimeFoundation(unittest.TestCase):
         self.assertIsNotNone(a2)
         self.assertAlmostEqual(a1["metrics"]["dominant_frequency"], a2["metrics"]["dominant_frequency"])
         np.testing.assert_allclose(a1["features"], a2["features"])
+
+    def test_14_pause_timer_freezing_and_resume_duration(self):
+        """14. Pause timer freezing: verify timer stops during pause and resumes accurately."""
+        session = self.runtime.start_simulator(seed=888)
+        time.sleep(0.05)
+        self.runtime.pause_session()
+        paused_duration = session.update_duration()
+        self.assertGreaterEqual(paused_duration, 0.04)
+
+        # Sleep while paused
+        time.sleep(0.1)
+        during_pause_duration = session.update_duration()
+        self.assertEqual(during_pause_duration, paused_duration) # Must remain frozen during pause
+
+        # Resume and sleep
+        self.runtime.resume_session()
+        time.sleep(0.05)
+        resumed_duration = session.update_duration()
+        self.assertGreater(resumed_duration, paused_duration)
+
+    def test_15_consecutive_session_counter_resets(self):
+        """15. Consecutive session counter resets: verify Session 2 counters start at 0."""
+        s1 = self.runtime.start_simulator(seed=123)
+        for _ in range(5):
+            f = self.runtime.synthetic_source.generate_frame(num_samples=50)
+            self.runtime.acq_mgr._process_incoming_frame(f)
+
+        s1_samples = self.runtime.acq_mgr.samples_received
+        self.assertGreaterEqual(s1_samples, 250)
+
+        self.runtime.stop_session()
+
+        # Start Session 2
+        s2 = self.runtime.start_simulator(seed=456)
+        self.assertNotEqual(s1.session_id, s2.session_id)
+        
+        status = self.runtime.get_runtime_status()
+        self.assertEqual(status["samples_received"], 0)
+        self.assertEqual(status["frames_received"], 0)
+        self.assertEqual(status["buffer_count"], 0)
+
+    def test_16_lifecycle_error_safety_and_edge_cases(self):
+        """16. Lifecycle edge cases: pause while idle, resume while recording, double stop."""
+        # Pause while idle
+        self.assertFalse(self.runtime.pause_session())
+        # Resume while idle
+        self.assertFalse(self.runtime.resume_session())
+        # Stop while idle
+        self.assertIsNone(self.runtime.stop_session()) # Returns None if no session exists
+
+        # Start and double stop
+        s = self.runtime.start_simulator(seed=789)
+        s_stopped1 = self.runtime.stop_session()
+        self.assertIsNotNone(s_stopped1)
+        end_t1 = s_stopped1.end_timestamp
+
+        time.sleep(0.02)
+        s_stopped2 = self.runtime.stop_session()
+        self.assertEqual(s_stopped2.end_timestamp, end_t1) # End timestamp preserved
 
 if __name__ == "__main__":
     unittest.main()

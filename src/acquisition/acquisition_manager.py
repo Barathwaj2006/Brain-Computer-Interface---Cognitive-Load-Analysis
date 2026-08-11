@@ -47,6 +47,14 @@ class AcquisitionManager(QObject):
         with self._lock:
             return self._sequence_gaps
 
+    def reset_telemetry(self):
+        """Resets stream telemetry counters for a fresh acquisition session."""
+        with self._lock:
+            self._frames_received = 0
+            self._samples_received = 0
+            self._sequence_gaps = 0
+            self._last_sequence = -1
+
     def register_source(self, name: str, source: BaseSignalSource):
         """Registers a generic BaseSignalSource instance."""
         if not isinstance(source, BaseSignalSource):

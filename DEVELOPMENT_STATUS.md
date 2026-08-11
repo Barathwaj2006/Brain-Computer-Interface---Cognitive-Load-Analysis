@@ -1,33 +1,30 @@
 # Current Development Status
 
 ## Phase & Agent
-PHASE=2A
+PHASE=2D
 AGENT=ANTIGRAVITY
-TASK=Product Runtime Foundation
+TASK=Runtime QA Owner & Defect Remediation
 BRANCH=rebuild/neurosim-v2
-BASELINE=7c7613c
-FINAL_COMMIT=4ba1cfdc73bf1f2f819fae3e4835848bb019e078
-TESTS=71/71 PASS
+BASELINE=6736283d5a4bbddc5aa8f041ff34685ffcb0e1a4
+FINAL_COMMIT=6736283d5a4bbddc5aa8f041ff34685ffcb0e1a4
+TESTS=74/74 PASS
 POKIDEX=FROZEN
 WORKTREE=CLEAN
 
-## Phase 2A Product Runtime Foundation Summary
-- **Session Model**: Lightweight in-memory `SessionModel` ([`src/runtime/session_model.py`](file:///C:/Users/barat/OneDrive/Documents/neurosim-eeg-cognitive-analysis/src/runtime/session_model.py)) tracking `session_id`, `start_timestamp`, `end_timestamp`, `duration_sec`, `source_name`, `source_type`, `sampling_rate`, `channels`, `samples_received`, `frames_received`, `state`, `latest_analysis`, and `last_error`.
-- **Runtime Controller**: `RuntimeController` / `NeuroSimRuntime` ([`src/runtime/runtime_controller.py`](file:///C:/Users/barat/OneDrive/Documents/neurosim-eeg-cognitive-analysis/src/runtime/runtime_controller.py)) orchestrating session start/stop/pause/resume, active source selection, signal routing, controlled 200ms analysis cadence on buffer snapshots, zero-input safety, and UI-neutral telemetry.
-- **Zero-Input Safety**: Default runtime startup initializes in `IDLE` state with 0 samples, 0 packets, no fake metrics, no fake waveforms, and no synthetic generation unless explicitly started via `start_simulator()` / `start_session()`.
-- **Official Simulator**: `start_simulator()` / `stop_simulator()` provides official development simulation controls. Stopping simulation resets runtime cleanly without lingering fake state.
-- **Test Suite**: 13 new unit tests in [`tests/test_runtime.py`](file:///C:/Users/barat/OneDrive/Documents/neurosim-eeg-cognitive-analysis/tests/test_runtime.py) (71 total suite tests passing cleanly).
+## Phase 2D Audit & Defect Remediation Summary
+- **Defect 1 Fixed (Pause Duration Tracking)**: Updated `SessionModel` ([`src/runtime/session_model.py`](file:///C:/Users/barat/OneDrive/Documents/neurosim-eeg-cognitive-analysis/src/runtime/session_model.py)) so active duration counter freezes when `state == SessionState.PAUSED` and resumes accurately upon `resume_session()`.
+- **Defect 2 Fixed (Multi-Session Counter Reset)**: Added `reset_telemetry()` to `AcquisitionManager` ([`src/acquisition/acquisition_manager.py`](file:///C:/Users/barat/OneDrive/Documents/neurosim-eeg-cognitive-analysis/src/acquisition/acquisition_manager.py)) and invoked it during `start_session()` in `RuntimeController` ([`src/runtime/runtime_controller.py`](file:///C:/Users/barat/OneDrive/Documents/neurosim-eeg-cognitive-analysis/src/runtime/runtime_controller.py)), preventing sample/frame counter leakage across consecutive sessions.
+- **Defect 3 Fixed (Lifecycle Edge Cases)**: Fixed `start_session()` to finalize paused sessions cleanly before creating new ones, and fixed `stop_session()` to preserve `end_timestamp` and state when called on an already stopped session.
+- **Test Suite Expansion**: Added 3 regression test cases in [`tests/test_runtime.py`](file:///C:/Users/barat/OneDrive/Documents/neurosim-eeg-cognitive-analysis/tests/test_runtime.py) (16 total runtime tests, 74 total repository tests passing cleanly).
+
+## Historical Record: Phase 2A Product Runtime Foundation
+- **Session Model & Runtime Controller**: In-memory `SessionModel` and `RuntimeController` managing 200ms analysis cadence and zero-input safety.
 
 ## Historical Record: Phase 1D Core Pipeline Integration
 - **Verified Pipeline**: SyntheticSource -> SignalFrame -> AcquisitionManager -> BoundedSignalBuffer -> PSDAnalyzer -> Quantitative Result -> Feature Extraction.
-- **Numerical Validation**: Pure Delta (2Hz), Alpha (10Hz), Beta (20Hz), and Mixed EEG validated.
 
 ## Historical Record: Phase 1C Signal Acquisition Core & Rolling Buffer
-- **Acquisition Interface**: Generic `BaseSignalSource` ([`src/acquisition/base_acquirer.py`](file:///C:/Users/barat/OneDrive/Documents/neurosim-eeg-cognitive-analysis/src/acquisition/base_acquirer.py)) and `AcquisitionManager` ([`src/acquisition/acquisition_manager.py`](file:///C:/Users/barat/OneDrive/Documents/neurosim-eeg-cognitive-analysis/src/acquisition/acquisition_manager.py)).
-- **Rolling Buffer**: Thread-safe `BoundedSignalBuffer` ([`src/processing/signal_buffer.py`](file:///C:/Users/barat/OneDrive/Documents/neurosim-eeg-cognitive-analysis/src/processing/signal_buffer.py)).
+- **Acquisition Interface & Buffer**: `BaseSignalSource`, `AcquisitionManager`, `BoundedSignalBuffer`.
 
 ## Historical Record: Phase 1A Canonical Signal Contract
 - **Contract Location**: [`src/core/signal_contract.py`](file:///C:/Users/barat/OneDrive/Documents/neurosim-eeg-cognitive-analysis/src/core/signal_contract.py)
-
-## Next Recommended Phase
-- **Phase 2B**: Application State & Event Architecture / Session Persistence Foundation.

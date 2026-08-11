@@ -29,6 +29,8 @@ class SessionModel:
     start_timestamp: float = field(default_factory=time.time)
     end_timestamp: Optional[float] = None
     duration_sec: float = 0.0
+    accumulated_duration: float = 0.0
+    segment_start_timestamp: Optional[float] = field(default_factory=time.time)
     source_name: str = "NONE"
     source_type: SignalSourceType = SignalSourceType.UNKNOWN
     sampling_rate: int = 250
@@ -40,18 +42,38 @@ class SessionModel:
     last_error: str = ""
 
     def update_duration(self) -> float:
-        """Updates and returns elapsed duration in seconds."""
-        if self.state in (SessionState.RECORDING, SessionState.PAUSED):
-            self.duration_sec = max(0.0, round(time.time() - self.start_timestamp, 2))
-        elif self.end_timestamp is not None:
-            self.duration_sec = max(0.0, round(self.end_timestamp - self.start_timestamp, 2))
+        """Updates and returns active elapsed recording duration in seconds (excluding pause time)."""
+        if self.state == SessionState.RECORDING and self.segment_start_timestamp is not None:
+            elapsed_segment = time.time() - self.segment_start_timestamp
+            self.duration_sec = max(0.0, round(self.accumulated_duration + elapsed_segment, 2))
+        else:
+            self.duration_sec = max(0.0, round(self.accumulated_duration, 2))
         return self.duration_sec
+
+    def pause_session(self):
+        """Pauses recording session, freezing active elapsed duration counter."""
+        if self.state == SessionState.RECORDING and self.segment_start_timestamp is not None:
+            self.accumulated_duration += (time.time() - self.segment_start_timestamp)
+            self.segment_start_timestamp = None
+        self.state = SessionState.PAUSED
+        self.update_duration()
+
+    def resume_session(self):
+        """Resumes recording session, continuing active duration counter."""
+        self.segment_start_timestamp = time.time()
+        self.state = SessionState.RECORDING
+        self.update_duration()
 
     def stop_session(self):
         """Finalizes session timestamps and sets state to STOPPED."""
+        if self.state == SessionState.STOPPED:
+            return
+        if self.state == SessionState.RECORDING and self.segment_start_timestamp is not None:
+            self.accumulated_duration += (time.time() - self.segment_start_timestamp)
+            self.segment_start_timestamp = None
         self.end_timestamp = time.time()
-        self.update_duration()
         self.state = SessionState.STOPPED
+        self.update_duration()
 
     def to_dict(self) -> Dict[str, Any]:
         """Returns dictionary representation of session state."""
