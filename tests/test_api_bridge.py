@@ -40,6 +40,7 @@ class TestRuntimeApiBridge(unittest.TestCase):
         for _ in range(frames):
             frame = self.service.runtime.synthetic_source.generate_frame(samples_per_frame)
             self.service.runtime.acq_mgr._process_incoming_frame(frame)
+        self.service.runtime.run_analysis_tick()
 
     def test_01_zero_input_state_is_truthful(self):
         state = self.request_json("/api/state")

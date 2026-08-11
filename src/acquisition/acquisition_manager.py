@@ -4,7 +4,7 @@ Orchestrates generic BaseSignalSource instances, handles lifecycle controls, and
 """
 
 import threading
-from typing import Dict, Optional, Any
+from typing import Dict, Optional, Any, List, Callable
 from PySide6.QtCore import QObject, Signal
 from src.core.enums import SignalSourceType
 from src.core.signal_contract import SignalFrame
@@ -24,6 +24,7 @@ class AcquisitionManager(QObject):
         self.signal_buffer = signal_buffer
         self._sources: Dict[str, BaseSignalSource] = {}
         self.active_source: Optional[BaseSignalSource] = None
+        self._callbacks: List[Callable[[SignalFrame], None]] = []
         self._lock = threading.RLock()
 
         # Telemetry counters
@@ -46,6 +47,18 @@ class AcquisitionManager(QObject):
     def sequence_gaps(self) -> int:
         with self._lock:
             return self._sequence_gaps
+
+    def add_callback(self, callback: Callable[[SignalFrame], None]):
+        """Registers a direct python frame callback for headless / multi-threaded execution."""
+        with self._lock:
+            if callback not in self._callbacks:
+                self._callbacks.append(callback)
+
+    def remove_callback(self, callback: Callable[[SignalFrame], None]):
+        """Unregisters a direct python frame callback."""
+        with self._lock:
+            if callback in self._callbacks:
+                self._callbacks.remove(callback)
 
     def reset_telemetry(self):
         """Resets stream telemetry counters for a fresh acquisition session."""
@@ -74,9 +87,13 @@ class AcquisitionManager(QObject):
                     self.active_source.frame_received.disconnect(self._on_frame)
                 except (RuntimeError, AttributeError):
                     pass
+                self.active_source.remove_callback(self._on_frame_cb)
 
             self.active_source = self._sources[name]
-            self.active_source.frame_received.connect(self._on_frame)
+            try:
+                self.active_source.frame_received.connect(self._on_frame)
+            except (RuntimeError, AttributeError):
+                pass
             self.active_source.add_callback(self._on_frame_cb)
             return True
 
@@ -129,8 +146,8 @@ class AcquisitionManager(QObject):
         self._process_incoming_frame(frame)
 
     def _on_frame_cb(self, frame: SignalFrame):
-        """Internal callback handler for incoming SignalFrame payloads."""
-        pass  # Handled via _on_frame to prevent double ingestion
+        """Internal direct callback handler for incoming SignalFrame payloads."""
+        self._process_incoming_frame(frame)
 
     def _process_incoming_frame(self, frame: SignalFrame):
         """Validates, tracks telemetry, and routes SignalFrame into BoundedSignalBuffer."""
@@ -147,4 +164,14 @@ class AcquisitionManager(QObject):
             self._last_sequence = frame.sequence
 
         self.signal_buffer.append_frame(frame)
-        self.frame_received.emit(frame)
+        
+        try:
+            self.frame_received.emit(frame)
+        except (RuntimeError, AttributeError):
+            pass
+
+        for cb in list(self._callbacks):
+            try:
+                cb(frame)
+            except Exception:
+                pass

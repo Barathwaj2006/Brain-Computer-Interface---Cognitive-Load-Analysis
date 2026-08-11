@@ -104,7 +104,14 @@ function updateMetrics(metrics) {
         const fill = document.getElementById(`fill-${band}`);
         if (fill) fill.style.width = available && Number.isFinite(metrics[`${band}_rel`]) ? `${metrics[`${band}_rel`]}%` : "0%";
     });
-    value("m-load", "--");
+    
+    // Cognitive Load & Classification
+    if (runtimeState && runtimeState.cognitive_state) {
+        value("m-load", `${runtimeState.cognitive_state} LOAD`);
+    } else {
+        value("m-load", "--");
+    }
+
     value("m-dom", available ? `${metrics.dominant_band || "--"} (${metric(metrics.dominant_frequency, 2, " Hz")})` : "--");
     value("m-stress", available ? metric(metrics.stress_index, 4) : "--");
     value("m-qual", runtimeState && runtimeState.streaming ? "RUNTIME STREAM" : "NO SIGNAL");
@@ -166,12 +173,18 @@ function resumeSession() { return lifecycle("resume"); }
 function stopSession() { return lifecycle("stop"); }
 
 async function downloadCurrentReport() {
+    return downloadReportForSession(null);
+}
+
+async function downloadReportForSession(sessionId) {
     try {
-        const response = await api("/api/report", {method: "POST"});
+        const url = sessionId ? `/api/report?session_id=${encodeURIComponent(sessionId)}` : "/api/report";
+        const response = await api(url, {method: "POST"});
         const blob = await response.blob();
         const link = document.createElement("a");
         link.href = URL.createObjectURL(blob);
-        link.download = "NeuroSim_Runtime_Report.pdf";
+        const filename = sessionId ? `NeuroSim_${sessionId}.pdf` : "NeuroSim_Runtime_Report.pdf";
+        link.download = filename;
         link.click();
         URL.revokeObjectURL(link.href);
     } catch (error) {
@@ -182,11 +195,31 @@ async function downloadCurrentReport() {
 async function renderHistoryTable() {
     const body = document.getElementById("history-table-body");
     if (!body) return;
-    if (!runtimeState || runtimeState.state !== "STOPPED") {
-        body.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#94A3B8;">No completed runtime session available.</td></tr>';
-        return;
+    try {
+        const historyData = await api("/api/history");
+        const sessions = historyData.sessions || [];
+        if (sessions.length === 0) {
+            if (runtimeState && runtimeState.state === "STOPPED") {
+                body.innerHTML = `<tr><td><strong>${runtimeState.session_id}</strong></td><td>Current runtime</td><td>${duration(runtimeState.duration_sec)}</td><td>${runtimeState.state}</td><td>${metric(runtimeState.metrics && runtimeState.metrics.stress_index, 4)}</td><td><button class="btn" style="padding:4px 8px; font-size:12px;" onclick="downloadCurrentReport()">Export PDF</button></td></tr>`;
+            } else {
+                body.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#94A3B8;">No recorded sessions found in database archive.</td></tr>';
+            }
+            return;
+        }
+
+        body.innerHTML = sessions.map((s) => `
+            <tr>
+                <td><strong>${s.session_id}</strong></td>
+                <td>${s.mode || "SIMULATOR"}</td>
+                <td>${duration(s.duration)}</td>
+                <td>${s.cognitive_state || "COMPLETED"}</td>
+                <td>${metric(s.stress_index, 4)}</td>
+                <td><button class="btn" style="padding:4px 8px; font-size:12px;" onclick="downloadReportForSession('${s.session_id}')">Export PDF</button></td>
+            </tr>
+        `).join("");
+    } catch (error) {
+        body.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#EF4444;">Failed to load history: ${error.message}</td></tr>`;
     }
-    body.innerHTML = `<tr><td><strong>${runtimeState.session_id}</strong></td><td>Current runtime</td><td>${duration(runtimeState.duration_sec)}</td><td>${runtimeState.state}</td><td>${metric(runtimeState.metrics && runtimeState.metrics.stress_index, 4)}</td><td>Available for PDF export</td></tr>`;
 }
 
 window.addEventListener("resize", resizeCanvases);

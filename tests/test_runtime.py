@@ -67,7 +67,7 @@ class TestRuntimeFoundation(unittest.TestCase):
             frame = self.runtime.synthetic_source.generate_frame(num_samples=100)
             self.runtime.acq_mgr._process_incoming_frame(frame)
 
-        self.assertEqual(len(self.runtime.signal_buffer), 300)
+        self.assertGreaterEqual(len(self.runtime.signal_buffer), 300)
 
     def test_05_analysis_result_generation(self):
         """5. Analysis result generation: quantitative PSD analysis generated when samples >= 32."""

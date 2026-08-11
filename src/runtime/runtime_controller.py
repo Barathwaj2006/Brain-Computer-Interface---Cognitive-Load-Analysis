@@ -1,6 +1,6 @@
 """
 Application Runtime Controller for NeuroSim 2.0 (Phase 2A)
-Orchestrates AcquisitionManager, BoundedSignalBuffer, PSDAnalyzer, and SessionModel.
+Orchestrates AcquisitionManager, BoundedSignalBuffer, PSDAnalyzer, SessionModel, RuleBasedClassifier, and DatabaseManager.
 Exposes UI-neutral runtime capabilities, controlled analysis cadence, and zero-input safety.
 """
 
@@ -16,6 +16,8 @@ from src.acquisition.synthetic_source import SyntheticSignalSource
 from src.acquisition.acquisition_manager import AcquisitionManager
 from src.processing.psd import PSDAnalyzer
 from src.features.extractor import EEGFeatureExtractor
+from src.classification.rule_classifier import RuleBasedClassifier
+from src.database.db_manager import DatabaseManager
 from src.runtime.session_model import SessionModel, SessionState
 
 class RuntimeController(QObject):
@@ -37,13 +39,19 @@ class RuntimeController(QObject):
         self.acq_mgr = AcquisitionManager(self.signal_buffer)
         self.psd_analyzer = PSDAnalyzer(sampling_rate=sampling_rate)
         self.feature_extractor = EEGFeatureExtractor()
+        self.classifier = RuleBasedClassifier()
+        self.db_manager = DatabaseManager()
 
         # Register official Synthetic Source
         self.synthetic_source = SyntheticSignalSource(sampling_rate=sampling_rate, channels=self.channels)
         self.acq_mgr.register_source("synthetic", self.synthetic_source)
 
-        # Connect internal frame signal for cadence tracking
-        self.acq_mgr.frame_received.connect(self._on_frame_received)
+        # Connect internal frame signal and callback for cadence tracking
+        try:
+            self.acq_mgr.frame_received.connect(self._on_frame_received)
+        except (RuntimeError, AttributeError):
+            pass
+        self.acq_mgr.add_callback(self._on_frame_received)
 
         # Session & Cadence Management
         self.current_session: Optional[SessionModel] = None
@@ -87,6 +95,8 @@ class RuntimeController(QObject):
                 "sequence_gaps": seq_gaps,
                 "buffer_count": buffer_count,
                 "has_latest_analysis": self._latest_analysis_result is not None,
+                "metrics": self._latest_analysis_result["metrics"] if self._latest_analysis_result else None,
+                "classification": self._latest_analysis_result.get("classification") if self._latest_analysis_result else None,
                 "last_error": self._last_error
             }
 
@@ -165,16 +175,40 @@ class RuntimeController(QObject):
             return session
 
     def stop_session(self) -> Optional[SessionModel]:
-        """Stops active recording session, halts acquisition, clears live state."""
+        """Stops active recording session, halts acquisition, persists session record to DB, clears live state."""
         with self._lock:
             if not self.current_session or self.current_session.state in (SessionState.IDLE, SessionState.STOPPED):
                 return self.current_session
+
+            # Perform final analysis tick if needed before stopping
+            if not self._latest_analysis_result and len(self.signal_buffer) >= 32:
+                self.run_analysis_tick()
 
             self.acq_mgr.stop()
             self.current_session.samples_received = self.acq_mgr.samples_received
             self.current_session.frames_received = self.acq_mgr.frames_received
             self.current_session.latest_analysis = self._latest_analysis_result
             self.current_session.stop_session()
+
+            # Save session to DatabaseManager
+            if self._latest_analysis_result and self.current_session.samples_received > 0:
+                m = self._latest_analysis_result["metrics"]
+                cls = self._latest_analysis_result.get("classification", {})
+                self.db_manager.save_session({
+                    "session_id": self.current_session.session_id,
+                    "duration": self.current_session.duration_sec,
+                    "sampling_rate": self.sampling_rate,
+                    "mode": self.current_session.source_name.upper(),
+                    "rel_delta": m.get("delta_rel", 25.0),
+                    "rel_theta": m.get("theta_rel", 25.0),
+                    "rel_alpha": m.get("alpha_rel", 25.0),
+                    "rel_beta": m.get("beta_rel", 25.0),
+                    "dominant_band": m.get("dominant_band", "ALPHA"),
+                    "cognitive_state": cls.get("cognitive_state", "MODERATE"),
+                    "stress_index": m.get("stress_index", 0.5),
+                    "confidence": cls.get("confidence", 85.0),
+                    "notes": f"Session recorded via {self.current_session.source_name}"
+                })
 
             finished_session = self.current_session
             self.session_state_changed.emit("STOPPED")
@@ -255,12 +289,14 @@ class RuntimeController(QObject):
                     'total_power': float(sum(combined_metrics.get(f"{b}_abs", 0.0) for b in ('delta', 'theta', 'alpha', 'beta')))
                 }
                 features = self.feature_extractor.extract_features(psd_metrics_for_extractor)
+                classification = self.classifier.classify(psd_metrics_for_extractor)
 
                 analysis_result = {
                     "timestamp": time.time(),
                     "sample_count": sample_count,
                     "duration_sec": snap["duration_sec"],
                     "metrics": combined_metrics,
+                    "classification": classification,
                     "features": features,
                     "feature_names": self.feature_extractor.feature_names(),
                     "spectrum": {

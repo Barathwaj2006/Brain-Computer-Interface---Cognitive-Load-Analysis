@@ -52,6 +52,8 @@ class NeuroSimRequestHandler(SimpleHTTPRequestHandler):
         if not parsed.path.startswith("/api/"):
             return super().do_GET()
         try:
+            if parsed.path == "/api/history":
+                return self._json({"sessions": self.runtime_service.history()})
             if parsed.path == "/api/state":
                 return self._json(self.runtime_service.state())
             if parsed.path == "/api/analysis":
@@ -77,7 +79,9 @@ class NeuroSimRequestHandler(SimpleHTTPRequestHandler):
             if parsed.path in actions:
                 return self._json(actions[parsed.path]())
             if parsed.path == "/api/report":
-                report_data = self.runtime_service.report_data()
+                params = parse_qs(parsed.query)
+                session_id = params.get("session_id", [None])[0]
+                report_data = self.runtime_service.report_data(session_id=session_id)
                 with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as file:
                     report_path = file.name
                 try:

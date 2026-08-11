@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, List
 
 from src.runtime.runtime_controller import RuntimeController
 from src.runtime.session_model import SessionState
@@ -20,6 +20,7 @@ class RuntimeService:
     def state(self) -> Dict[str, Any]:
         status = self.runtime.get_runtime_status()
         analysis = self.runtime.get_latest_analysis()
+        classification = analysis.get("classification") if analysis else None
         return {
             "state": status["state"],
             "streaming": status["state"] == SessionState.RECORDING.name,
@@ -34,6 +35,8 @@ class RuntimeService:
             "channels": status["channels"],
             "analysis_available": analysis is not None,
             "metrics": analysis["metrics"] if analysis else None,
+            "classification": classification,
+            "cognitive_state": classification.get("cognitive_state") if classification else None,
             "hardware": {"connected": False, "status": "NOT_CONNECTED"},
             "last_error": status["last_error"] or None,
         }
@@ -52,6 +55,10 @@ class RuntimeService:
 
     def analysis(self) -> Optional[Dict[str, Any]]:
         return self.runtime.get_latest_analysis()
+
+    def history(self) -> List[Dict[str, Any]]:
+        """Returns all recorded sessions from SQLite DatabaseManager."""
+        return self.runtime.db_manager.get_all_sessions()
 
     def start(self) -> Dict[str, Any]:
         self.runtime.start_simulator()
@@ -73,20 +80,62 @@ class RuntimeService:
             raise RuntimeError("Cannot stop: no session exists")
         return self.state()
 
-    def report_data(self) -> Dict[str, Any]:
-        session = self.runtime.get_session_model()
-        if not session or session.state != SessionState.STOPPED or not session.latest_analysis:
-            raise RuntimeError("A stopped session with completed analysis is required for report export")
+    def report_data(self, session_id: Optional[str] = None) -> Dict[str, Any]:
+        """Builds report data for PDF export for current session or historical session_id."""
+        if session_id:
+            db_rec = self.runtime.db_manager.get_session_by_id(session_id)
+            if not db_rec:
+                raise RuntimeError(f"Session '{session_id}' not found in database archive.")
+            return {
+                "session_id": db_rec["session_id"],
+                "duration_sec": db_rec["duration"],
+                "source_name": db_rec["mode"],
+                "sample_count": int(db_rec["duration"] * db_rec["sampling_rate"]),
+                "frame_count": int(db_rec["duration"] * db_rec["sampling_rate"] / 25),
+                "channels": list(self.runtime.channels),
+                "cognitive_state": db_rec["cognitive_state"],
+                "delta_abs": 0.0,
+                "theta_abs": 0.0,
+                "alpha_abs": 0.0,
+                "beta_abs": 0.0,
+                "delta_rel": db_rec["rel_delta"],
+                "theta_rel": db_rec["rel_theta"],
+                "alpha_rel": db_rec["rel_alpha"],
+                "beta_rel": db_rec["rel_beta"],
+                "total_power": 1.0,
+                "dominant_frequency": 10.0,
+                "dominant_band": db_rec["dominant_band"],
+                "tbr": 1.0,
+                "abr": 1.0,
+                "stress_index": db_rec["stress_index"],
+            }
 
-        metrics = session.latest_analysis["metrics"]
+        session = self.runtime.get_session_model()
+        latest_analysis = (session.latest_analysis if session else None) or self.runtime.get_latest_analysis()
+        
+        # Fallback to database archive if available
+        if not latest_analysis:
+            history = self.runtime.db_manager.get_all_sessions()
+            if history:
+                return self.report_data(session_id=history[0]["session_id"])
+            raise RuntimeError("A completed analysis or saved session is required for report export.")
+
+        session_id = session.session_id if session else "SESSION_CURRENT"
+        duration_sec = session.duration_sec if session else 0.0
+        source_name = session.source_name if session else "synthetic"
+        sample_count = session.samples_received if session else 0
+        frame_count = session.frames_received if session else 0
+
+        metrics = latest_analysis["metrics"]
+        classification = latest_analysis.get("classification", {})
         return {
-            "session_id": session.session_id,
-            "duration_sec": session.duration_sec,
-            "source_name": session.source_name,
-            "sample_count": session.samples_received,
-            "frame_count": session.frames_received,
-            "channels": list(session.channels),
-            "cognitive_state": None,
+            "session_id": session_id,
+            "duration_sec": duration_sec,
+            "source_name": source_name,
+            "sample_count": sample_count,
+            "frame_count": frame_count,
+            "channels": list(self.runtime.channels),
+            "cognitive_state": classification.get("cognitive_state", "MODERATE"),
             "delta_abs": metrics.get("delta_abs"),
             "theta_abs": metrics.get("theta_abs"),
             "alpha_abs": metrics.get("alpha_abs"),
