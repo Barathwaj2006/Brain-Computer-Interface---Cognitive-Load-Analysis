@@ -63,6 +63,23 @@ class NeuroSimRequestHandler(SimpleHTTPRequestHandler):
             if parsed.path == "/api/waveform":
                 seconds = float(parse_qs(parsed.query).get("seconds", ["5"])[0])
                 return self._json(self.runtime_service.waveform(seconds))
+            if parsed.path == "/api/research/longitudinal":
+                return self._json(self.runtime_service.longitudinal_research())
+            if parsed.path == "/api/research/compare":
+                ids_param = parse_qs(parsed.query).get("ids", [""])[0]
+                session_ids = [s.strip() for s in ids_param.split(",") if s.strip()]
+                return self._json(self.runtime_service.compare_research(session_ids))
+            if parsed.path == "/api/research/bids":
+                return self._json(self.runtime_service.export_research_bids())
+            if parsed.path == "/api/research/export_csv":
+                csv_content = self.runtime_service.export_research_csv().encode("utf-8")
+                self.send_response(HTTPStatus.OK)
+                self.send_header("Content-Type", "text/csv; charset=utf-8")
+                self.send_header("Content-Disposition", 'attachment; filename="neurosim_research_dataset.csv"')
+                self.send_header("Content-Length", str(len(csv_content)))
+                self.end_headers()
+                self.wfile.write(csv_content)
+                return
             return self._error(HTTPStatus.NOT_FOUND, "Unknown API endpoint")
         except (ValueError, RuntimeError) as error:
             return self._error(HTTPStatus.BAD_REQUEST, str(error))

@@ -41,6 +41,7 @@ function switchTab(tabKey) {
     document.getElementById(`screen-${tabKey}`).classList.add("active");
     if (window.event && window.event.currentTarget) window.event.currentTarget.classList.add("active");
     if (tabKey === "history") renderHistoryTable();
+    if (tabKey === "research") loadResearchSummary();
     if (tabKey === "settings") renderSettings();
 }
 
@@ -282,6 +283,77 @@ async function renderHistoryTable() {
         `).join("");
     } catch (error) {
         body.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#EF4444;">Failed to load history: ${error.message}</td></tr>`;
+    }
+}
+
+async function loadResearchSummary() {
+    const timelineDiv = document.getElementById("research-longitudinal-timeline");
+    try {
+        const summary = await api("/api/research/longitudinal");
+        value("r-sessions", summary.total_sessions || 0);
+        value("r-duration", duration(summary.total_duration_sec));
+        value("r-stress", metric(summary.mean_stress_index, 4));
+
+        if (!timelineDiv) return;
+        const timeline = summary.timeline || [];
+        if (timeline.length === 0) {
+            timelineDiv.innerHTML = '<p style="color:#94A3B8; text-align:center; padding:20px;">No research sessions recorded yet in database archive.</p>';
+            return;
+        }
+
+        timelineDiv.innerHTML = `
+            <div style="font-size:14px; font-weight:600; margin-bottom:10px;">Longitudinal Session Progression</div>
+            <table>
+                <thead>
+                    <tr><th>Session ID</th><th>Timestamp</th><th>Duration</th><th>Delta %</th><th>Theta %</th><th>Alpha %</th><th>Beta %</th><th>Stress</th><th>State</th></tr>
+                </thead>
+                <tbody>
+                    ${timeline.map((s) => `
+                        <tr>
+                            <td><strong>${s.session_id}</strong></td>
+                            <td>${s.timestamp}</td>
+                            <td>${duration(s.duration)}</td>
+                            <td>${metric(s.rel_delta, 1, "%")}</td>
+                            <td>${metric(s.rel_theta, 1, "%")}</td>
+                            <td>${metric(s.rel_alpha, 1, "%")}</td>
+                            <td>${metric(s.rel_beta, 1, "%")}</td>
+                            <td>${metric(s.stress_index, 4)}</td>
+                            <td><span class="badge">${s.cognitive_state}</span></td>
+                        </tr>
+                    `).join("")}
+                </tbody>
+            </table>
+        `;
+    } catch (error) {
+        value("api-status", error.message);
+    }
+}
+
+async function exportResearchCSV() {
+    try {
+        const response = await fetch("/api/research/export_csv");
+        const blob = await response.blob();
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = "neurosim_research_dataset.csv";
+        link.click();
+        URL.revokeObjectURL(link.href);
+    } catch (error) {
+        value("api-status", error.message);
+    }
+}
+
+async function exportResearchBIDS() {
+    try {
+        const bidsData = await api("/api/research/bids");
+        const blob = new Blob([JSON.stringify(bidsData, null, 2)], {type: "application/json"});
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = "bids_dataset_description.json";
+        link.click();
+        URL.revokeObjectURL(link.href);
+    } catch (error) {
+        value("api-status", error.message);
     }
 }
 

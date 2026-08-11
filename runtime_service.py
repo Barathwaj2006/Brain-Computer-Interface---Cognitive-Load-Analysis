@@ -66,6 +66,22 @@ class RuntimeService:
             raise RuntimeError(f"Failed to delete session '{session_id}' from database archive.")
         return {"deleted": session_id, "sessions": self.history()}
 
+    def longitudinal_research(self) -> Dict[str, Any]:
+        """Returns longitudinal analytics across all recorded sessions."""
+        return self.runtime.research_engine.get_longitudinal_summary()
+
+    def compare_research(self, session_ids: List[str]) -> Dict[str, Any]:
+        """Returns side-by-side comparison of specific session IDs."""
+        return self.runtime.research_engine.compare_sessions(session_ids)
+
+    def export_research_csv(self) -> str:
+        """Returns CSV string representation of all research sessions."""
+        return self.runtime.research_engine.export_csv_summary()
+
+    def export_research_bids(self) -> Dict[str, Any]:
+        """Returns BIDS-compliant dataset JSON of recorded sessions."""
+        return self.runtime.research_engine.export_bids_dataset()
+
     def settings(self) -> Dict[str, Any]:
         """Returns application branding, signal parameters, and filter configuration."""
         import src.app.config as cfg

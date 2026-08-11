@@ -19,6 +19,7 @@
             <li class="nav-item" onclick="switchTab('band')">Band Analysis</li>
             <li class="nav-item" onclick="switchTab('session')">Session Control</li>
             <li class="nav-item" onclick="switchTab('history')">History Archive</li>
+            <li class="nav-item" onclick="switchTab('research')">Research Platform</li>
             <li class="nav-item" onclick="switchTab('settings')">Settings</li>
         </ul>
     </div>
@@ -66,6 +67,24 @@
         <div id="screen-session" class="view-screen"><div class="glass-card"><div class="card-title">Session Recording Controls</div><div style="display:flex; gap:14px; margin-bottom:24px;"><button class="btn btn-emerald" onclick="startSession()">START</button><button class="btn" onclick="pauseSession()">PAUSE</button><button class="btn" onclick="resumeSession()">RESUME</button><button class="btn btn-rose" onclick="stopSession()">STOP</button><button class="btn" onclick="downloadCurrentReport()">EXPORT PDF REPORT</button></div><div class="grid-4"><div class="metric-card"><div class="metric-label">Session ID</div><div class="metric-val" id="s-id">--</div></div><div class="metric-card"><div class="metric-label">Duration</div><div class="metric-val" id="s-dur">--</div></div><div class="metric-card"><div class="metric-label">Samples Logged</div><div class="metric-val" id="s-samples">0</div></div><div class="metric-card"><div class="metric-label">Status</div><div class="metric-val" id="s-status">IDLE</div></div></div></div></div>
 
         <div id="screen-history" class="view-screen"><div class="glass-card"><div class="card-title">Runtime Session Archive</div><table><thead><tr><th>Session ID</th><th>Source</th><th>Duration</th><th>State</th><th>Stress Index</th><th>Actions</th></tr></thead><tbody id="history-table-body"></tbody></table><div id="history-session-detail"></div></div></div>
+
+        <div id="screen-research" class="view-screen">
+            <div class="glass-card">
+                <div class="card-title">Research Platform & Longitudinal Dashboard</div>
+                <div style="display:flex; gap:12px; margin-bottom:16px;">
+                    <button class="btn btn-emerald" onclick="exportResearchCSV()">EXPORT RESEARCH DATASET (CSV)</button>
+                    <button class="btn" onclick="exportResearchBIDS()">EXPORT BIDS JSON</button>
+                    <button class="btn" onclick="loadResearchSummary()">REFRESH ANALYTICS</button>
+                </div>
+                <div class="grid-4" style="margin-bottom:20px;">
+                    <div class="metric-card"><div class="metric-label">TOTAL SESSIONS</div><div class="metric-val" id="r-sessions">0</div></div>
+                    <div class="metric-card"><div class="metric-label">TOTAL DURATION</div><div class="metric-val" id="r-duration">0s</div></div>
+                    <div class="metric-card"><div class="metric-label">MEAN STRESS INDEX</div><div class="metric-val" id="r-stress">--</div></div>
+                    <div class="metric-card"><div class="metric-label">BIDS COMPLIANCE</div><div class="metric-val" style="color:var(--emerald);">1.8.0</div></div>
+                </div>
+                <div id="research-longitudinal-timeline"></div>
+            </div>
+        </div>
 
         <div id="screen-settings" class="view-screen"><div class="glass-card"><div class="card-title">Runtime Configuration & System Settings</div><p id="api-status">Connecting to the NeuroSim runtime API...</p><div id="settings-details"></div><p style="margin-top:16px; font-size:12px; color:#64748B;">The browser renders server-provided samples, spectrum, and metrics. It performs no EEG generation, session-state tracking, or quantitative analysis.</p></div></div>
     </div>

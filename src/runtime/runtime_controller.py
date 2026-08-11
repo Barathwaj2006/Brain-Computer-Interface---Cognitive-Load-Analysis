@@ -18,6 +18,7 @@ from src.processing.psd import PSDAnalyzer
 from src.features.extractor import EEGFeatureExtractor
 from src.classification.rule_classifier import RuleBasedClassifier
 from src.database.db_manager import DatabaseManager
+from src.analysis.research_engine import ResearchAnalyticsEngine
 from src.runtime.session_model import SessionModel, SessionState
 
 from src.utils.logger import get_logger
@@ -44,6 +45,7 @@ class RuntimeController(QObject):
         self.feature_extractor = EEGFeatureExtractor()
         self.classifier = RuleBasedClassifier()
         self.db_manager = DatabaseManager()
+        self.research_engine = ResearchAnalyticsEngine(db_manager=self.db_manager)
 
         # Register official Synthetic Source
         self.synthetic_source = SyntheticSignalSource(sampling_rate=sampling_rate, channels=self.channels)
