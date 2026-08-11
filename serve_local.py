@@ -131,10 +131,18 @@ class NeuroSimRequestHandler(SimpleHTTPRequestHandler):
 
 def create_server(host="127.0.0.1", port=8000, runtime_service=None):
     ThreadingHTTPServer.allow_reuse_address = True
-    server = ThreadingHTTPServer((host, port), NeuroSimRequestHandler)
-    server.daemon_threads = True
-    server.runtime_service = runtime_service or RuntimeService()
-    return server
+    ports_to_try = [port] if port == 0 else [port, 8080, 8085, 8090, 8888, 0]
+    last_error = None
+    for p in ports_to_try:
+        try:
+            server = ThreadingHTTPServer((host, p), NeuroSimRequestHandler)
+            server.daemon_threads = True
+            server.runtime_service = runtime_service or RuntimeService()
+            return server
+        except OSError as exc:
+            last_error = exc
+            continue
+    raise last_error
 
 
 def run(host="127.0.0.1", port=8000, open_browser=True):
