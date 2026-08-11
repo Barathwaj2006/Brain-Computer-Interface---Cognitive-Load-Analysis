@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NeuroSim Runtime EEG Analysis</title>
+    <title>NeuroSim 3.0 — Runtime EEG Cognitive Analysis</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0B0F19">
@@ -11,40 +11,72 @@
 <body>
     <div id="sidebar">
         <div class="brand-header">
-            <div class="brand-title">NEUROSIM</div>
-            <div class="brand-sub">RUNTIME-CONNECTED COGNITIVE ANALYSIS</div>
+            <div class="brand-title">NEUROSIM 3.0</div>
+            <div class="brand-sub">AUTHORITATIVE SCIENTIFIC PLATFORM</div>
         </div>
         <ul class="nav-list">
-            <li class="nav-item active" onclick="switchTab('monitor')">Live Monitor</li>
+            <li class="nav-item active" onclick="switchTab('dashboard')">Dashboard</li>
+            <li class="nav-item" onclick="switchTab('monitor')">Live Monitor</li>
             <li class="nav-item" onclick="switchTab('band')">Band Analysis</li>
-            <li class="nav-item" onclick="switchTab('session')">Session Control</li>
             <li class="nav-item" onclick="switchTab('history')">History Archive</li>
+            <li class="nav-item" onclick="switchTab('reports')">Reports Platform</li>
             <li class="nav-item" onclick="switchTab('research')">Research Platform</li>
+            <li class="nav-item" onclick="switchTab('neurofeedback')">Neurofeedback</li>
+            <li class="nav-item" onclick="switchTab('hardware')">Hardware Control</li>
             <li class="nav-item" onclick="switchTab('settings')">Settings</li>
         </ul>
     </div>
 
     <div id="main-content">
         <header>
-            <div class="header-title">LIVE MONITORING DASHBOARD</div>
+            <div class="header-title" id="page-header-title">EXECUTIVE DASHBOARD</div>
             <div style="display:flex; gap:12px; align-items:center;">
                 <div class="badge" id="hardware-status">Hardware: Not Connected</div>
                 <div class="badge" id="mode-badge">SIMULATOR: IDLE</div>
             </div>
         </header>
 
-        <div id="screen-monitor" class="view-screen active">
+        <!-- 1. DASHBOARD SCREEN -->
+        <div id="screen-dashboard" class="view-screen active">
+            <div class="glass-card">
+                <div class="card-title">Runtime Lifecycle Controls</div>
+                <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+                    <button class="btn btn-emerald" onclick="startSession()">START SESSION</button>
+                    <button class="btn" onclick="pauseSession()">PAUSE</button>
+                    <button class="btn" onclick="resumeSession()">RESUME</button>
+                    <button class="btn btn-rose" onclick="stopSession()">STOP</button>
+                </div>
+            </div>
             <div class="grid-4">
-                <div class="metric-card"><div class="metric-label">COGNITIVE LOAD</div><div class="metric-val" id="m-load">--</div><div class="metric-sub">Unavailable until a runtime classifier is connected</div></div>
-                <div class="metric-card"><div class="metric-label">DOMINANT BAND</div><div class="metric-val" id="m-dom">--</div><div class="metric-sub">Peak spectral power</div></div>
+                <div class="metric-card"><div class="metric-label">COGNITIVE LOAD</div><div class="metric-val" id="dash-m-load">--</div><div class="metric-sub">Authoritative Classifier</div></div>
+                <div class="metric-card"><div class="metric-label">DOMINANT BAND</div><div class="metric-val" id="dash-m-dom">--</div><div class="metric-sub">Peak Spectral Power</div></div>
+                <div class="metric-card"><div class="metric-label">STRESS INDEX</div><div class="metric-val" id="dash-m-stress">--</div><div class="metric-sub">Beta / (Alpha + Theta)</div></div>
+                <div class="metric-card"><div class="metric-label">SIGNAL STATUS</div><div class="metric-val" id="dash-m-qual">NO SIGNAL</div><div class="metric-sub">Runtime Stream Status</div></div>
+            </div>
+            <div class="grid-4">
+                <div class="metric-card"><div class="metric-label">SESSION ID</div><div class="metric-val" id="dash-s-id" style="font-size:16px;">--</div></div>
+                <div class="metric-card"><div class="metric-label">ACTIVE DURATION</div><div class="metric-val" id="dash-s-dur">00:00:00</div></div>
+                <div class="metric-card"><div class="metric-label">SAMPLES LOGGED</div><div class="metric-val" id="dash-s-samples">0</div></div>
+                <div class="metric-card"><div class="metric-label">SEQUENCE GAPS</div><div class="metric-val" id="dash-s-gaps">0</div></div>
+            </div>
+        </div>
+
+        <!-- 2. LIVE MONITOR SCREEN -->
+        <div id="screen-monitor" class="view-screen">
+            <div class="grid-4">
+                <div class="metric-card"><div class="metric-label">COGNITIVE LOAD</div><div class="metric-val" id="m-load">--</div><div class="metric-sub">Server Runtime Classifier</div></div>
+                <div class="metric-card"><div class="metric-label">DOMINANT BAND</div><div class="metric-val" id="m-dom">--</div><div class="metric-sub">Peak Spectral Power</div></div>
                 <div class="metric-card"><div class="metric-label">STRESS INDEX</div><div class="metric-val" id="m-stress">--</div><div class="metric-sub">Beta / (Alpha + Theta)</div></div>
-                <div class="metric-card"><div class="metric-label">SIGNAL STATUS</div><div class="metric-val" id="m-qual">NO SIGNAL</div><div class="metric-sub">Runtime stream status</div></div>
+                <div class="metric-card"><div class="metric-label">SIGNAL STATUS</div><div class="metric-val" id="m-qual">NO SIGNAL</div><div class="metric-sub">Runtime Stream Status</div></div>
             </div>
             <div class="grid-2">
                 <div>
                     <div class="glass-card">
                         <div class="card-title">Live EEG Signal Waveform (uV)</div>
-                        <div style="display:flex; gap:8px; margin-bottom:8px;"><label>Channel <select id="channel-select"><option value="FP1">FP1</option></select></label><label>Window <select id="window-select"><option value="1">1 sec</option><option value="2">2 sec</option><option value="5" selected>5 sec</option></select></label></div>
+                        <div style="display:flex; gap:8px; margin-bottom:8px;">
+                            <label>Channel <select id="channel-select"><option value="FP1">FP1</option></select></label>
+                            <label>Window <select id="window-select"><option value="1">1 sec</option><option value="2">2 sec</option><option value="5" selected>5 sec</option></select></label>
+                        </div>
                         <canvas id="waveCanvas"></canvas>
                     </div>
                     <div class="glass-card"><div class="card-title">Runtime PSD Spectrum (0-40 Hz)</div><canvas id="psdCanvas"></canvas></div>
@@ -57,11 +89,12 @@
                         <div class="bar-container"><div class="bar-header"><span>ALPHA (8-13 Hz)</span><span id="lbl-alpha">--</span></div><div class="bar-bg"><div class="bar-fill" id="fill-alpha" style="width:0%; background:var(--purple);"></div></div></div>
                         <div class="bar-container"><div class="bar-header"><span>BETA (13-30 Hz)</span><span id="lbl-beta">--</span></div><div class="bar-bg"><div class="bar-fill" id="fill-beta" style="width:0%; background:var(--amber);"></div></div></div>
                     </div>
-                    <div class="glass-card"><div class="card-title">Research Scope</div><p>This research interface renders only data returned by the server-side runtime. It is not a medical device.</p></div>
+                    <div class="glass-card"><div class="card-title">Research Scope</div><p>Renders authoritative server runtime metrics. No local client EEG or DSP calculations.</p></div>
                 </div>
             </div>
         </div>
 
+        <!-- 3. BAND ANALYSIS SCREEN -->
         <div id="screen-band" class="view-screen">
             <div class="glass-card">
                 <div class="card-title">Clinical Ratios & Spectral Metrics</div>
@@ -72,21 +105,60 @@
                     <div class="metric-card"><div class="metric-label">Total Band Power</div><div class="metric-val" id="b-total">--</div></div>
                 </div>
             </div>
-            <div class="glass-card" style="margin-top:16px;">
-                <div class="card-title">Real-Time Neurofeedback Protocol Engine</div>
+            <div class="glass-card">
+                <div class="card-title">Spectral Band Metrics Breakdown</div>
                 <div class="grid-4">
-                    <div class="metric-card"><div class="metric-label">FEEDBACK STATUS</div><div class="metric-val" id="nf-status" style="font-size:16px; color:var(--emerald);">--</div></div>
-                    <div class="metric-card"><div class="metric-label">TARGET PROTOCOL</div><div class="metric-val" style="font-size:16px;">ALPHA ENHANCEMENT</div></div>
-                    <div class="metric-card"><div class="metric-label">FOCUS INDEX</div><div class="metric-val" id="nf-focus">--</div></div>
-                    <div class="metric-card"><div class="metric-label">ATTENTION REGULATION</div><div class="metric-val" id="nf-regulation">--</div></div>
+                    <div class="metric-card"><div class="metric-label">DELTA POWER</div><div class="metric-val" id="b-delta-val">--</div></div>
+                    <div class="metric-card"><div class="metric-label">THETA POWER</div><div class="metric-val" id="b-theta-val">--</div></div>
+                    <div class="metric-card"><div class="metric-label">ALPHA POWER</div><div class="metric-val" id="b-alpha-val">--</div></div>
+                    <div class="metric-card"><div class="metric-label">BETA POWER</div><div class="metric-val" id="b-beta-val">--</div></div>
                 </div>
             </div>
         </div>
 
-        <div id="screen-session" class="view-screen"><div class="glass-card"><div class="card-title">Session Recording Controls</div><div style="display:flex; gap:14px; margin-bottom:24px;"><button class="btn btn-emerald" onclick="startSession()">START</button><button class="btn" onclick="pauseSession()">PAUSE</button><button class="btn" onclick="resumeSession()">RESUME</button><button class="btn btn-rose" onclick="stopSession()">STOP</button><button class="btn" onclick="downloadCurrentReport()">EXPORT PDF REPORT</button></div><div class="grid-4"><div class="metric-card"><div class="metric-label">Session ID</div><div class="metric-val" id="s-id">--</div></div><div class="metric-card"><div class="metric-label">Duration</div><div class="metric-val" id="s-dur">--</div></div><div class="metric-card"><div class="metric-label">Samples Logged</div><div class="metric-val" id="s-samples">0</div></div><div class="metric-card"><div class="metric-label">Status</div><div class="metric-val" id="s-status">IDLE</div></div></div></div></div>
+        <!-- 4. HISTORY ARCHIVE SCREEN -->
+        <div id="screen-history" class="view-screen">
+            <div class="glass-card">
+                <div class="card-title">Runtime Session Archive (SQLite Database)</div>
+                <table>
+                    <thead>
+                        <tr><th>Session ID</th><th>Source</th><th>Duration</th><th>State</th><th>Stress Index</th><th>Actions</th></tr>
+                    </thead>
+                    <tbody id="history-table-body"></tbody>
+                </table>
+                <div id="history-session-detail"></div>
+            </div>
+        </div>
 
-        <div id="screen-history" class="view-screen"><div class="glass-card"><div class="card-title">Runtime Session Archive</div><table><thead><tr><th>Session ID</th><th>Source</th><th>Duration</th><th>State</th><th>Stress Index</th><th>Actions</th></tr></thead><tbody id="history-table-body"></tbody></table><div id="history-session-detail"></div></div></div>
+        <!-- 5. REPORTS PLATFORM SCREEN -->
+        <div id="screen-reports" class="view-screen">
+            <div class="glass-card">
+                <div class="card-title">Reports Platform & Export Manager</div>
+                <div style="display:flex; gap:12px; align-items:center; margin-bottom:16px; flex-wrap:wrap;">
+                    <label style="font-size:13px; font-weight:700;">Select Session: <select id="reports-session-select"><option value="">Current Session / Latest</option></select></label>
+                    <button class="btn btn-emerald" onclick="exportSelectedReportPDF()">EXPORT PDF REPORT</button>
+                    <button class="btn" onclick="exportResearchCSV()">EXPORT RESEARCH CSV</button>
+                    <button class="btn" onclick="exportResearchBIDS()">EXPORT BIDS JSON</button>
+                </div>
+                <div id="reports-preview-card" class="metric-card" style="padding:20px;">
+                    <div class="card-title">Session Report Summary</div>
+                    <div class="grid-4" style="margin-bottom:12px;">
+                        <div><strong>Session ID:</strong> <span id="rep-id">--</span></div>
+                        <div><strong>Duration:</strong> <span id="rep-dur">--</span></div>
+                        <div><strong>Source:</strong> <span id="rep-src">--</span></div>
+                        <div><strong>Cognitive State:</strong> <span id="rep-state">--</span></div>
+                    </div>
+                    <div class="grid-4">
+                        <div><strong>Stress Index:</strong> <span id="rep-stress">--</span></div>
+                        <div><strong>Dominant Band:</strong> <span id="rep-band">--</span></div>
+                        <div><strong>TBR:</strong> <span id="rep-tbr">--</span></div>
+                        <div><strong>ABR:</strong> <span id="rep-abr">--</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
+        <!-- 6. RESEARCH PLATFORM SCREEN -->
         <div id="screen-research" class="view-screen">
             <div class="glass-card">
                 <div class="card-title">Research Platform & Longitudinal Dashboard</div>
@@ -102,10 +174,74 @@
                     <div class="metric-card"><div class="metric-label">BIDS COMPLIANCE</div><div class="metric-val" style="color:var(--emerald);">1.8.0</div></div>
                 </div>
                 <div id="research-longitudinal-timeline"></div>
+                <div class="glass-card" style="margin-top:20px;">
+                    <div class="card-title">Side-by-Side Session Comparison</div>
+                    <div style="display:flex; gap:16px; align-items:center; margin-bottom:16px;">
+                        <label style="font-size:13px; font-weight:700;">Session A: <select id="cmp-sess-a"><option value="">Select Session A</option></select></label>
+                        <label style="font-size:13px; font-weight:700;">Session B: <select id="cmp-sess-b"><option value="">Select Session B</option></select></label>
+                        <button class="btn" onclick="runSessionComparison()">COMPARE</button>
+                    </div>
+                    <div id="comparison-results-div"></div>
+                </div>
             </div>
         </div>
 
-        <div id="screen-settings" class="view-screen"><div class="glass-card"><div class="card-title">Runtime Configuration & System Settings</div><p id="api-status">Connecting to the NeuroSim runtime API...</p><div id="settings-details"></div><p style="margin-top:16px; font-size:12px; color:#64748B;">The browser renders server-provided samples, spectrum, and metrics. It performs no EEG generation, session-state tracking, or quantitative analysis.</p></div></div>
+        <!-- 7. NEUROFEEDBACK SCREEN -->
+        <div id="screen-neurofeedback" class="view-screen">
+            <div class="glass-card">
+                <div class="card-title">Real-Time Neurofeedback Protocol Engine</div>
+                <div style="display:flex; gap:16px; align-items:center; margin-bottom:20px;">
+                    <label style="font-size:13px; font-weight:700;">Training Protocol: 
+                        <select id="nf-protocol-select">
+                            <option value="alpha">Alpha Enhancement (8-13 Hz)</option>
+                            <option value="tbr">Theta/Beta Reduction (Focus)</option>
+                            <option value="beta">Beta Boosting (Alertness)</option>
+                        </select>
+                    </label>
+                </div>
+                <div class="grid-4">
+                    <div class="metric-card"><div class="metric-label">FEEDBACK STATUS</div><div class="metric-val" id="nf-status" style="font-size:16px; color:var(--emerald);">--</div></div>
+                    <div class="metric-card"><div class="metric-label">TARGET PROTOCOL</div><div class="metric-val" id="nf-proto-name" style="font-size:16px;">ALPHA ENHANCEMENT</div></div>
+                    <div class="metric-card"><div class="metric-label">FOCUS INDEX</div><div class="metric-val" id="nf-focus">--</div></div>
+                    <div class="metric-card"><div class="metric-label">ATTENTION REGULATION</div><div class="metric-val" id="nf-regulation" style="font-size:16px;">--</div></div>
+                </div>
+                <div class="glass-card" style="margin-top:16px;"><div class="card-title">Research Protocol Notice</div><p style="font-size:12px; color:var(--text-muted);">Consumes server-side runtime spectral metrics. Not a clinical medical device. Simulator sessions are explicitly identified.</p></div>
+            </div>
+        </div>
+
+        <!-- 8. HARDWARE SCREEN -->
+        <div id="screen-hardware" class="view-screen">
+            <div class="glass-card">
+                <div class="card-title">Hardware Connection & Status Monitor</div>
+                <div class="grid-4">
+                    <div class="metric-card"><div class="metric-label">CONNECTION STATUS</div><div class="metric-val" id="hw-status-val" style="font-size:18px;">Not Connected / Idle</div></div>
+                    <div class="metric-card"><div class="metric-label">ACTIVE SOURCE</div><div class="metric-val" id="hw-source-val" style="font-size:18px;">NONE</div></div>
+                    <div class="metric-card"><div class="metric-label">SAMPLING RATE</div><div class="metric-val" style="font-size:18px;">250 Hz</div></div>
+                    <div class="metric-card"><div class="metric-label">CHANNELS</div><div class="metric-val" style="font-size:18px;">FP1, FP2, O1, O2</div></div>
+                </div>
+                <div class="glass-card">
+                    <div class="card-title">Acquisition Source Control</div>
+                    <div style="display:flex; gap:12px;">
+                        <button class="btn btn-emerald" onclick="startSession()">START SYNTHETIC SIMULATOR</button>
+                        <button class="btn btn-rose" onclick="stopSession()">DISCONNECT / STOP</button>
+                    </div>
+                </div>
+                <div class="glass-card">
+                    <div class="card-title">Hardware Boundary Policy</div>
+                    <p style="font-size:13px; color:var(--text-muted);">Physical hardware (ESP32 / BLE / Wi-Fi) is disconnected. Pokidex module is 100% frozen per architecture boundaries. Zero fabricated hardware telemetry.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 9. SETTINGS SCREEN -->
+        <div id="screen-settings" class="view-screen">
+            <div class="glass-card">
+                <div class="card-title">Runtime Configuration & System Settings</div>
+                <p id="api-status">Connecting to the NeuroSim runtime API...</p>
+                <div id="settings-details"></div>
+                <p style="margin-top:16px; font-size:12px; color:#64748B;">The browser renders server-provided samples, spectrum, and metrics. It performs no EEG generation, session-state tracking, or quantitative analysis.</p>
+            </div>
+        </div>
     </div>
     <script src="pdf_export.js"></script>
     <script src="app.js"></script>

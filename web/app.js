@@ -32,15 +32,39 @@ function metric(number, digits = 2, suffix = "") {
 function duration(seconds) {
     if (typeof seconds !== "number" || !Number.isFinite(seconds)) return "--";
     const total = Math.floor(seconds);
-    return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
+    const hrs = Math.floor(total / 3600);
+    const mins = Math.floor((total % 3600) / 60);
+    const secs = total % 60;
+    if (hrs > 0) {
+        return `${String(hrs).padStart(2, "0")}:${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+    }
+    return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
 }
 
 function switchTab(tabKey) {
     document.querySelectorAll(".view-screen").forEach((element) => element.classList.remove("active"));
     document.querySelectorAll(".nav-item").forEach((element) => element.classList.remove("active"));
-    document.getElementById(`screen-${tabKey}`).classList.add("active");
+    
+    const targetScreen = document.getElementById(`screen-${tabKey}`);
+    if (targetScreen) targetScreen.classList.add("active");
+
+    const titleMap = {
+        dashboard: "EXECUTIVE DASHBOARD",
+        monitor: "LIVE MONITORING DASHBOARD",
+        band: "QUANTITATIVE BAND ANALYSIS",
+        history: "HISTORICAL SESSION ARCHIVE",
+        reports: "REPORTS PLATFORM & EXPORT MANAGER",
+        research: "RESEARCH PLATFORM & LONGITUDINAL ANALYTICS",
+        neurofeedback: "NEUROFEEDBACK TRAINING MODULE",
+        hardware: "HARDWARE CONNECTION & STATUS",
+        settings: "RUNTIME CONFIGURATION & SETTINGS"
+    };
+    value("page-header-title", titleMap[tabKey] || "NEUROSIM PLATFORM");
+
     if (window.event && window.event.currentTarget) window.event.currentTarget.classList.add("active");
+    
     if (tabKey === "history") renderHistoryTable();
+    if (tabKey === "reports") renderReportsPlatform();
     if (tabKey === "research") loadResearchSummary();
     if (tabKey === "settings") renderSettings();
 }
@@ -67,13 +91,18 @@ async function renderSettings() {
 }
 
 function resizeCanvases() {
-    waveCanvas.width = waveCanvas.clientWidth;
-    waveCanvas.height = waveCanvas.clientHeight;
-    psdCanvas.width = psdCanvas.clientWidth;
-    psdCanvas.height = psdCanvas.clientHeight;
+    if (waveCanvas) {
+        waveCanvas.width = waveCanvas.clientWidth;
+        waveCanvas.height = waveCanvas.clientHeight;
+    }
+    if (psdCanvas) {
+        psdCanvas.width = psdCanvas.clientWidth;
+        psdCanvas.height = psdCanvas.clientHeight;
+    }
 }
 
 function drawEmpty(context, canvas, message) {
+    if (!context || !canvas) return;
     context.clearRect(0, 0, canvas.width, canvas.height);
     context.fillStyle = "#94A3B8";
     context.font = "14px Segoe UI";
@@ -82,7 +111,7 @@ function drawEmpty(context, canvas, message) {
 }
 
 function drawWaveform(samples) {
-    if (!samples || samples.length === 0) return drawEmpty(waveCtx, waveCanvas, "No Data Stream");
+    if (!samples || samples.length === 0) return drawEmpty(waveCtx, waveCanvas, "No Signal Stream");
     const width = waveCanvas.width;
     const height = waveCanvas.height;
     const peak = Math.max(1, ...samples.map((sample) => Math.abs(sample)));
@@ -129,28 +158,61 @@ function updateMetrics(metrics) {
     });
     
     // Cognitive Load & Classification
-    if (runtimeState && runtimeState.cognitive_state) {
-        value("m-load", `${runtimeState.cognitive_state} LOAD`);
-    } else {
-        value("m-load", "--");
-    }
+    const cogText = (runtimeState && runtimeState.cognitive_state) ? `${runtimeState.cognitive_state} LOAD` : "--";
+    value("m-load", cogText);
+    value("dash-m-load", cogText);
 
-    value("m-dom", available ? `${metrics.dominant_band || "--"} (${metric(metrics.dominant_frequency, 2, " Hz")})` : "--");
-    value("m-stress", available ? metric(metrics.stress_index, 4) : "--");
-    value("m-qual", runtimeState && runtimeState.streaming ? "RUNTIME STREAM" : "NO SIGNAL");
+    const domText = available ? `${metrics.dominant_band || "--"} (${metric(metrics.dominant_frequency, 2, " Hz")})` : "--";
+    value("m-dom", domText);
+    value("dash-m-dom", domText);
+
+    const stressText = available ? metric(metrics.stress_index, 4) : "--";
+    value("m-stress", stressText);
+    value("dash-m-stress", stressText);
+
+    const qualText = (runtimeState && runtimeState.streaming) ? "RUNTIME STREAM" : "NO SIGNAL";
+    value("m-qual", qualText);
+    value("dash-m-qual", qualText);
+
     value("b-tbr", available ? metric(metrics.tbr, 4) : "--");
     value("b-abr", available ? metric(metrics.abr, 4) : "--");
     value("b-eng", available ? metric(metrics.engagement, 4) : "--");
     value("b-total", available ? metric(metrics.total_power, 4) : "--");
 
+    value("b-delta-val", available ? metric(metrics.delta_rel, 1, "%") : "--");
+    value("b-theta-val", available ? metric(metrics.theta_rel, 1, "%") : "--");
+    value("b-alpha-val", available ? metric(metrics.alpha_rel, 1, "%") : "--");
+    value("b-beta-val", available ? metric(metrics.beta_rel, 1, "%") : "--");
+
     // Real-Time Neurofeedback Protocol Calculations
     if (available && metrics) {
+        const protoSelect = document.getElementById("nf-protocol-select");
+        const protocol = protoSelect ? protoSelect.value : "alpha";
         const stress = metrics.stress_index || 0.5;
         const alphaRel = metrics.alpha_rel || 25;
-        const focusScore = Math.max(0, Math.min(100, (1.0 - stress) * 100));
-        const statusText = alphaRel >= 30 ? "OPTIMAL TARGET" : (alphaRel >= 20 ? "STABLE REGULATION" : "SUB-THRESHOLD");
-        const regulationText = (metrics.tbr || 2.0) <= 2.5 ? "OPTIMAL ATTENTION" : "HIGH THETA WAVES";
+        const tbr = metrics.tbr || 1.0;
         
+        let focusScore = 0;
+        let statusText = "SUB-THRESHOLD";
+        let regulationText = "SUB-THRESHOLD";
+
+        if (protocol === "alpha") {
+            value("nf-proto-name", "ALPHA ENHANCEMENT");
+            focusScore = Math.max(0, Math.min(100, (alphaRel / 35.0) * 100));
+            statusText = alphaRel >= 30 ? "OPTIMAL TARGET" : (alphaRel >= 20 ? "STABLE REGULATION" : "SUB-THRESHOLD");
+            regulationText = alphaRel >= 25 ? "HIGH ALPHA SYNCHRONY" : "MODERATE SYNC";
+        } else if (protocol === "tbr") {
+            value("nf-proto-name", "THETA/BETA REDUCTION");
+            focusScore = Math.max(0, Math.min(100, Math.max(0, (2.5 - tbr) / 2.5 * 100)));
+            statusText = tbr <= 1.5 ? "OPTIMAL TARGET" : (tbr <= 2.5 ? "STABLE REGULATION" : "SUB-THRESHOLD");
+            regulationText = tbr <= 2.0 ? "OPTIMAL ATTENTION" : "HIGH THETA WAVES";
+        } else {
+            value("nf-proto-name", "BETA BOOSTING");
+            focusScore = Math.max(0, Math.min(100, stress * 100));
+            statusText = stress >= 0.7 ? "OPTIMAL TARGET" : (stress >= 0.4 ? "STABLE REGULATION" : "SUB-THRESHOLD");
+            regulationText = stress >= 0.6 ? "ACTIVE ALERTNESS" : "CALM STATE";
+        }
+
         value("nf-status", statusText);
         value("nf-focus", metric(focusScore, 1, "%"));
         value("nf-regulation", regulationText);
@@ -162,12 +224,31 @@ function updateMetrics(metrics) {
 }
 
 function updateSession(state) {
-    value("s-id", state.session_id || "--");
-    value("s-dur", duration(state.duration_sec));
-    value("s-samples", String(state.samples || 0));
+    const sessId = state.session_id || "--";
+    const durText = duration(state.duration_sec);
+    const samplesText = String(state.samples || 0);
+
+    value("s-id", sessId);
+    value("s-dur", durText);
+    value("s-samples", samplesText);
     value("s-status", state.state || "IDLE");
+
+    value("dash-s-id", sessId);
+    value("dash-s-dur", durText);
+    value("dash-s-samples", samplesText);
+    value("dash-s-gaps", String(state.sequence_gaps || 0));
+
     value("mode-badge", `SIMULATOR: ${state.state || "IDLE"}`);
-    value("hardware-status", state.hardware && state.hardware.status === "NOT_CONNECTED" ? "Hardware: Not Connected" : "Hardware: Unknown");
+    
+    if (state.streaming) {
+        value("hardware-status", "Hardware: Connected (Simulator)");
+        value("hw-status-val", "CONNECTED (SIMULATOR)");
+        value("hw-source-val", state.source || "SYNTHETIC");
+    } else {
+        value("hardware-status", "Hardware: Not Connected");
+        value("hw-status-val", "Not Connected / Idle");
+        value("hw-source-val", "NONE");
+    }
 }
 
 function updateChannelOptions(channels) {
@@ -192,7 +273,7 @@ async function refreshRuntime() {
     } catch (error) {
         runtimeState = null;
         updateMetrics(null);
-        drawEmpty(waveCtx, waveCanvas, "No Data Stream");
+        drawEmpty(waveCtx, waveCanvas, "No Signal Stream");
         drawEmpty(psdCtx, psdCanvas, "PSD unavailable");
         value("api-status", `API unavailable: ${error.message}`);
     }
@@ -212,8 +293,10 @@ function pauseSession() { return lifecycle("pause"); }
 function resumeSession() { return lifecycle("resume"); }
 function stopSession() { return lifecycle("stop"); }
 
-async function downloadCurrentReport() {
-    return downloadReportForSession(null);
+async function exportSelectedReportPDF() {
+    const select = document.getElementById("reports-session-select");
+    const sessionId = select ? select.value : null;
+    return downloadReportForSession(sessionId);
 }
 
 async function downloadReportForSession(sessionId) {
@@ -237,6 +320,7 @@ async function deleteSessionFromHistory(sessionId) {
     try {
         await api(`/api/history/delete?session_id=${encodeURIComponent(sessionId)}`, {method: "POST"});
         await renderHistoryTable();
+        await renderReportsPlatform();
     } catch (error) {
         value("api-status", error.message);
     }
@@ -277,7 +361,7 @@ async function renderHistoryTable() {
         const sessions = historyData.sessions || [];
         if (sessions.length === 0) {
             if (runtimeState && runtimeState.state === "STOPPED") {
-                body.innerHTML = `<tr><td><strong>${runtimeState.session_id}</strong></td><td>Current runtime</td><td>${duration(runtimeState.duration_sec)}</td><td>${runtimeState.state}</td><td>${metric(runtimeState.metrics && runtimeState.metrics.stress_index, 4)}</td><td><button class="btn" style="padding:4px 8px; font-size:12px;" onclick="downloadCurrentReport()">Export PDF</button></td></tr>`;
+                body.innerHTML = `<tr><td><strong>${runtimeState.session_id}</strong></td><td>Current runtime</td><td>${duration(runtimeState.duration_sec)}</td><td>${runtimeState.state}</td><td>${metric(runtimeState.metrics && runtimeState.metrics.stress_index, 4)}</td><td><button class="btn" style="padding:4px 8px; font-size:12px;" onclick="downloadReportForSession(null)">Export PDF</button></td></tr>`;
             } else {
                 body.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#94A3B8;">No recorded sessions found in database archive.</td></tr>';
             }
@@ -303,16 +387,78 @@ async function renderHistoryTable() {
     }
 }
 
+async function renderReportsPlatform() {
+    const select = document.getElementById("reports-session-select");
+    if (!select) return;
+    try {
+        const historyData = await api("/api/history");
+        const sessions = historyData.sessions || [];
+        
+        let optionsHtml = '<option value="">Current Session / Latest</option>';
+        optionsHtml += sessions.map(s => `<option value="${s.session_id}">${s.session_id} (${s.mode} - ${duration(s.duration)})</option>`).join("");
+        select.innerHTML = optionsHtml;
+        
+        updateReportPreview();
+        select.onchange = updateReportPreview;
+    } catch (error) {
+        value("api-status", error.message);
+    }
+}
+
+async function updateReportPreview() {
+    const select = document.getElementById("reports-session-select");
+    const sessionId = select ? select.value : "";
+    try {
+        if (!sessionId) {
+            value("rep-id", runtimeState ? (runtimeState.session_id || "--") : "--");
+            value("rep-dur", runtimeState ? duration(runtimeState.duration_sec) : "--");
+            value("rep-src", runtimeState ? (runtimeState.source || "--") : "--");
+            value("rep-state", runtimeState ? (runtimeState.cognitive_state || "--") : "--");
+            const m = runtimeState ? runtimeState.metrics : null;
+            value("rep-stress", m ? metric(m.stress_index, 4) : "--");
+            value("rep-band", m ? (m.dominant_band || "--") : "--");
+            value("rep-tbr", m ? metric(m.tbr, 4) : "--");
+            value("rep-abr", m ? metric(m.abr, 4) : "--");
+        } else {
+            const historyData = await api("/api/history");
+            const session = (historyData.sessions || []).find((s) => s.session_id === sessionId);
+            if (session) {
+                value("rep-id", session.session_id);
+                value("rep-dur", duration(session.duration));
+                value("rep-src", session.mode || "SIMULATOR");
+                value("rep-state", session.cognitive_state || "COMPLETED");
+                value("rep-stress", metric(session.stress_index, 4));
+                value("rep-band", session.dominant_band || "--");
+                const b = session.rel_beta || 25.0;
+                const tbr = session.rel_theta / (b + 1e-6);
+                const abr = session.rel_alpha / (b + 1e-6);
+                value("rep-tbr", metric(tbr, 4));
+                value("rep-abr", metric(abr, 4));
+            }
+        }
+    } catch (error) {
+        value("api-status", error.message);
+    }
+}
+
 async function loadResearchSummary() {
     const timelineDiv = document.getElementById("research-longitudinal-timeline");
+    const cmpA = document.getElementById("cmp-sess-a");
+    const cmpB = document.getElementById("cmp-sess-b");
     try {
         const summary = await api("/api/research/longitudinal");
         value("r-sessions", summary.total_sessions || 0);
         value("r-duration", duration(summary.total_duration_sec));
         value("r-stress", metric(summary.mean_stress_index, 4));
 
-        if (!timelineDiv) return;
         const timeline = summary.timeline || [];
+        if (cmpA && cmpB) {
+            const opts = '<option value="">Select Session</option>' + timeline.map(s => `<option value="${s.session_id}">${s.session_id} (${s.cognitive_state})</option>`).join("");
+            cmpA.innerHTML = opts;
+            cmpB.innerHTML = opts;
+        }
+
+        if (!timelineDiv) return;
         if (timeline.length === 0) {
             timelineDiv.innerHTML = '<p style="color:#94A3B8; text-align:center; padding:20px;">No research sessions recorded yet in database archive.</p>';
             return;
@@ -343,6 +489,49 @@ async function loadResearchSummary() {
         `;
     } catch (error) {
         value("api-status", error.message);
+    }
+}
+
+async function runSessionComparison() {
+    const cmpA = document.getElementById("cmp-sess-a");
+    const cmpB = document.getElementById("cmp-sess-b");
+    const resDiv = document.getElementById("comparison-results-div");
+    if (!cmpA || !cmpB || !resDiv) return;
+    const idA = cmpA.value;
+    const idB = cmpB.value;
+    if (!idA || !idB) {
+        resDiv.innerHTML = '<p style="color:#F59E0B;">Please select two sessions to compare.</p>';
+        return;
+    }
+    try {
+        const compData = await api(`/api/research/compare?ids=${encodeURIComponent(idA)},${encodeURIComponent(idB)}`);
+        const sessions = compData.sessions || [];
+        if (sessions.length < 2) {
+            resDiv.innerHTML = '<p style="color:#EF4444;">Failed to retrieve both session records for comparison.</p>';
+            return;
+        }
+        const sA = sessions[0];
+        const sB = sessions[1];
+
+        resDiv.innerHTML = `
+            <table>
+                <thead>
+                    <tr><th>Metric</th><th>Session A (${sA.session_id})</th><th>Session B (${sB.session_id})</th><th>Difference</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Duration</td><td>${duration(sA.duration)}</td><td>${duration(sB.duration)}</td><td>${duration(Math.abs(sB.duration - sA.duration))}</td></tr>
+                    <tr><td>Cognitive State</td><td>${sA.cognitive_state}</td><td>${sB.cognitive_state}</td><td>--</td></tr>
+                    <tr><td>Stress Index</td><td>${metric(sA.stress_index, 4)}</td><td>${metric(sB.stress_index, 4)}</td><td>${metric(sB.stress_index - sA.stress_index, 4)}</td></tr>
+                    <tr><td>Dominant Band</td><td>${sA.dominant_band}</td><td>${sB.dominant_band}</td><td>--</td></tr>
+                    <tr><td>Delta %</td><td>${metric(sA.rel_delta, 1, "%")}</td><td>${metric(sB.rel_delta, 1, "%")}</td><td>${metric(sB.rel_delta - sA.rel_delta, 1, "%")}</td></tr>
+                    <tr><td>Theta %</td><td>${metric(sA.rel_theta, 1, "%")}</td><td>${metric(sB.rel_theta, 1, "%")}</td><td>${metric(sB.rel_theta - sA.rel_theta, 1, "%")}</td></tr>
+                    <tr><td>Alpha %</td><td>${metric(sA.rel_alpha, 1, "%")}</td><td>${metric(sB.rel_alpha, 1, "%")}</td><td>${metric(sB.rel_alpha - sA.rel_alpha, 1, "%")}</td></tr>
+                    <tr><td>Beta %</td><td>${metric(sA.rel_beta, 1, "%")}</td><td>${metric(sB.rel_beta, 1, "%")}</td><td>${metric(sB.rel_beta - sA.rel_beta, 1, "%")}</td></tr>
+                </tbody>
+            </table>
+        `;
+    } catch (error) {
+        resDiv.innerHTML = `<p style="color:#EF4444;">Comparison failed: ${error.message}</p>`;
     }
 }
 
@@ -377,8 +566,12 @@ async function exportResearchBIDS() {
 window.addEventListener("resize", resizeCanvases);
 window.addEventListener("DOMContentLoaded", () => {
     resizeCanvases();
-    document.getElementById("channel-select").addEventListener("change", (event) => { selectedChannel = event.target.value; refreshRuntime(); });
-    document.getElementById("window-select").addEventListener("change", (event) => { selectedWindowSeconds = Number(event.target.value); refreshRuntime(); });
+    const chSel = document.getElementById("channel-select");
+    if (chSel) chSel.addEventListener("change", (event) => { selectedChannel = event.target.value; refreshRuntime(); });
+    const winSel = document.getElementById("window-select");
+    if (winSel) winSel.addEventListener("change", (event) => { selectedWindowSeconds = Number(event.target.value); refreshRuntime(); });
+    const nfSel = document.getElementById("nf-protocol-select");
+    if (nfSel) nfSel.addEventListener("change", refreshRuntime);
     refreshRuntime();
     window.setInterval(refreshRuntime, 500);
 });
