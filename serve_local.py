@@ -54,6 +54,8 @@ class NeuroSimRequestHandler(SimpleHTTPRequestHandler):
         try:
             if parsed.path == "/api/history":
                 return self._json({"sessions": self.runtime_service.history()})
+            if parsed.path == "/api/settings":
+                return self._json(self.runtime_service.settings())
             if parsed.path == "/api/state":
                 return self._json(self.runtime_service.state())
             if parsed.path == "/api/analysis":

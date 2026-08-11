@@ -60,6 +60,23 @@ class RuntimeService:
         """Returns all recorded sessions from SQLite DatabaseManager."""
         return self.runtime.db_manager.get_all_sessions()
 
+    def settings(self) -> Dict[str, Any]:
+        """Returns application branding, signal parameters, and filter configuration."""
+        import src.app.config as cfg
+        return {
+            "app_name": cfg.APP_NAME,
+            "version": cfg.VERSION,
+            "sampling_rate": cfg.SAMPLING_RATE,
+            "window_size_sec": cfg.WINDOW_SIZE_SEC,
+            "bands": cfg.BANDS,
+            "channels": list(self.runtime.channels),
+            "filters": {
+                "notch": cfg.NOTCH_FILTER_STATUS,
+                "eog": cfg.EOG_FILTER_STATUS,
+                "emg": cfg.EMG_FILTER_STATUS,
+            }
+        }
+
     def start(self) -> Dict[str, Any]:
         self.runtime.start_simulator()
         return self.state()

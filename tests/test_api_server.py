@@ -80,6 +80,14 @@ class TestAPIServer(unittest.TestCase):
         self.assertIn("sessions", payload)
         self.assertIsInstance(payload["sessions"], list)
 
+    def test_03b_get_settings(self):
+        """Verify GET /api/settings returns system configuration."""
+        status, content_type, data = self._get("/api/settings")
+        self.assertEqual(status, 200)
+        payload = json.loads(data.decode("utf-8"))
+        self.assertIn("app_name", payload)
+        self.assertEqual(payload["sampling_rate"], 250)
+
     def test_04_session_lifecycle(self):
         """Verify POST /api/session/start, pause, resume, and stop."""
         # START

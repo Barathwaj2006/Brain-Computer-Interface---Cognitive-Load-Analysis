@@ -41,6 +41,28 @@ function switchTab(tabKey) {
     document.getElementById(`screen-${tabKey}`).classList.add("active");
     if (window.event && window.event.currentTarget) window.event.currentTarget.classList.add("active");
     if (tabKey === "history") renderHistoryTable();
+    if (tabKey === "settings") renderSettings();
+}
+
+async function renderSettings() {
+    const card = document.getElementById("settings-details");
+    if (!card) return;
+    try {
+        const settings = await api("/api/settings");
+        card.innerHTML = `
+            <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-top: 12px; font-size:13px; color:#334155;">
+                <div><strong>Application:</strong> ${settings.app_name} (${settings.version})</div>
+                <div><strong>Sampling Rate:</strong> ${settings.sampling_rate} Hz</div>
+                <div><strong>Window Duration:</strong> ${settings.window_size_sec} sec</div>
+                <div><strong>Montage Channels:</strong> ${settings.channels.join(", ")}</div>
+                <div><strong>Notch Filter:</strong> ${settings.filters.notch}</div>
+                <div><strong>Ocular Filter:</strong> ${settings.filters.eog}</div>
+                <div><strong>EMG Filter:</strong> ${settings.filters.emg}</div>
+            </div>
+        `;
+    } catch (error) {
+        card.innerHTML = `<p style="color:#EF4444;">Failed to load settings: ${error.message}</p>`;
+    }
 }
 
 function resizeCanvases() {
