@@ -88,6 +88,15 @@ class TestAPIServer(unittest.TestCase):
         self.assertIn("app_name", payload)
         self.assertEqual(payload["sampling_rate"], 250)
 
+    def test_03c_get_quality(self):
+        """Verify GET /api/quality returns signal quality and truthful impedance notice."""
+        status, content_type, data = self._get("/api/quality")
+        self.assertEqual(status, 200)
+        payload = json.loads(data.decode("utf-8"))
+        self.assertIn("impedance", payload)
+        self.assertFalse(payload["impedance"]["available"])
+        self.assertEqual(payload["impedance"]["status"], "NOT_SUPPORTED")
+
     def test_04_session_lifecycle(self):
         """Verify POST /api/session/start, pause, resume, and stop."""
         # START

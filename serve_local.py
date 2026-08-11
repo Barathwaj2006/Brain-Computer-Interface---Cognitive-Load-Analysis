@@ -58,6 +58,8 @@ class NeuroSimRequestHandler(SimpleHTTPRequestHandler):
                 return self._json(self.runtime_service.settings())
             if parsed.path == "/api/state":
                 return self._json(self.runtime_service.state())
+            if parsed.path == "/api/quality":
+                return self._json(self.runtime_service.quality())
             if parsed.path == "/api/analysis":
                 return self._json({"analysis": self.runtime_service.analysis()})
             if parsed.path == "/api/waveform":

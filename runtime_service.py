@@ -21,6 +21,7 @@ class RuntimeService:
         status = self.runtime.get_runtime_status()
         analysis = self.runtime.get_latest_analysis()
         classification = analysis.get("classification") if analysis else None
+        quality = analysis.get("quality") if analysis else None
         return {
             "state": status["state"],
             "streaming": status["state"] == SessionState.RECORDING.name,
@@ -35,11 +36,21 @@ class RuntimeService:
             "channels": status["channels"],
             "analysis_available": analysis is not None,
             "metrics": analysis["metrics"] if analysis else None,
+            "quality": quality,
             "classification": classification,
             "cognitive_state": classification.get("cognitive_state") if classification else None,
             "hardware": {"connected": False, "status": "NOT_CONNECTED"},
             "last_error": status["last_error"] or None,
         }
+
+    def quality(self) -> Dict[str, Any]:
+        analysis = self.runtime.get_latest_analysis()
+        if analysis and "quality" in analysis:
+            return analysis["quality"]
+        import numpy as np
+        from src.processing.quality import EEGQualityEvaluator
+        evaluator = EEGQualityEvaluator(sampling_rate=self.runtime.sampling_rate)
+        return evaluator.evaluate_multichannel(np.zeros((len(self.runtime.channels), 0)), self.runtime.channels)
 
     def waveform(self, seconds: float = 5.0) -> Dict[str, Any]:
         if seconds not in (1.0, 2.0, 5.0):

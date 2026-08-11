@@ -298,11 +298,23 @@ class RuntimeController(QObject):
                 features = self.feature_extractor.extract_features(psd_metrics_for_extractor)
                 classification = self.classifier.classify(psd_metrics_for_extractor)
 
+                # Quality evaluation across all channels
+                from src.processing.quality import EEGQualityEvaluator
+                quality_evaluator = EEGQualityEvaluator(sampling_rate=self.sampling_rate)
+                all_samples_arr = snap.get("all_samples", primary_samples.reshape(1, -1))
+                quality_info = quality_evaluator.evaluate_multichannel(all_samples_arr, self.channels, freqs, psd)
+
+                combined_metrics["quality_score"] = quality_info.get("overall_score")
+                combined_metrics["quality_rating"] = quality_info.get("overall_rating")
+                combined_metrics["usable_data_pct"] = quality_info.get("overall_usable_pct", 100.0)
+                combined_metrics["artifact_burden_pct"] = quality_info.get("overall_artifact_pct", 0.0)
+
                 analysis_result = {
                     "timestamp": time.time(),
                     "sample_count": sample_count,
                     "duration_sec": snap["duration_sec"],
                     "metrics": combined_metrics,
+                    "quality": quality_info,
                     "classification": classification,
                     "features": features,
                     "feature_names": self.feature_extractor.feature_names(),
