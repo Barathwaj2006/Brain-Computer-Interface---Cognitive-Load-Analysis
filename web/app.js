@@ -1,267 +1,199 @@
-// NeuroSim Web Application Core Logic & DSP Engine
+// Browser renderer for the authoritative RuntimeController API. No client-side EEG or DSP exists here.
 
-let simParams = { delta: 0.3, theta: 0.4, alpha: 0.8, beta: 0.3, noise: 0.15 };
-let tCursor = 0.0;
-let isRecording = false;
-let recordingStart = 0;
-let sampleCount = 0;
-let currentSessionData = null;
+let runtimeState = null;
+let latestAnalysis = null;
+let selectedWindowSeconds = 5;
+let selectedChannel = "FP1";
 
-// Hardware Serial API state
-let serialPort = null;
-let serialReader = null;
-let isHardwareConnected = false;
+const waveCanvas = document.getElementById("waveCanvas");
+const psdCanvas = document.getElementById("psdCanvas");
+const waveCtx = waveCanvas.getContext("2d");
+const psdCtx = psdCanvas.getContext("2d");
 
-function updateSim() {
-    simParams.delta = parseFloat(document.getElementById('sld-delta').value) / 100.0;
-    simParams.theta = parseFloat(document.getElementById('sld-theta').value) / 100.0;
-    simParams.alpha = parseFloat(document.getElementById('sld-alpha').value) / 100.0;
-    simParams.beta = parseFloat(document.getElementById('sld-beta').value) / 100.0;
-    simParams.noise = parseFloat(document.getElementById('sld-noise').value) / 100.0;
+async function api(path, options = {}) {
+    const response = await fetch(path, options);
+    const type = response.headers.get("content-type") || "";
+    if (!response.ok) {
+        const payload = type.includes("application/json") ? await response.json() : {};
+        throw new Error(payload.error || `API request failed (${response.status})`);
+    }
+    return type.includes("application/json") ? response.json() : response;
+}
+
+function value(id, text) {
+    const element = document.getElementById(id);
+    if (element) element.innerText = text;
+}
+
+function metric(number, digits = 2, suffix = "") {
+    return typeof number === "number" && Number.isFinite(number) ? `${number.toFixed(digits)}${suffix}` : "--";
+}
+
+function duration(seconds) {
+    if (typeof seconds !== "number" || !Number.isFinite(seconds)) return "--";
+    const total = Math.floor(seconds);
+    return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
 }
 
 function switchTab(tabKey) {
-    document.querySelectorAll('.view-screen').forEach(el => el.classList.remove('active'));
-    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-    document.getElementById('screen-' + tabKey).classList.add('active');
-    event.currentTarget.classList.add('active');
-    
-    if (tabKey === 'history') {
-        renderHistoryTable();
-    }
+    document.querySelectorAll(".view-screen").forEach((element) => element.classList.remove("active"));
+    document.querySelectorAll(".nav-item").forEach((element) => element.classList.remove("active"));
+    document.getElementById(`screen-${tabKey}`).classList.add("active");
+    if (window.event && window.event.currentTarget) window.event.currentTarget.classList.add("active");
+    if (tabKey === "history") renderHistoryTable();
 }
-
-// Canvases
-const waveCanvas = document.getElementById('waveCanvas');
-const waveCtx = waveCanvas.getContext('2d');
-const psdCanvas = document.getElementById('psdCanvas');
-const psdCtx = psdCanvas.getContext('2d');
 
 function resizeCanvases() {
-    if (waveCanvas && psdCanvas) {
-        waveCanvas.width = waveCanvas.clientWidth;
-        waveCanvas.height = waveCanvas.clientHeight;
-        psdCanvas.width = psdCanvas.clientWidth;
-        psdCanvas.height = psdCanvas.clientHeight;
-    }
+    waveCanvas.width = waveCanvas.clientWidth;
+    waveCanvas.height = waveCanvas.clientHeight;
+    psdCanvas.width = psdCanvas.clientWidth;
+    psdCanvas.height = psdCanvas.clientHeight;
 }
-window.addEventListener('resize', resizeCanvases);
-setTimeout(resizeCanvases, 100);
 
-let waveHistory = new Array(350).fill(0);
+function drawEmpty(context, canvas, message) {
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.fillStyle = "#94A3B8";
+    context.font = "14px Segoe UI";
+    context.textAlign = "center";
+    context.fillText(message, canvas.width / 2, canvas.height / 2);
+}
 
-// Main Animation Loop
-function renderLoop() {
-    tCursor += 0.04;
-
-    // Signal generation
-    let val = 0;
-    if (!isHardwareConnected) {
-        const sD = simParams.delta * Math.sin(2 * Math.PI * 2 * tCursor);
-        const sT = simParams.theta * Math.sin(2 * Math.PI * 6 * tCursor);
-        const sA = simParams.alpha * Math.sin(2 * Math.PI * 10 * tCursor);
-        const sB = simParams.beta * Math.sin(2 * Math.PI * 20 * tCursor);
-        const n = (Math.random() - 0.5) * simParams.noise * 2;
-        val = (sD + sT + sA + sB + n) * 32.0;
-    } else {
-        val = waveHistory[waveHistory.length - 1];
-    }
-
-    waveHistory.shift();
-    waveHistory.push(val);
-
-    // Draw Waveform
-    const w = waveCanvas.width;
-    const h = waveCanvas.height;
-    waveCtx.clearRect(0, 0, w, h);
-    
-    // Grid lines
-    waveCtx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
-    waveCtx.lineWidth = 1;
-    for (let y = 0; y < h; y += 30) {
-        waveCtx.beginPath(); waveCtx.moveTo(0, y); waveCtx.lineTo(w, y); waveCtx.stroke();
-    }
-
+function drawWaveform(samples) {
+    if (!samples || samples.length === 0) return drawEmpty(waveCtx, waveCanvas, "No Data Stream");
+    const width = waveCanvas.width;
+    const height = waveCanvas.height;
+    const peak = Math.max(1, ...samples.map((sample) => Math.abs(sample)));
+    waveCtx.clearRect(0, 0, width, height);
     waveCtx.beginPath();
-    waveCtx.strokeStyle = '#06B6D4';
+    waveCtx.strokeStyle = "#06B6D4";
     waveCtx.lineWidth = 2;
-    waveCtx.shadowColor = '#06B6D4';
-    waveCtx.shadowBlur = 8;
-
-    const step = w / waveHistory.length;
-    for (let i = 0; i < waveHistory.length; i++) {
-        const x = i * step;
-        const y = h / 2 - waveHistory[i];
-        if (i === 0) waveCtx.moveTo(x, y);
-        else waveCtx.lineTo(x, y);
-    }
-    waveCtx.stroke();
-    waveCtx.shadowBlur = 0;
-
-    // Calculate Band Powers
-    const total = simParams.delta + simParams.theta + simParams.alpha + simParams.beta + 0.001;
-    const pD = ((simParams.delta / total) * 100).toFixed(1);
-    const pT = ((simParams.theta / total) * 100).toFixed(1);
-    const pA = ((simParams.alpha / total) * 100).toFixed(1);
-    const pB = ((simParams.beta / total) * 100).toFixed(1);
-
-    document.getElementById('lbl-delta').innerText = pD + ' %';
-    document.getElementById('fill-delta').style.width = pD + '%';
-    document.getElementById('lbl-theta').innerText = pT + ' %';
-    document.getElementById('fill-theta').style.width = pT + '%';
-    document.getElementById('lbl-alpha').innerText = pA + ' %';
-    document.getElementById('fill-alpha').style.width = pA + '%';
-    document.getElementById('lbl-beta').innerText = pB + ' %';
-    document.getElementById('fill-beta').style.width = pB + '%';
-
-    // Stress & Metrics
-    const stress = (simParams.beta / (simParams.alpha + simParams.theta + 0.001)).toFixed(2);
-    document.getElementById('m-stress').innerText = stress;
-    
-    const tbr = (simParams.theta / (simParams.beta + 0.001)).toFixed(2);
-    const abr = (simParams.alpha / (simParams.beta + 0.001)).toFixed(2);
-    const eng = (simParams.beta / (simParams.alpha + simParams.theta + 0.001)).toFixed(2);
-    
-    if (document.getElementById('b-tbr')) {
-        document.getElementById('b-tbr').innerText = tbr;
-        document.getElementById('b-abr').innerText = abr;
-        document.getElementById('b-eng').innerText = eng;
-    }
-
-    // Cognitive State Logic
-    let state = 'MODERATE';
-    if (parseFloat(pB) >= 35 || stress >= 0.8) {
-        state = 'HIGH';
-        document.getElementById('m-load').style.color = '#EF4444';
-    } else if (parseFloat(pA) >= 35) {
-        state = 'RELAXED';
-        document.getElementById('m-load').style.color = '#8B5CF6';
-    } else {
-        state = 'MODERATE';
-        document.getElementById('m-load').style.color = '#06B6D4';
-    }
-    document.getElementById('m-load').innerText = state;
-
-    // Draw PSD Spectrum
-    const pw = psdCanvas.width;
-    const ph = psdCanvas.height;
-    psdCtx.clearRect(0, 0, pw, ph);
-
-    const bands = [
-        { f: 2, val: pD, color: '#06B6D4' },
-        { f: 6, val: pT, color: '#10B981' },
-        { f: 10, val: pA, color: '#8B5CF6' },
-        { f: 20, val: pB, color: '#F59E0B' }
-    ];
-
-    bands.forEach(b => {
-        const x = (b.f / 40) * pw;
-        const barH = (parseFloat(b.val) / 100) * (ph - 40);
-        psdCtx.fillStyle = b.color;
-        psdCtx.fillRect(x - 12, ph - barH - 20, 24, barH);
-        psdCtx.fillStyle = '#94A3B8';
-        psdCtx.font = '10px Segoe UI';
-        psdCtx.fillText(b.f + 'Hz', x - 10, ph - 5);
+    samples.forEach((sample, index) => {
+        const x = (index / Math.max(samples.length - 1, 1)) * width;
+        const y = height / 2 - (sample / peak) * (height * 0.4);
+        if (index === 0) waveCtx.moveTo(x, y); else waveCtx.lineTo(x, y);
     });
+    waveCtx.stroke();
+}
 
-    if (isRecording) {
-        sampleCount += 10;
-        const elapsed = Math.floor((Date.now() - recordingStart) / 1000);
-        const mins = String(Math.floor(elapsed / 60)).padStart(2, '0');
-        const secs = String(elapsed % 60).padStart(2, '0');
-        document.getElementById('s-dur').innerText = `${mins}:${secs}`;
-        document.getElementById('s-samples').innerText = sampleCount;
+function drawSpectrum(spectrum) {
+    if (!spectrum || !spectrum.frequencies_hz || spectrum.frequencies_hz.length === 0) {
+        return drawEmpty(psdCtx, psdCanvas, "PSD unavailable");
     }
-
-    requestAnimationFrame(renderLoop);
+    const frequencies = spectrum.frequencies_hz;
+    const power = spectrum.power;
+    const width = psdCanvas.width;
+    const height = psdCanvas.height;
+    const peak = Math.max(1e-12, ...power);
+    psdCtx.clearRect(0, 0, width, height);
+    psdCtx.beginPath();
+    psdCtx.strokeStyle = "#8B5CF6";
+    psdCtx.lineWidth = 2;
+    frequencies.forEach((frequency, index) => {
+        const x = Math.min(frequency, 40) / 40 * width;
+        const y = height - (power[index] / peak) * (height * 0.9) - 4;
+        if (index === 0) psdCtx.moveTo(x, y); else psdCtx.lineTo(x, y);
+    });
+    psdCtx.stroke();
 }
 
-renderLoop();
-
-// Session Controls
-function startSession() {
-    isRecording = true;
-    recordingStart = Date.now();
-    sampleCount = 0;
-    const id = 'SESS-' + Math.floor(1000 + Math.random() * 9000);
-    document.getElementById('s-id').innerText = id;
+function updateMetrics(metrics) {
+    const available = metrics && typeof metrics === "object";
+    const percent = (name) => available ? metric(metrics[`${name}_rel`], 1, " %") : "--";
+    ["delta", "theta", "alpha", "beta"].forEach((band) => {
+        value(`lbl-${band}`, percent(band));
+        const fill = document.getElementById(`fill-${band}`);
+        if (fill) fill.style.width = available && Number.isFinite(metrics[`${band}_rel`]) ? `${metrics[`${band}_rel`]}%` : "0%";
+    });
+    value("m-load", "--");
+    value("m-dom", available ? `${metrics.dominant_band || "--"} (${metric(metrics.dominant_frequency, 2, " Hz")})` : "--");
+    value("m-stress", available ? metric(metrics.stress_index, 4) : "--");
+    value("m-qual", runtimeState && runtimeState.streaming ? "RUNTIME STREAM" : "NO SIGNAL");
+    value("b-tbr", available ? metric(metrics.tbr, 4) : "--");
+    value("b-abr", available ? metric(metrics.abr, 4) : "--");
+    value("b-eng", available ? metric(metrics.engagement, 4) : "--");
+    value("b-total", available ? metric(metrics.total_power, 4) : "--");
 }
 
-function stopSession() {
-    if (!isRecording) return;
-    isRecording = false;
-
-    const elapsed = Math.floor((Date.now() - recordingStart) / 1000);
-    const mins = String(Math.floor(elapsed / 60)).padStart(2, '0');
-    const secs = String(elapsed % 60).padStart(2, '0');
-
-    currentSessionData = {
-        id: document.getElementById('s-id').innerText,
-        duration: `${mins}:${secs}`,
-        samples: sampleCount,
-        load: document.getElementById('m-load').innerText,
-        stress: document.getElementById('m-stress').innerText,
-        delta: document.getElementById('fill-delta').style.width.replace('%', ''),
-        theta: document.getElementById('fill-theta').style.width.replace('%', ''),
-        alpha: document.getElementById('fill-alpha').style.width.replace('%', ''),
-        beta: document.getElementById('fill-beta').style.width.replace('%', ''),
-        date: new Date().toLocaleString()
-    };
-
-    saveSessionLocal(currentSessionData);
-    alert('Session Recorded & Saved to Local History!');
+function updateSession(state) {
+    value("s-id", state.session_id || "--");
+    value("s-dur", duration(state.duration_sec));
+    value("s-samples", String(state.samples || 0));
+    value("s-status", state.state || "IDLE");
+    value("mode-badge", `SIMULATOR: ${state.state || "IDLE"}`);
+    value("hardware-status", state.hardware && state.hardware.status === "NOT_CONNECTED" ? "Hardware: Not Connected" : "Hardware: Unknown");
 }
 
-function downloadCurrentReport() {
-    if (!currentSessionData) {
-        stopSession();
-    }
-    exportSessionPDF(currentSessionData);
+function updateChannelOptions(channels) {
+    const select = document.getElementById("channel-select");
+    if (!select || !channels || channels.length === 0) return;
+    if (![...select.options].some((option) => option.value === selectedChannel)) selectedChannel = channels[0];
+    select.innerHTML = channels.map((channel) => `<option value="${channel}">${channel}</option>`).join("");
+    select.value = selectedChannel;
 }
 
-function saveSessionLocal(session) {
-    let history = JSON.parse(localStorage.getItem('neurosim_history') || '[]');
-    history.unshift(session);
-    localStorage.setItem('neurosim_history', JSON.stringify(history));
-}
-
-function renderHistoryTable() {
-    const history = JSON.parse(localStorage.getItem('neurosim_history') || '[]');
-    const container = document.getElementById('history-table-body');
-    if (!container) return;
-
-    if (history.length === 0) {
-        container.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#94A3B8;">No recorded sessions found.</td></tr>';
-        return;
-    }
-
-    container.innerHTML = history.map(item => `
-        <tr>
-            <td><strong>${item.id}</strong></td>
-            <td>${item.date}</td>
-            <td>${item.duration}</td>
-            <td><span style="color:${item.load === 'HIGH' ? '#EF4444' : '#06B6D4'}; font-weight:700;">${item.load}</span></td>
-            <td>${item.stress}</td>
-            <td><button class="btn" style="padding:4px 10px; font-size:11px;" onclick='exportSessionPDF(${JSON.stringify(item)})'>📄 PDF</button></td>
-        </tr>
-    `).join('');
-}
-
-// Hardware Web Serial Connect
-async function connectESP32Serial() {
-    if (!('serial' in navigator)) {
-        alert('Web Serial API is not supported on this browser. Please use Google Chrome or MS Edge.');
-        return;
-    }
+async function refreshRuntime() {
     try {
-        serialPort = await navigator.serial.requestPort();
-        await serialPort.open({ baudRate: 115200 });
-        isHardwareConnected = true;
-        document.getElementById('mode-badge').innerText = 'HARDWARE MODE (ESP32)';
-        document.getElementById('mode-badge').style.borderColor = '#10B981';
-        document.getElementById('mode-badge').style.color = '#10B981';
-        alert('ESP32 Serial Port Connected Successfully!');
-    } catch (e) {
-        console.error('Serial Connection Failed:', e);
+        runtimeState = await api("/api/state");
+        latestAnalysis = runtimeState.analysis_available ? await api("/api/analysis") : {analysis: null};
+        updateChannelOptions(runtimeState.channels);
+        updateSession(runtimeState);
+        updateMetrics(runtimeState.metrics);
+        drawSpectrum(latestAnalysis.analysis ? latestAnalysis.analysis.spectrum : null);
+        const waveform = await api(`/api/waveform?seconds=${selectedWindowSeconds}`);
+        drawWaveform(waveform.channels[selectedChannel]);
+        value("api-status", "API connected");
+    } catch (error) {
+        runtimeState = null;
+        updateMetrics(null);
+        drawEmpty(waveCtx, waveCanvas, "No Data Stream");
+        drawEmpty(psdCtx, psdCanvas, "PSD unavailable");
+        value("api-status", `API unavailable: ${error.message}`);
     }
 }
+
+async function lifecycle(action) {
+    try {
+        await api(`/api/session/${action}`, {method: "POST"});
+    } catch (error) {
+        value("api-status", error.message);
+    }
+    await refreshRuntime();
+}
+
+function startSession() { return lifecycle("start"); }
+function pauseSession() { return lifecycle("pause"); }
+function resumeSession() { return lifecycle("resume"); }
+function stopSession() { return lifecycle("stop"); }
+
+async function downloadCurrentReport() {
+    try {
+        const response = await api("/api/report", {method: "POST"});
+        const blob = await response.blob();
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = "NeuroSim_Runtime_Report.pdf";
+        link.click();
+        URL.revokeObjectURL(link.href);
+    } catch (error) {
+        value("api-status", error.message);
+    }
+}
+
+async function renderHistoryTable() {
+    const body = document.getElementById("history-table-body");
+    if (!body) return;
+    if (!runtimeState || runtimeState.state !== "STOPPED") {
+        body.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#94A3B8;">No completed runtime session available.</td></tr>';
+        return;
+    }
+    body.innerHTML = `<tr><td><strong>${runtimeState.session_id}</strong></td><td>Current runtime</td><td>${duration(runtimeState.duration_sec)}</td><td>${runtimeState.state}</td><td>${metric(runtimeState.metrics && runtimeState.metrics.stress_index, 4)}</td><td>Available for PDF export</td></tr>`;
+}
+
+window.addEventListener("resize", resizeCanvases);
+window.addEventListener("DOMContentLoaded", () => {
+    resizeCanvases();
+    document.getElementById("channel-select").addEventListener("change", (event) => { selectedChannel = event.target.value; refreshRuntime(); });
+    document.getElementById("window-select").addEventListener("change", (event) => { selectedWindowSeconds = Number(event.target.value); refreshRuntime(); });
+    refreshRuntime();
+    window.setInterval(refreshRuntime, 500);
+});

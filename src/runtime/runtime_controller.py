@@ -238,6 +238,9 @@ class RuntimeController(QObject):
                 primary_samples = snap["samples"]
                 freqs, psd = self.psd_analyzer.compute_psd(primary_samples)
                 combined_metrics = self.psd_analyzer.analyze_bands(freqs, psd)
+                combined_metrics["total_power"] = float(
+                    sum(combined_metrics.get(f"{band}_abs", 0.0) for band in ("delta", "theta", "alpha", "beta"))
+                )
 
                 psd_metrics_for_extractor = {
                     'rel_powers': {
@@ -259,7 +262,11 @@ class RuntimeController(QObject):
                     "duration_sec": snap["duration_sec"],
                     "metrics": combined_metrics,
                     "features": features,
-                    "feature_names": self.feature_extractor.feature_names()
+                    "feature_names": self.feature_extractor.feature_names(),
+                    "spectrum": {
+                        "frequencies_hz": [float(value) for value in freqs],
+                        "power": [float(value) for value in psd],
+                    }
                 }
 
                 self._latest_analysis_result = analysis_result

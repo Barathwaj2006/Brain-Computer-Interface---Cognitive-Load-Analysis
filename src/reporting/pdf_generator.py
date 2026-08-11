@@ -35,6 +35,13 @@ class PDFReportGenerator:
         if not isinstance(session_data, dict):
             session_data = {'id': str(session_data)}
 
+        def display(value, precision=None, suffix=""):
+            if value is None:
+                return "UNAVAILABLE"
+            if precision is not None:
+                return f"{float(value):.{precision}f}{suffix}"
+            return f"{value}{suffix}"
+
         if filename is None:
             filename = f"NeuroSim_Session_{session_data.get('session_id', session_data.get('id', 'DEMO'))}.pdf"
         
@@ -63,13 +70,20 @@ class PDFReportGenerator:
         data_summary = [
             [Paragraph("<b>Parameter</b>", body_style), Paragraph("<b>Value</b>", body_style)],
             ["Session ID", str(session_data.get('session_id', session_data.get('id', 'N/A')))],
-            ["Classified Cognitive Load", str(session_data.get('cognitive_state', session_data.get('load_class', 'MODERATE')))],
-            ["Spectral Stress Index", f"{session_data.get('stress_index', 0.5):.2f}"],
-            ["Dominant Frequency Rhythm", str(session_data.get('dominant_band', 'ALPHA'))],
-            ["Alpha Relative Power", f"{session_data.get('rel_alpha', session_data.get('alpha_rel', session_data.get('alpha', 25.0))):.1f} %"],
-            ["Beta Relative Power", f"{session_data.get('rel_beta', session_data.get('beta_rel', session_data.get('beta', 25.0))):.1f} %"],
-            ["Theta Relative Power", f"{session_data.get('rel_theta', session_data.get('theta_rel', session_data.get('theta', 25.0))):.1f} %"],
-            ["Delta Relative Power", f"{session_data.get('rel_delta', session_data.get('delta_rel', session_data.get('delta', 25.0))):.1f} %"],
+            ["Signal Source", display(session_data.get('source_name'))],
+            ["Duration", display(session_data.get('duration_sec'), 2, " sec")],
+            ["Samples Received", display(session_data.get('sample_count'))],
+            ["Classified Cognitive Load", display(session_data.get('cognitive_state', session_data.get('load_class')))],
+            ["Spectral Stress Index", display(session_data.get('stress_index'), 4)],
+            ["Dominant Frequency", display(session_data.get('dominant_frequency'), 4, " Hz")],
+            ["Dominant Band", display(session_data.get('dominant_band'))],
+            ["Total Band Power", display(session_data.get('total_power'), 4)],
+            ["Theta/Beta Ratio (TBR)", display(session_data.get('tbr'), 4)],
+            ["Alpha/Beta Ratio (ABR)", display(session_data.get('abr'), 4)],
+            ["Delta Absolute / Relative", f"{display(session_data.get('delta_abs'), 4)} / {display(session_data.get('delta_rel'), 2, ' %')}"],
+            ["Theta Absolute / Relative", f"{display(session_data.get('theta_abs'), 4)} / {display(session_data.get('theta_rel'), 2, ' %')}"],
+            ["Alpha Absolute / Relative", f"{display(session_data.get('alpha_abs'), 4)} / {display(session_data.get('alpha_rel'), 2, ' %')}"],
+            ["Beta Absolute / Relative", f"{display(session_data.get('beta_abs'), 4)} / {display(session_data.get('beta_rel'), 2, ' %')}"],
         ]
 
         t_summary = Table(data_summary, colWidths=[200, 300])
@@ -86,7 +100,12 @@ class PDFReportGenerator:
         elements.append(Spacer(1, 16))
 
         elements.append(Paragraph("AI Narrative & Clinical Summary", h2_style))
-        ai_narrative = session_data.get('ai_interpretation', "The session exhibited stable spectral power dynamics across alpha (8-13 Hz) and beta (13-30 Hz) bands. Spectral stress index remained within baseline research limits.")
+        ai_narrative = session_data.get('ai_interpretation')
+        if not ai_narrative:
+            ai_narrative = (
+                "No cognitive-load interpretation is available for this session. "
+                "The report presents only measured runtime telemetry and quantitative signal metrics."
+            )
         elements.append(Paragraph(ai_narrative, body_style))
 
         elements.append(Spacer(1, 20))
