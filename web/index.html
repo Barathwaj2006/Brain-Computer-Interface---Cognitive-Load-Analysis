@@ -62,7 +62,26 @@
             </div>
         </div>
 
-        <div id="screen-band" class="view-screen"><div class="glass-card"><div class="card-title">Clinical Ratios & Spectral Metrics</div><div class="grid-4"><div class="metric-card"><div class="metric-label">Theta/Beta Ratio</div><div class="metric-val" id="b-tbr">--</div></div><div class="metric-card"><div class="metric-label">Alpha/Beta Ratio</div><div class="metric-val" id="b-abr">--</div></div><div class="metric-card"><div class="metric-label">Engagement Index</div><div class="metric-val" id="b-eng">--</div></div><div class="metric-card"><div class="metric-label">Total Band Power</div><div class="metric-val" id="b-total">--</div></div></div></div></div>
+        <div id="screen-band" class="view-screen">
+            <div class="glass-card">
+                <div class="card-title">Clinical Ratios & Spectral Metrics</div>
+                <div class="grid-4">
+                    <div class="metric-card"><div class="metric-label">Theta/Beta Ratio</div><div class="metric-val" id="b-tbr">--</div></div>
+                    <div class="metric-card"><div class="metric-label">Alpha/Beta Ratio</div><div class="metric-val" id="b-abr">--</div></div>
+                    <div class="metric-card"><div class="metric-label">Engagement Index</div><div class="metric-val" id="b-eng">--</div></div>
+                    <div class="metric-card"><div class="metric-label">Total Band Power</div><div class="metric-val" id="b-total">--</div></div>
+                </div>
+            </div>
+            <div class="glass-card" style="margin-top:16px;">
+                <div class="card-title">Real-Time Neurofeedback Protocol Engine</div>
+                <div class="grid-4">
+                    <div class="metric-card"><div class="metric-label">FEEDBACK STATUS</div><div class="metric-val" id="nf-status" style="font-size:16px; color:var(--emerald);">--</div></div>
+                    <div class="metric-card"><div class="metric-label">TARGET PROTOCOL</div><div class="metric-val" style="font-size:16px;">ALPHA ENHANCEMENT</div></div>
+                    <div class="metric-card"><div class="metric-label">FOCUS INDEX</div><div class="metric-val" id="nf-focus">--</div></div>
+                    <div class="metric-card"><div class="metric-label">ATTENTION REGULATION</div><div class="metric-val" id="nf-regulation">--</div></div>
+                </div>
+            </div>
+        </div>
 
         <div id="screen-session" class="view-screen"><div class="glass-card"><div class="card-title">Session Recording Controls</div><div style="display:flex; gap:14px; margin-bottom:24px;"><button class="btn btn-emerald" onclick="startSession()">START</button><button class="btn" onclick="pauseSession()">PAUSE</button><button class="btn" onclick="resumeSession()">RESUME</button><button class="btn btn-rose" onclick="stopSession()">STOP</button><button class="btn" onclick="downloadCurrentReport()">EXPORT PDF REPORT</button></div><div class="grid-4"><div class="metric-card"><div class="metric-label">Session ID</div><div class="metric-val" id="s-id">--</div></div><div class="metric-card"><div class="metric-label">Duration</div><div class="metric-val" id="s-dur">--</div></div><div class="metric-card"><div class="metric-label">Samples Logged</div><div class="metric-val" id="s-samples">0</div></div><div class="metric-card"><div class="metric-label">Status</div><div class="metric-val" id="s-status">IDLE</div></div></div></div></div>
 

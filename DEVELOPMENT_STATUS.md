@@ -1,21 +1,18 @@
 # Current Development Status
 
 ## Phase & Agent
-PHASE=NEUROSIM_3.0_BUILD_MODE
+PHASE=NEUROSIM_3.0_PRODUCTION_RELEASE
 AGENT=ANTIGRAVITY
-TASK=Advanced Research Platform Integration
+TASK=Final Ship Sprint & Production Release
 BRANCH=rebuild/neurosim-v2
-BASELINE=003b53c1264c76bcf6f16a04874a7732d8fa8f9e
-FINAL_COMMIT=1d5613133cbcf313eeb2fa1c12574eeb3568c07e
+BASELINE=4bcaf2104ea20c5bb8f03ee402aa39ce25712f5a
+FINAL_COMMIT=PENDING
 TESTS=90/90 PASS
 POKIDEX=FROZEN
 WORKTREE=CLEAN
 
-## NeuroSim 3.0 Advanced Research Platform Summary
-- **Research Analytics Engine**: Built [`src/analysis/research_engine.py`](file:///C:/Users/barat/OneDrive/Documents/neurosim-eeg-cognitive-analysis/src/analysis/research_engine.py) to provide longitudinal session progression analysis, multi-session comparison matrices, BIDS 1.8.0 dataset exports, and statistical CSV exports.
-- **HTTP Research Endpoints**: Integrated `GET /api/research/longitudinal`, `GET /api/research/compare`, `GET /api/research/bids`, and `GET /api/research/export_csv` in [`serve_local.py`](file:///C:/Users/barat/OneDrive/Documents/neurosim-eeg-cognitive-analysis/serve_local.py) and [`runtime_service.py`](file:///C:/Users/barat/OneDrive/Documents/neurosim-eeg-cognitive-analysis/runtime_service.py).
-- **Web UI Research Platform**: Created `Research Platform` tab in [`web/index.html`](file:///C:/Users/barat/OneDrive/Documents/neurosim-eeg-cognitive-analysis/web/index.html) and [`web/app.js`](file:///C:/Users/barat/OneDrive/Documents/neurosim-eeg-cognitive-analysis/web/app.js) with longitudinal progression timeline, total research metrics, CSV export, and BIDS export buttons.
+## NeuroSim 3.0 Production Build Summary
+- **Real-Time Neurofeedback Engine**: Connected live Alpha Enhancement and Theta Regulation neurofeedback protocol calculations in [`web/app.js`](file:///C:/Users/barat/OneDrive/Documents/neurosim-eeg-cognitive-analysis/web/app.js) and [`web/index.html`](file:///C:/Users/barat/OneDrive/Documents/neurosim-eeg-cognitive-analysis/web/index.html) driven directly by `RuntimeController` PSD metrics.
+- **End-to-End Product Verification**: Verified entire production pipeline: Idle state $\rightarrow$ Start $\rightarrow$ Real Waveform Streaming $\rightarrow$ Pause $\rightarrow$ Resume $\rightarrow$ Stop $\rightarrow$ Second Session $\rightarrow$ Real-time Analysis $\rightarrow$ History Archive & Detail Inspector $\rightarrow$ Session Comparison $\rightarrow$ PDF Report Exporter $\rightarrow$ BIDS & CSV Research Exporter $\rightarrow$ Neurofeedback Protocol.
+- **Production Readiness**: Graceful server startup/shutdown (`SIGINT`/`SIGTERM`), socket address reuse (`allow_reuse_address = True`), and rotating file logger (`neurosim_runtime.log`).
 - **Validation**: 90 unit and integration tests passing cleanly across 15 test modules.
-
-## Historical Record: NeuroSim 2.0 Final Release Candidate
-- **Full Architecture**: Authoritative RuntimeController, thin HTTP API, browser UI, cognitive load classification, PDF report generation, SQLite session history, session deletion, system settings, and rotating file logging.

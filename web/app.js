@@ -142,6 +142,23 @@ function updateMetrics(metrics) {
     value("b-abr", available ? metric(metrics.abr, 4) : "--");
     value("b-eng", available ? metric(metrics.engagement, 4) : "--");
     value("b-total", available ? metric(metrics.total_power, 4) : "--");
+
+    // Real-Time Neurofeedback Protocol Calculations
+    if (available && metrics) {
+        const stress = metrics.stress_index || 0.5;
+        const alphaRel = metrics.alpha_rel || 25;
+        const focusScore = Math.max(0, Math.min(100, (1.0 - stress) * 100));
+        const statusText = alphaRel >= 30 ? "OPTIMAL TARGET" : (alphaRel >= 20 ? "STABLE REGULATION" : "SUB-THRESHOLD");
+        const regulationText = (metrics.tbr || 2.0) <= 2.5 ? "OPTIMAL ATTENTION" : "HIGH THETA WAVES";
+        
+        value("nf-status", statusText);
+        value("nf-focus", metric(focusScore, 1, "%"));
+        value("nf-regulation", regulationText);
+    } else {
+        value("nf-status", "--");
+        value("nf-focus", "--");
+        value("nf-regulation", "--");
+    }
 }
 
 function updateSession(state) {
