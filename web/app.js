@@ -214,6 +214,16 @@ async function downloadReportForSession(sessionId) {
     }
 }
 
+async function deleteSessionFromHistory(sessionId) {
+    if (!sessionId) return;
+    try {
+        await api(`/api/history/delete?session_id=${encodeURIComponent(sessionId)}`, {method: "POST"});
+        await renderHistoryTable();
+    } catch (error) {
+        value("api-status", error.message);
+    }
+}
+
 async function renderHistoryTable() {
     const body = document.getElementById("history-table-body");
     if (!body) return;
@@ -236,7 +246,10 @@ async function renderHistoryTable() {
                 <td>${duration(s.duration)}</td>
                 <td>${s.cognitive_state || "COMPLETED"}</td>
                 <td>${metric(s.stress_index, 4)}</td>
-                <td><button class="btn" style="padding:4px 8px; font-size:12px;" onclick="downloadReportForSession('${s.session_id}')">Export PDF</button></td>
+                <td>
+                    <button class="btn" style="padding:4px 8px; font-size:12px; margin-right:4px;" onclick="downloadReportForSession('${s.session_id}')">Export PDF</button>
+                    <button class="btn btn-rose" style="padding:4px 8px; font-size:12px;" onclick="deleteSessionFromHistory('${s.session_id}')">Delete</button>
+                </td>
             </tr>
         `).join("");
     } catch (error) {

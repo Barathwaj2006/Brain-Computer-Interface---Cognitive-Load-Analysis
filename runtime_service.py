@@ -60,6 +60,12 @@ class RuntimeService:
         """Returns all recorded sessions from SQLite DatabaseManager."""
         return self.runtime.db_manager.get_all_sessions()
 
+    def delete_history(self, session_id: str) -> Dict[str, Any]:
+        """Deletes a session record from SQLite database archive."""
+        if not self.runtime.db_manager.delete_session(session_id):
+            raise RuntimeError(f"Failed to delete session '{session_id}' from database archive.")
+        return {"deleted": session_id, "sessions": self.history()}
+
     def settings(self) -> Dict[str, Any]:
         """Returns application branding, signal parameters, and filter configuration."""
         import src.app.config as cfg

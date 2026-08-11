@@ -80,6 +80,12 @@ class NeuroSimRequestHandler(SimpleHTTPRequestHandler):
             }
             if parsed.path in actions:
                 return self._json(actions[parsed.path]())
+            if parsed.path == "/api/history/delete":
+                params = parse_qs(parsed.query)
+                session_id = params.get("session_id", [None])[0]
+                if not session_id:
+                    return self._error(HTTPStatus.BAD_REQUEST, "Missing required query parameter: session_id")
+                return self._json(self.runtime_service.delete_history(session_id))
             if parsed.path == "/api/report":
                 params = parse_qs(parsed.query)
                 session_id = params.get("session_id", [None])[0]

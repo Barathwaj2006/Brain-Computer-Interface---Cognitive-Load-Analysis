@@ -139,6 +139,22 @@ class TestAPIServer(unittest.TestCase):
             self._get("/api/unknown_endpoint")
         self.assertEqual(ctx.exception.code, 404)
 
+    def test_07_delete_history(self):
+        """Verify POST /api/history/delete removes session from database."""
+        # Create a saved session
+        self._post("/api/session/start")
+        time.sleep(0.5)
+        self._post("/api/session/stop")
+        
+        _, _, data = self._get("/api/history")
+        sessions = json.loads(data.decode("utf-8"))["sessions"]
+        if sessions:
+            target_id = sessions[0]["session_id"]
+            status, _, del_data = self._post(f"/api/history/delete?session_id={target_id}")
+            self.assertEqual(status, 200)
+            res = json.loads(del_data.decode("utf-8"))
+            self.assertEqual(res["deleted"], target_id)
+
 
 if __name__ == "__main__":
     unittest.main()
