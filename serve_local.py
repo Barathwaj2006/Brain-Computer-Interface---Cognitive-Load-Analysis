@@ -113,7 +113,9 @@ class NeuroSimRequestHandler(SimpleHTTPRequestHandler):
 
 
 def create_server(host="127.0.0.1", port=8000, runtime_service=None):
+    ThreadingHTTPServer.allow_reuse_address = True
     server = ThreadingHTTPServer((host, port), NeuroSimRequestHandler)
+    server.daemon_threads = True
     server.runtime_service = runtime_service or RuntimeService()
     return server
 
@@ -129,11 +131,18 @@ def run(host="127.0.0.1", port=8000, open_browser=True):
         webbrowser.open(url)
 
     def shutdown():
+        try:
+            if hasattr(server, "runtime_service") and server.runtime_service:
+                server.runtime_service.runtime.stop_session()
+        except Exception:
+            pass
         server.shutdown()
         server.server_close()
 
     app.aboutToQuit.connect(shutdown)
     signal.signal(signal.SIGINT, lambda *_: app.quit())
+    if hasattr(signal, "SIGTERM"):
+        signal.signal(signal.SIGTERM, lambda *_: app.quit())
     return app.exec()
 
 
