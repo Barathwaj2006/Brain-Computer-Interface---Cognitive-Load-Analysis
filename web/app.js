@@ -184,6 +184,13 @@ function updateMetrics(metrics) {
     value("b-alpha-val", available ? metric(metrics.alpha_rel, 1, "%") : "--");
     value("b-beta-val", available ? metric(metrics.beta_rel, 1, "%") : "--");
 
+    value("b-spec-ent", available ? metric(metrics.spectral_entropy, 4) : "--");
+    value("b-samp-ent", available ? metric(metrics.sample_entropy, 4) : "--");
+    value("b-lzc", available ? metric(metrics.lzc, 4) : "--");
+    value("b-faa", available ? metric(metrics.faa, 4) : "--");
+    value("b-usable", available ? metric(metrics.usable_data_pct, 1, "%") : "--");
+    value("b-artifact", available ? metric(metrics.artifact_burden_pct, 2, "%") : "--");
+
     // Real-Time Neurofeedback Protocol Calculations
     if (available && metrics) {
         const protoSelect = document.getElementById("nf-protocol-select");

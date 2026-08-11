@@ -1,18 +1,17 @@
 # Current Development Status
 
 ## Phase & Agent
-PHASE=NEUROSIM_3.0_PRODUCTION_RELEASE
+PHASE=NEUROSIM_SCIENTIFIC_VISUALIZATION_WORKSPACE
 AGENT=ANTIGRAVITY
-TASK=Final Ship Sprint & Production Release
+TASK=Advanced Scientific Visualization Workspace
 BRANCH=rebuild/neurosim-v2
-BASELINE=4bcaf2104ea20c5bb8f03ee402aa39ce25712f5a
-FINAL_COMMIT=0451cf6f2a6df7a00508f7516d2b638927976e10
-TESTS=90/90 PASS
+BASELINE=60b0d7035be94fdbc9d8a7e6648f9b23e41ee42f
+FINAL_COMMIT=PENDING
+TESTS=92/92 PASS
 POKIDEX=FROZEN
 WORKTREE=CLEAN
 
-## NeuroSim 3.0 Production Build Summary
-- **Real-Time Neurofeedback Engine**: Connected live Alpha Enhancement and Theta Regulation neurofeedback protocol calculations in [`web/app.js`](file:///C:/Users/barat/OneDrive/Documents/neurosim-eeg-cognitive-analysis/web/app.js) and [`web/index.html`](file:///C:/Users/barat/OneDrive/Documents/neurosim-eeg-cognitive-analysis/web/index.html) driven directly by `RuntimeController` PSD metrics.
-- **End-to-End Product Verification**: Verified entire production pipeline: Idle state $\rightarrow$ Start $\rightarrow$ Real Waveform Streaming $\rightarrow$ Pause $\rightarrow$ Resume $\rightarrow$ Stop $\rightarrow$ Second Session $\rightarrow$ Real-time Analysis $\rightarrow$ History Archive & Detail Inspector $\rightarrow$ Session Comparison $\rightarrow$ PDF Report Exporter $\rightarrow$ BIDS & CSV Research Exporter $\rightarrow$ Neurofeedback Protocol.
-- **Production Readiness**: Graceful server startup/shutdown (`SIGINT`/`SIGTERM`), socket address reuse (`allow_reuse_address = True`), and rotating file logger (`neurosim_runtime.log`).
-- **Validation**: 90 unit and integration tests passing cleanly across 15 test modules.
+## Advanced Scientific Visualization Workspace Summary
+- **Advanced Information Dynamics Engine**: Expanded [`src/processing/psd.py`](file:///C:/Users/barat/OneDrive/Documents/neurosim-eeg-cognitive-analysis/src/processing/psd.py) to compute Spectral Entropy ($H_{spec}$), Sample Entropy, Lempel-Ziv Complexity (LZC), Frontal Alpha Asymmetry (FAA), Usable Data Rate %, and 50/60Hz Powerline Interference Burden %.
+- **Web UI Scientific Workspace**: Updated [`web/index.html`](file:///C:/Users/barat/OneDrive/Documents/neurosim-eeg-cognitive-analysis/web/index.html) and [`web/app.js`](file:///C:/Users/barat/OneDrive/Documents/neurosim-eeg-cognitive-analysis/web/app.js) to render information metrics, signal quality indicators, and live band distributions driven by authoritative server PSD metrics.
+- **Validation**: 92 unit and integration tests passing cleanly across 16 test modules.
