@@ -20,6 +20,8 @@ from src.classification.rule_classifier import RuleBasedClassifier
 from src.database.db_manager import DatabaseManager
 from src.runtime.session_model import SessionModel, SessionState
 
+from src.utils.logger import get_logger
+
 class RuntimeController(QObject):
     """
     Core Application Runtime Controller for NeuroSim 2.0.
@@ -33,6 +35,7 @@ class RuntimeController(QObject):
         super().__init__(parent)
         self.sampling_rate = sampling_rate
         self.channels = tuple(channels)
+        self.logger = get_logger("runtime")
 
         # Core Subsystems
         self.signal_buffer = BoundedSignalBuffer(capacity=buffer_capacity, sampling_rate=sampling_rate, channels=self.channels)
@@ -172,6 +175,7 @@ class RuntimeController(QObject):
                 raise RuntimeError("Failed to start acquisition manager")
 
             self.session_state_changed.emit("RECORDING")
+            self.logger.info(f"Started session '{session.session_id}' using source '{source_name}'")
             return session
 
     def stop_session(self) -> Optional[SessionModel]:
@@ -212,6 +216,7 @@ class RuntimeController(QObject):
 
             finished_session = self.current_session
             self.session_state_changed.emit("STOPPED")
+            self.logger.info(f"Stopped session '{finished_session.session_id}'. Duration: {finished_session.duration_sec:.2f}s, Samples: {finished_session.samples_received}")
             return finished_session
 
     def pause_session(self) -> bool:
