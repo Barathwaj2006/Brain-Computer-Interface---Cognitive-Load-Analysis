@@ -99,7 +99,7 @@ class PDFReportGenerator:
         elements.append(t_summary)
         elements.append(Spacer(1, 16))
 
-        elements.append(Paragraph("AI Narrative & Clinical Summary", h2_style))
+        elements.append(Paragraph("AI Narrative & Research Interpretation Summary", h2_style))
         ai_narrative = session_data.get('ai_interpretation')
         if not ai_narrative:
             ai_narrative = (
