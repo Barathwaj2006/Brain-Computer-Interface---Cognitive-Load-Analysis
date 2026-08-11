@@ -224,6 +224,33 @@ async function deleteSessionFromHistory(sessionId) {
     }
 }
 
+async function inspectSessionDetail(sessionId) {
+    const detailDiv = document.getElementById("history-session-detail");
+    if (!detailDiv || !sessionId) return;
+    try {
+        const historyData = await api("/api/history");
+        const session = (historyData.sessions || []).find((s) => s.session_id === sessionId);
+        if (!session) return;
+
+        detailDiv.innerHTML = `
+            <div class="glass-card" style="margin-top:16px; border: 1px solid var(--border-glow);">
+                <div class="card-title">Session Detail Inspector: ${session.session_id}</div>
+                <div class="grid-4" style="margin-bottom:12px;">
+                    <div class="metric-card"><div class="metric-label">MODE</div><div class="metric-val" style="font-size:16px;">${session.mode}</div></div>
+                    <div class="metric-card"><div class="metric-label">DURATION</div><div class="metric-val" style="font-size:16px;">${duration(session.duration)}</div></div>
+                    <div class="metric-card"><div class="metric-label">DOMINANT BAND</div><div class="metric-val" style="font-size:16px;">${session.dominant_band}</div></div>
+                    <div class="metric-card"><div class="metric-label">STRESS INDEX</div><div class="metric-val" style="font-size:16px;">${metric(session.stress_index, 4)}</div></div>
+                </div>
+                <div style="font-size:13px; color:var(--text-muted);">
+                    <strong>Relative Band Powers:</strong> Delta: ${metric(session.rel_delta, 1, "%")} | Theta: ${metric(session.rel_theta, 1, "%")} | Alpha: ${metric(session.rel_alpha, 1, "%")} | Beta: ${metric(session.rel_beta, 1, "%")}
+                </div>
+            </div>
+        `;
+    } catch (error) {
+        value("api-status", error.message);
+    }
+}
+
 async function renderHistoryTable() {
     const body = document.getElementById("history-table-body");
     if (!body) return;
@@ -247,6 +274,7 @@ async function renderHistoryTable() {
                 <td>${s.cognitive_state || "COMPLETED"}</td>
                 <td>${metric(s.stress_index, 4)}</td>
                 <td>
+                    <button class="btn" style="padding:4px 8px; font-size:12px; margin-right:4px;" onclick="inspectSessionDetail('${s.session_id}')">Inspect</button>
                     <button class="btn" style="padding:4px 8px; font-size:12px; margin-right:4px;" onclick="downloadReportForSession('${s.session_id}')">Export PDF</button>
                     <button class="btn btn-rose" style="padding:4px 8px; font-size:12px;" onclick="deleteSessionFromHistory('${s.session_id}')">Delete</button>
                 </td>
