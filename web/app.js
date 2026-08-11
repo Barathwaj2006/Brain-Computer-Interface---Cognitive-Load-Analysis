@@ -1,267 +1,584 @@
-// NeuroSim Web Application Core Logic & DSP Engine
+// Browser renderer for the authoritative RuntimeController API. No client-side EEG or DSP exists here.
 
-let simParams = { delta: 0.3, theta: 0.4, alpha: 0.8, beta: 0.3, noise: 0.15 };
-let tCursor = 0.0;
-let isRecording = false;
-let recordingStart = 0;
-let sampleCount = 0;
-let currentSessionData = null;
+let runtimeState = null;
+let latestAnalysis = null;
+let selectedWindowSeconds = 5;
+let selectedChannel = "FP1";
 
-// Hardware Serial API state
-let serialPort = null;
-let serialReader = null;
-let isHardwareConnected = false;
+const waveCanvas = document.getElementById("waveCanvas");
+const psdCanvas = document.getElementById("psdCanvas");
+const waveCtx = waveCanvas.getContext("2d");
+const psdCtx = psdCanvas.getContext("2d");
 
-function updateSim() {
-    simParams.delta = parseFloat(document.getElementById('sld-delta').value) / 100.0;
-    simParams.theta = parseFloat(document.getElementById('sld-theta').value) / 100.0;
-    simParams.alpha = parseFloat(document.getElementById('sld-alpha').value) / 100.0;
-    simParams.beta = parseFloat(document.getElementById('sld-beta').value) / 100.0;
-    simParams.noise = parseFloat(document.getElementById('sld-noise').value) / 100.0;
+async function api(path, options = {}) {
+    const response = await fetch(path, options);
+    const type = response.headers.get("content-type") || "";
+    if (!response.ok) {
+        const payload = type.includes("application/json") ? await response.json() : {};
+        throw new Error(payload.error || `API request failed (${response.status})`);
+    }
+    return type.includes("application/json") ? response.json() : response;
+}
+
+function value(id, text) {
+    const element = document.getElementById(id);
+    if (element) element.innerText = text;
+}
+
+function metric(number, digits = 2, suffix = "") {
+    return typeof number === "number" && Number.isFinite(number) ? `${number.toFixed(digits)}${suffix}` : "--";
+}
+
+function duration(seconds) {
+    if (typeof seconds !== "number" || !Number.isFinite(seconds)) return "--";
+    const total = Math.floor(seconds);
+    const hrs = Math.floor(total / 3600);
+    const mins = Math.floor((total % 3600) / 60);
+    const secs = total % 60;
+    if (hrs > 0) {
+        return `${String(hrs).padStart(2, "0")}:${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+    }
+    return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
 }
 
 function switchTab(tabKey) {
-    document.querySelectorAll('.view-screen').forEach(el => el.classList.remove('active'));
-    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-    document.getElementById('screen-' + tabKey).classList.add('active');
-    event.currentTarget.classList.add('active');
+    document.querySelectorAll(".view-screen").forEach((element) => element.classList.remove("active"));
+    document.querySelectorAll(".nav-item").forEach((element) => element.classList.remove("active"));
     
-    if (tabKey === 'history') {
-        renderHistoryTable();
+    const targetScreen = document.getElementById(`screen-${tabKey}`);
+    if (targetScreen) targetScreen.classList.add("active");
+
+    const titleMap = {
+        dashboard: "EXECUTIVE DASHBOARD",
+        monitor: "LIVE MONITORING DASHBOARD",
+        band: "QUANTITATIVE BAND ANALYSIS",
+        history: "HISTORICAL SESSION ARCHIVE",
+        reports: "REPORTS PLATFORM & EXPORT MANAGER",
+        research: "RESEARCH PLATFORM & LONGITUDINAL ANALYTICS",
+        neurofeedback: "NEUROFEEDBACK TRAINING MODULE",
+        hardware: "HARDWARE CONNECTION & STATUS",
+        settings: "RUNTIME CONFIGURATION & SETTINGS"
+    };
+    value("page-header-title", titleMap[tabKey] || "NEUROSIM PLATFORM");
+
+    if (window.event && window.event.currentTarget) window.event.currentTarget.classList.add("active");
+    
+    if (tabKey === "history") renderHistoryTable();
+    if (tabKey === "reports") renderReportsPlatform();
+    if (tabKey === "research") loadResearchSummary();
+    if (tabKey === "settings") renderSettings();
+}
+
+async function renderSettings() {
+    const card = document.getElementById("settings-details");
+    if (!card) return;
+    try {
+        const settings = await api("/api/settings");
+        card.innerHTML = `
+            <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-top: 12px; font-size:13px; color:#334155;">
+                <div><strong>Application:</strong> ${settings.app_name} (${settings.version})</div>
+                <div><strong>Sampling Rate:</strong> ${settings.sampling_rate} Hz</div>
+                <div><strong>Window Duration:</strong> ${settings.window_size_sec} sec</div>
+                <div><strong>Montage Channels:</strong> ${settings.channels.join(", ")}</div>
+                <div><strong>Notch Filter:</strong> ${settings.filters.notch}</div>
+                <div><strong>Ocular Filter:</strong> ${settings.filters.eog}</div>
+                <div><strong>EMG Filter:</strong> ${settings.filters.emg}</div>
+            </div>
+        `;
+    } catch (error) {
+        card.innerHTML = `<p style="color:#EF4444;">Failed to load settings: ${error.message}</p>`;
     }
 }
 
-// Canvases
-const waveCanvas = document.getElementById('waveCanvas');
-const waveCtx = waveCanvas.getContext('2d');
-const psdCanvas = document.getElementById('psdCanvas');
-const psdCtx = psdCanvas.getContext('2d');
-
 function resizeCanvases() {
-    if (waveCanvas && psdCanvas) {
+    if (waveCanvas) {
         waveCanvas.width = waveCanvas.clientWidth;
         waveCanvas.height = waveCanvas.clientHeight;
+    }
+    if (psdCanvas) {
         psdCanvas.width = psdCanvas.clientWidth;
         psdCanvas.height = psdCanvas.clientHeight;
     }
 }
-window.addEventListener('resize', resizeCanvases);
-setTimeout(resizeCanvases, 100);
 
-let waveHistory = new Array(350).fill(0);
+function drawEmpty(context, canvas, message) {
+    if (!context || !canvas) return;
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.fillStyle = "#94A3B8";
+    context.font = "14px Segoe UI";
+    context.textAlign = "center";
+    context.fillText(message, canvas.width / 2, canvas.height / 2);
+}
 
-// Main Animation Loop
-function renderLoop() {
-    tCursor += 0.04;
-
-    // Signal generation
-    let val = 0;
-    if (!isHardwareConnected) {
-        const sD = simParams.delta * Math.sin(2 * Math.PI * 2 * tCursor);
-        const sT = simParams.theta * Math.sin(2 * Math.PI * 6 * tCursor);
-        const sA = simParams.alpha * Math.sin(2 * Math.PI * 10 * tCursor);
-        const sB = simParams.beta * Math.sin(2 * Math.PI * 20 * tCursor);
-        const n = (Math.random() - 0.5) * simParams.noise * 2;
-        val = (sD + sT + sA + sB + n) * 32.0;
-    } else {
-        val = waveHistory[waveHistory.length - 1];
-    }
-
-    waveHistory.shift();
-    waveHistory.push(val);
-
-    // Draw Waveform
-    const w = waveCanvas.width;
-    const h = waveCanvas.height;
-    waveCtx.clearRect(0, 0, w, h);
-    
-    // Grid lines
-    waveCtx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
-    waveCtx.lineWidth = 1;
-    for (let y = 0; y < h; y += 30) {
-        waveCtx.beginPath(); waveCtx.moveTo(0, y); waveCtx.lineTo(w, y); waveCtx.stroke();
-    }
-
+function drawWaveform(samples) {
+    if (!samples || samples.length === 0) return drawEmpty(waveCtx, waveCanvas, "No Signal Stream");
+    const width = waveCanvas.width;
+    const height = waveCanvas.height;
+    const peak = Math.max(1, ...samples.map((sample) => Math.abs(sample)));
+    waveCtx.clearRect(0, 0, width, height);
     waveCtx.beginPath();
-    waveCtx.strokeStyle = '#06B6D4';
+    waveCtx.strokeStyle = "#06B6D4";
     waveCtx.lineWidth = 2;
-    waveCtx.shadowColor = '#06B6D4';
-    waveCtx.shadowBlur = 8;
-
-    const step = w / waveHistory.length;
-    for (let i = 0; i < waveHistory.length; i++) {
-        const x = i * step;
-        const y = h / 2 - waveHistory[i];
-        if (i === 0) waveCtx.moveTo(x, y);
-        else waveCtx.lineTo(x, y);
-    }
-    waveCtx.stroke();
-    waveCtx.shadowBlur = 0;
-
-    // Calculate Band Powers
-    const total = simParams.delta + simParams.theta + simParams.alpha + simParams.beta + 0.001;
-    const pD = ((simParams.delta / total) * 100).toFixed(1);
-    const pT = ((simParams.theta / total) * 100).toFixed(1);
-    const pA = ((simParams.alpha / total) * 100).toFixed(1);
-    const pB = ((simParams.beta / total) * 100).toFixed(1);
-
-    document.getElementById('lbl-delta').innerText = pD + ' %';
-    document.getElementById('fill-delta').style.width = pD + '%';
-    document.getElementById('lbl-theta').innerText = pT + ' %';
-    document.getElementById('fill-theta').style.width = pT + '%';
-    document.getElementById('lbl-alpha').innerText = pA + ' %';
-    document.getElementById('fill-alpha').style.width = pA + '%';
-    document.getElementById('lbl-beta').innerText = pB + ' %';
-    document.getElementById('fill-beta').style.width = pB + '%';
-
-    // Stress & Metrics
-    const stress = (simParams.beta / (simParams.alpha + simParams.theta + 0.001)).toFixed(2);
-    document.getElementById('m-stress').innerText = stress;
-    
-    const tbr = (simParams.theta / (simParams.beta + 0.001)).toFixed(2);
-    const abr = (simParams.alpha / (simParams.beta + 0.001)).toFixed(2);
-    const eng = (simParams.beta / (simParams.alpha + simParams.theta + 0.001)).toFixed(2);
-    
-    if (document.getElementById('b-tbr')) {
-        document.getElementById('b-tbr').innerText = tbr;
-        document.getElementById('b-abr').innerText = abr;
-        document.getElementById('b-eng').innerText = eng;
-    }
-
-    // Cognitive State Logic
-    let state = 'MODERATE';
-    if (parseFloat(pB) >= 35 || stress >= 0.8) {
-        state = 'HIGH';
-        document.getElementById('m-load').style.color = '#EF4444';
-    } else if (parseFloat(pA) >= 35) {
-        state = 'RELAXED';
-        document.getElementById('m-load').style.color = '#8B5CF6';
-    } else {
-        state = 'MODERATE';
-        document.getElementById('m-load').style.color = '#06B6D4';
-    }
-    document.getElementById('m-load').innerText = state;
-
-    // Draw PSD Spectrum
-    const pw = psdCanvas.width;
-    const ph = psdCanvas.height;
-    psdCtx.clearRect(0, 0, pw, ph);
-
-    const bands = [
-        { f: 2, val: pD, color: '#06B6D4' },
-        { f: 6, val: pT, color: '#10B981' },
-        { f: 10, val: pA, color: '#8B5CF6' },
-        { f: 20, val: pB, color: '#F59E0B' }
-    ];
-
-    bands.forEach(b => {
-        const x = (b.f / 40) * pw;
-        const barH = (parseFloat(b.val) / 100) * (ph - 40);
-        psdCtx.fillStyle = b.color;
-        psdCtx.fillRect(x - 12, ph - barH - 20, 24, barH);
-        psdCtx.fillStyle = '#94A3B8';
-        psdCtx.font = '10px Segoe UI';
-        psdCtx.fillText(b.f + 'Hz', x - 10, ph - 5);
+    samples.forEach((sample, index) => {
+        const x = (index / Math.max(samples.length - 1, 1)) * width;
+        const y = height / 2 - (sample / peak) * (height * 0.4);
+        if (index === 0) waveCtx.moveTo(x, y); else waveCtx.lineTo(x, y);
     });
+    waveCtx.stroke();
+}
 
-    if (isRecording) {
-        sampleCount += 10;
-        const elapsed = Math.floor((Date.now() - recordingStart) / 1000);
-        const mins = String(Math.floor(elapsed / 60)).padStart(2, '0');
-        const secs = String(elapsed % 60).padStart(2, '0');
-        document.getElementById('s-dur').innerText = `${mins}:${secs}`;
-        document.getElementById('s-samples').innerText = sampleCount;
+function drawSpectrum(spectrum) {
+    if (!spectrum || !spectrum.frequencies_hz || spectrum.frequencies_hz.length === 0) {
+        return drawEmpty(psdCtx, psdCanvas, "PSD unavailable");
     }
-
-    requestAnimationFrame(renderLoop);
+    const frequencies = spectrum.frequencies_hz;
+    const power = spectrum.power;
+    const width = psdCanvas.width;
+    const height = psdCanvas.height;
+    const peak = Math.max(1e-12, ...power);
+    psdCtx.clearRect(0, 0, width, height);
+    psdCtx.beginPath();
+    psdCtx.strokeStyle = "#8B5CF6";
+    psdCtx.lineWidth = 2;
+    frequencies.forEach((frequency, index) => {
+        const x = Math.min(frequency, 40) / 40 * width;
+        const y = height - (power[index] / peak) * (height * 0.9) - 4;
+        if (index === 0) psdCtx.moveTo(x, y); else psdCtx.lineTo(x, y);
+    });
+    psdCtx.stroke();
 }
 
-renderLoop();
+function updateMetrics(metrics) {
+    const available = metrics && typeof metrics === "object";
+    const percent = (name) => available ? metric(metrics[`${name}_rel`], 1, " %") : "--";
+    ["delta", "theta", "alpha", "beta"].forEach((band) => {
+        value(`lbl-${band}`, percent(band));
+        const fill = document.getElementById(`fill-${band}`);
+        if (fill) fill.style.width = available && Number.isFinite(metrics[`${band}_rel`]) ? `${metrics[`${band}_rel`]}%` : "0%";
+    });
+    
+    // Cognitive Load & Classification
+    const cogText = (runtimeState && runtimeState.cognitive_state) ? `${runtimeState.cognitive_state} LOAD` : "--";
+    value("m-load", cogText);
+    value("dash-m-load", cogText);
 
-// Session Controls
-function startSession() {
-    isRecording = true;
-    recordingStart = Date.now();
-    sampleCount = 0;
-    const id = 'SESS-' + Math.floor(1000 + Math.random() * 9000);
-    document.getElementById('s-id').innerText = id;
-}
+    const domText = available ? `${metrics.dominant_band || "--"} (${metric(metrics.dominant_frequency, 2, " Hz")})` : "--";
+    value("m-dom", domText);
+    value("dash-m-dom", domText);
 
-function stopSession() {
-    if (!isRecording) return;
-    isRecording = false;
+    const stressText = available ? metric(metrics.stress_index, 4) : "--";
+    value("m-stress", stressText);
+    value("dash-m-stress", stressText);
 
-    const elapsed = Math.floor((Date.now() - recordingStart) / 1000);
-    const mins = String(Math.floor(elapsed / 60)).padStart(2, '0');
-    const secs = String(elapsed % 60).padStart(2, '0');
+    const qualText = (runtimeState && runtimeState.streaming) ? "RUNTIME STREAM" : "NO SIGNAL";
+    value("m-qual", qualText);
+    value("dash-m-qual", qualText);
 
-    currentSessionData = {
-        id: document.getElementById('s-id').innerText,
-        duration: `${mins}:${secs}`,
-        samples: sampleCount,
-        load: document.getElementById('m-load').innerText,
-        stress: document.getElementById('m-stress').innerText,
-        delta: document.getElementById('fill-delta').style.width.replace('%', ''),
-        theta: document.getElementById('fill-theta').style.width.replace('%', ''),
-        alpha: document.getElementById('fill-alpha').style.width.replace('%', ''),
-        beta: document.getElementById('fill-beta').style.width.replace('%', ''),
-        date: new Date().toLocaleString()
-    };
+    value("b-tbr", available ? metric(metrics.tbr, 4) : "--");
+    value("b-abr", available ? metric(metrics.abr, 4) : "--");
+    value("b-eng", available ? metric(metrics.engagement, 4) : "--");
+    value("b-total", available ? metric(metrics.total_power, 4) : "--");
 
-    saveSessionLocal(currentSessionData);
-    alert('Session Recorded & Saved to Local History!');
-}
+    value("b-delta-val", available ? metric(metrics.delta_rel, 1, "%") : "--");
+    value("b-theta-val", available ? metric(metrics.theta_rel, 1, "%") : "--");
+    value("b-alpha-val", available ? metric(metrics.alpha_rel, 1, "%") : "--");
+    value("b-beta-val", available ? metric(metrics.beta_rel, 1, "%") : "--");
 
-function downloadCurrentReport() {
-    if (!currentSessionData) {
-        stopSession();
+    value("b-spec-ent", available ? metric(metrics.spectral_entropy, 4) : "--");
+    value("b-samp-ent", available ? metric(metrics.sample_entropy, 4) : "--");
+    value("b-lzc", available ? metric(metrics.lzc, 4) : "--");
+    value("b-faa", available ? metric(metrics.faa, 4) : "--");
+    value("b-usable", available ? metric(metrics.usable_data_pct, 1, "%") : "--");
+    value("b-artifact", available ? metric(metrics.artifact_burden_pct, 2, "%") : "--");
+
+    // Real-Time Neurofeedback Protocol Calculations
+    if (available && metrics) {
+        const protoSelect = document.getElementById("nf-protocol-select");
+        const protocol = protoSelect ? protoSelect.value : "alpha";
+        const stress = metrics.stress_index || 0.5;
+        const alphaRel = metrics.alpha_rel || 25;
+        const tbr = metrics.tbr || 1.0;
+        
+        let focusScore = 0;
+        let statusText = "SUB-THRESHOLD";
+        let regulationText = "SUB-THRESHOLD";
+
+        if (protocol === "alpha") {
+            value("nf-proto-name", "ALPHA ENHANCEMENT");
+            focusScore = Math.max(0, Math.min(100, (alphaRel / 35.0) * 100));
+            statusText = alphaRel >= 30 ? "OPTIMAL TARGET" : (alphaRel >= 20 ? "STABLE REGULATION" : "SUB-THRESHOLD");
+            regulationText = alphaRel >= 25 ? "HIGH ALPHA SYNCHRONY" : "MODERATE SYNC";
+        } else if (protocol === "tbr") {
+            value("nf-proto-name", "THETA/BETA REDUCTION");
+            focusScore = Math.max(0, Math.min(100, Math.max(0, (2.5 - tbr) / 2.5 * 100)));
+            statusText = tbr <= 1.5 ? "OPTIMAL TARGET" : (tbr <= 2.5 ? "STABLE REGULATION" : "SUB-THRESHOLD");
+            regulationText = tbr <= 2.0 ? "OPTIMAL ATTENTION" : "HIGH THETA WAVES";
+        } else {
+            value("nf-proto-name", "BETA BOOSTING");
+            focusScore = Math.max(0, Math.min(100, stress * 100));
+            statusText = stress >= 0.7 ? "OPTIMAL TARGET" : (stress >= 0.4 ? "STABLE REGULATION" : "SUB-THRESHOLD");
+            regulationText = stress >= 0.6 ? "ACTIVE ALERTNESS" : "CALM STATE";
+        }
+
+        value("nf-status", statusText);
+        value("nf-focus", metric(focusScore, 1, "%"));
+        value("nf-regulation", regulationText);
+    } else {
+        value("nf-status", "--");
+        value("nf-focus", "--");
+        value("nf-regulation", "--");
     }
-    exportSessionPDF(currentSessionData);
 }
 
-function saveSessionLocal(session) {
-    let history = JSON.parse(localStorage.getItem('neurosim_history') || '[]');
-    history.unshift(session);
-    localStorage.setItem('neurosim_history', JSON.stringify(history));
-}
+function updateSession(state) {
+    const sessId = state.session_id || "--";
+    const durText = duration(state.duration_sec);
+    const samplesText = String(state.samples || 0);
 
-function renderHistoryTable() {
-    const history = JSON.parse(localStorage.getItem('neurosim_history') || '[]');
-    const container = document.getElementById('history-table-body');
-    if (!container) return;
+    value("s-id", sessId);
+    value("s-dur", durText);
+    value("s-samples", samplesText);
+    value("s-status", state.state || "IDLE");
 
-    if (history.length === 0) {
-        container.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#94A3B8;">No recorded sessions found.</td></tr>';
-        return;
+    value("dash-s-id", sessId);
+    value("dash-s-dur", durText);
+    value("dash-s-samples", samplesText);
+    value("dash-s-gaps", String(state.sequence_gaps || 0));
+
+    value("mode-badge", `SIMULATOR: ${state.state || "IDLE"}`);
+    
+    if (state.streaming) {
+        value("hardware-status", "Hardware: Connected (Simulator)");
+        value("hw-status-val", "CONNECTED (SIMULATOR)");
+        value("hw-source-val", state.source || "SYNTHETIC");
+    } else {
+        value("hardware-status", "Hardware: Not Connected");
+        value("hw-status-val", "Not Connected / Idle");
+        value("hw-source-val", "NONE");
     }
-
-    container.innerHTML = history.map(item => `
-        <tr>
-            <td><strong>${item.id}</strong></td>
-            <td>${item.date}</td>
-            <td>${item.duration}</td>
-            <td><span style="color:${item.load === 'HIGH' ? '#EF4444' : '#06B6D4'}; font-weight:700;">${item.load}</span></td>
-            <td>${item.stress}</td>
-            <td><button class="btn" style="padding:4px 10px; font-size:11px;" onclick='exportSessionPDF(${JSON.stringify(item)})'>📄 PDF</button></td>
-        </tr>
-    `).join('');
 }
 
-// Hardware Web Serial Connect
-async function connectESP32Serial() {
-    if (!('serial' in navigator)) {
-        alert('Web Serial API is not supported on this browser. Please use Google Chrome or MS Edge.');
+function updateChannelOptions(channels) {
+    const select = document.getElementById("channel-select");
+    if (!select || !channels || channels.length === 0) return;
+    if (![...select.options].some((option) => option.value === selectedChannel)) selectedChannel = channels[0];
+    select.innerHTML = channels.map((channel) => `<option value="${channel}">${channel}</option>`).join("");
+    select.value = selectedChannel;
+}
+
+async function refreshRuntime() {
+    try {
+        runtimeState = await api("/api/state");
+        latestAnalysis = runtimeState.analysis_available ? await api("/api/analysis") : {analysis: null};
+        updateChannelOptions(runtimeState.channels);
+        updateSession(runtimeState);
+        updateMetrics(runtimeState.metrics);
+        drawSpectrum(latestAnalysis.analysis ? latestAnalysis.analysis.spectrum : null);
+        const waveform = await api(`/api/waveform?seconds=${selectedWindowSeconds}`);
+        drawWaveform(waveform.channels[selectedChannel]);
+        value("api-status", "API connected");
+    } catch (error) {
+        runtimeState = null;
+        updateMetrics(null);
+        drawEmpty(waveCtx, waveCanvas, "No Signal Stream");
+        drawEmpty(psdCtx, psdCanvas, "PSD unavailable");
+        value("api-status", `API unavailable: ${error.message}`);
+    }
+}
+
+async function lifecycle(action) {
+    try {
+        await api(`/api/session/${action}`, {method: "POST"});
+    } catch (error) {
+        value("api-status", error.message);
+    }
+    await refreshRuntime();
+}
+
+function startSession() { return lifecycle("start"); }
+function pauseSession() { return lifecycle("pause"); }
+function resumeSession() { return lifecycle("resume"); }
+function stopSession() { return lifecycle("stop"); }
+
+async function exportSelectedReportPDF() {
+    const select = document.getElementById("reports-session-select");
+    const sessionId = select ? select.value : null;
+    return downloadReportForSession(sessionId);
+}
+
+async function downloadReportForSession(sessionId) {
+    try {
+        const url = sessionId ? `/api/report?session_id=${encodeURIComponent(sessionId)}` : "/api/report";
+        const response = await api(url, {method: "POST"});
+        const blob = await response.blob();
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        const filename = sessionId ? `NeuroSim_${sessionId}.pdf` : "NeuroSim_Runtime_Report.pdf";
+        link.download = filename;
+        link.click();
+        URL.revokeObjectURL(link.href);
+    } catch (error) {
+        value("api-status", error.message);
+    }
+}
+
+async function deleteSessionFromHistory(sessionId) {
+    if (!sessionId) return;
+    try {
+        await api(`/api/history/delete?session_id=${encodeURIComponent(sessionId)}`, {method: "POST"});
+        await renderHistoryTable();
+        await renderReportsPlatform();
+    } catch (error) {
+        value("api-status", error.message);
+    }
+}
+
+async function inspectSessionDetail(sessionId) {
+    const detailDiv = document.getElementById("history-session-detail");
+    if (!detailDiv || !sessionId) return;
+    try {
+        const historyData = await api("/api/history");
+        const session = (historyData.sessions || []).find((s) => s.session_id === sessionId);
+        if (!session) return;
+
+        detailDiv.innerHTML = `
+            <div class="glass-card" style="margin-top:16px; border: 1px solid var(--border-glow);">
+                <div class="card-title">Session Detail Inspector: ${session.session_id}</div>
+                <div class="grid-4" style="margin-bottom:12px;">
+                    <div class="metric-card"><div class="metric-label">MODE</div><div class="metric-val" style="font-size:16px;">${session.mode}</div></div>
+                    <div class="metric-card"><div class="metric-label">DURATION</div><div class="metric-val" style="font-size:16px;">${duration(session.duration)}</div></div>
+                    <div class="metric-card"><div class="metric-label">DOMINANT BAND</div><div class="metric-val" style="font-size:16px;">${session.dominant_band}</div></div>
+                    <div class="metric-card"><div class="metric-label">STRESS INDEX</div><div class="metric-val" style="font-size:16px;">${metric(session.stress_index, 4)}</div></div>
+                </div>
+                <div style="font-size:13px; color:var(--text-muted);">
+                    <strong>Relative Band Powers:</strong> Delta: ${metric(session.rel_delta, 1, "%")} | Theta: ${metric(session.rel_theta, 1, "%")} | Alpha: ${metric(session.rel_alpha, 1, "%")} | Beta: ${metric(session.rel_beta, 1, "%")}
+                </div>
+            </div>
+        `;
+    } catch (error) {
+        value("api-status", error.message);
+    }
+}
+
+async function renderHistoryTable() {
+    const body = document.getElementById("history-table-body");
+    if (!body) return;
+    try {
+        const historyData = await api("/api/history");
+        const sessions = historyData.sessions || [];
+        if (sessions.length === 0) {
+            if (runtimeState && runtimeState.state === "STOPPED") {
+                body.innerHTML = `<tr><td><strong>${runtimeState.session_id}</strong></td><td>Current runtime</td><td>${duration(runtimeState.duration_sec)}</td><td>${runtimeState.state}</td><td>${metric(runtimeState.metrics && runtimeState.metrics.stress_index, 4)}</td><td><button class="btn" style="padding:4px 8px; font-size:12px;" onclick="downloadReportForSession(null)">Export PDF</button></td></tr>`;
+            } else {
+                body.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#94A3B8;">No recorded sessions found in database archive.</td></tr>';
+            }
+            return;
+        }
+
+        body.innerHTML = sessions.map((s) => `
+            <tr>
+                <td><strong>${s.session_id}</strong></td>
+                <td>${s.mode || "SIMULATOR"}</td>
+                <td>${duration(s.duration)}</td>
+                <td>${s.cognitive_state || "COMPLETED"}</td>
+                <td>${metric(s.stress_index, 4)}</td>
+                <td>
+                    <button class="btn" style="padding:4px 8px; font-size:12px; margin-right:4px;" onclick="inspectSessionDetail('${s.session_id}')">Inspect</button>
+                    <button class="btn" style="padding:4px 8px; font-size:12px; margin-right:4px;" onclick="downloadReportForSession('${s.session_id}')">Export PDF</button>
+                    <button class="btn btn-rose" style="padding:4px 8px; font-size:12px;" onclick="deleteSessionFromHistory('${s.session_id}')">Delete</button>
+                </td>
+            </tr>
+        `).join("");
+    } catch (error) {
+        body.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#EF4444;">Failed to load history: ${error.message}</td></tr>`;
+    }
+}
+
+async function renderReportsPlatform() {
+    const select = document.getElementById("reports-session-select");
+    if (!select) return;
+    try {
+        const historyData = await api("/api/history");
+        const sessions = historyData.sessions || [];
+        
+        let optionsHtml = '<option value="">Current Session / Latest</option>';
+        optionsHtml += sessions.map(s => `<option value="${s.session_id}">${s.session_id} (${s.mode} - ${duration(s.duration)})</option>`).join("");
+        select.innerHTML = optionsHtml;
+        
+        updateReportPreview();
+        select.onchange = updateReportPreview;
+    } catch (error) {
+        value("api-status", error.message);
+    }
+}
+
+async function updateReportPreview() {
+    const select = document.getElementById("reports-session-select");
+    const sessionId = select ? select.value : "";
+    try {
+        if (!sessionId) {
+            value("rep-id", runtimeState ? (runtimeState.session_id || "--") : "--");
+            value("rep-dur", runtimeState ? duration(runtimeState.duration_sec) : "--");
+            value("rep-src", runtimeState ? (runtimeState.source || "--") : "--");
+            value("rep-state", runtimeState ? (runtimeState.cognitive_state || "--") : "--");
+            const m = runtimeState ? runtimeState.metrics : null;
+            value("rep-stress", m ? metric(m.stress_index, 4) : "--");
+            value("rep-band", m ? (m.dominant_band || "--") : "--");
+            value("rep-tbr", m ? metric(m.tbr, 4) : "--");
+            value("rep-abr", m ? metric(m.abr, 4) : "--");
+        } else {
+            const historyData = await api("/api/history");
+            const session = (historyData.sessions || []).find((s) => s.session_id === sessionId);
+            if (session) {
+                value("rep-id", session.session_id);
+                value("rep-dur", duration(session.duration));
+                value("rep-src", session.mode || "SIMULATOR");
+                value("rep-state", session.cognitive_state || "COMPLETED");
+                value("rep-stress", metric(session.stress_index, 4));
+                value("rep-band", session.dominant_band || "--");
+                const b = session.rel_beta || 25.0;
+                const tbr = session.rel_theta / (b + 1e-6);
+                const abr = session.rel_alpha / (b + 1e-6);
+                value("rep-tbr", metric(tbr, 4));
+                value("rep-abr", metric(abr, 4));
+            }
+        }
+    } catch (error) {
+        value("api-status", error.message);
+    }
+}
+
+async function loadResearchSummary() {
+    const timelineDiv = document.getElementById("research-longitudinal-timeline");
+    const cmpA = document.getElementById("cmp-sess-a");
+    const cmpB = document.getElementById("cmp-sess-b");
+    try {
+        const summary = await api("/api/research/longitudinal");
+        value("r-sessions", summary.total_sessions || 0);
+        value("r-duration", duration(summary.total_duration_sec));
+        value("r-stress", metric(summary.mean_stress_index, 4));
+
+        const timeline = summary.timeline || [];
+        if (cmpA && cmpB) {
+            const opts = '<option value="">Select Session</option>' + timeline.map(s => `<option value="${s.session_id}">${s.session_id} (${s.cognitive_state})</option>`).join("");
+            cmpA.innerHTML = opts;
+            cmpB.innerHTML = opts;
+        }
+
+        if (!timelineDiv) return;
+        if (timeline.length === 0) {
+            timelineDiv.innerHTML = '<p style="color:#94A3B8; text-align:center; padding:20px;">No research sessions recorded yet in database archive.</p>';
+            return;
+        }
+
+        timelineDiv.innerHTML = `
+            <div style="font-size:14px; font-weight:600; margin-bottom:10px;">Longitudinal Session Progression</div>
+            <table>
+                <thead>
+                    <tr><th>Session ID</th><th>Timestamp</th><th>Duration</th><th>Delta %</th><th>Theta %</th><th>Alpha %</th><th>Beta %</th><th>Stress</th><th>State</th></tr>
+                </thead>
+                <tbody>
+                    ${timeline.map((s) => `
+                        <tr>
+                            <td><strong>${s.session_id}</strong></td>
+                            <td>${s.timestamp}</td>
+                            <td>${duration(s.duration)}</td>
+                            <td>${metric(s.rel_delta, 1, "%")}</td>
+                            <td>${metric(s.rel_theta, 1, "%")}</td>
+                            <td>${metric(s.rel_alpha, 1, "%")}</td>
+                            <td>${metric(s.rel_beta, 1, "%")}</td>
+                            <td>${metric(s.stress_index, 4)}</td>
+                            <td><span class="badge">${s.cognitive_state}</span></td>
+                        </tr>
+                    `).join("")}
+                </tbody>
+            </table>
+        `;
+    } catch (error) {
+        value("api-status", error.message);
+    }
+}
+
+async function runSessionComparison() {
+    const cmpA = document.getElementById("cmp-sess-a");
+    const cmpB = document.getElementById("cmp-sess-b");
+    const resDiv = document.getElementById("comparison-results-div");
+    if (!cmpA || !cmpB || !resDiv) return;
+    const idA = cmpA.value;
+    const idB = cmpB.value;
+    if (!idA || !idB) {
+        resDiv.innerHTML = '<p style="color:#F59E0B;">Please select two sessions to compare.</p>';
         return;
     }
     try {
-        serialPort = await navigator.serial.requestPort();
-        await serialPort.open({ baudRate: 115200 });
-        isHardwareConnected = true;
-        document.getElementById('mode-badge').innerText = 'HARDWARE MODE (ESP32)';
-        document.getElementById('mode-badge').style.borderColor = '#10B981';
-        document.getElementById('mode-badge').style.color = '#10B981';
-        alert('ESP32 Serial Port Connected Successfully!');
-    } catch (e) {
-        console.error('Serial Connection Failed:', e);
+        const compData = await api(`/api/research/compare?ids=${encodeURIComponent(idA)},${encodeURIComponent(idB)}`);
+        const sessions = compData.sessions || [];
+        if (sessions.length < 2) {
+            resDiv.innerHTML = '<p style="color:#EF4444;">Failed to retrieve both session records for comparison.</p>';
+            return;
+        }
+        const sA = sessions[0];
+        const sB = sessions[1];
+
+        resDiv.innerHTML = `
+            <table>
+                <thead>
+                    <tr><th>Metric</th><th>Session A (${sA.session_id})</th><th>Session B (${sB.session_id})</th><th>Difference</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Duration</td><td>${duration(sA.duration)}</td><td>${duration(sB.duration)}</td><td>${duration(Math.abs(sB.duration - sA.duration))}</td></tr>
+                    <tr><td>Cognitive State</td><td>${sA.cognitive_state}</td><td>${sB.cognitive_state}</td><td>--</td></tr>
+                    <tr><td>Stress Index</td><td>${metric(sA.stress_index, 4)}</td><td>${metric(sB.stress_index, 4)}</td><td>${metric(sB.stress_index - sA.stress_index, 4)}</td></tr>
+                    <tr><td>Dominant Band</td><td>${sA.dominant_band}</td><td>${sB.dominant_band}</td><td>--</td></tr>
+                    <tr><td>Delta %</td><td>${metric(sA.rel_delta, 1, "%")}</td><td>${metric(sB.rel_delta, 1, "%")}</td><td>${metric(sB.rel_delta - sA.rel_delta, 1, "%")}</td></tr>
+                    <tr><td>Theta %</td><td>${metric(sA.rel_theta, 1, "%")}</td><td>${metric(sB.rel_theta, 1, "%")}</td><td>${metric(sB.rel_theta - sA.rel_theta, 1, "%")}</td></tr>
+                    <tr><td>Alpha %</td><td>${metric(sA.rel_alpha, 1, "%")}</td><td>${metric(sB.rel_alpha, 1, "%")}</td><td>${metric(sB.rel_alpha - sA.rel_alpha, 1, "%")}</td></tr>
+                    <tr><td>Beta %</td><td>${metric(sA.rel_beta, 1, "%")}</td><td>${metric(sB.rel_beta, 1, "%")}</td><td>${metric(sB.rel_beta - sA.rel_beta, 1, "%")}</td></tr>
+                </tbody>
+            </table>
+        `;
+    } catch (error) {
+        resDiv.innerHTML = `<p style="color:#EF4444;">Comparison failed: ${error.message}</p>`;
     }
 }
+
+async function exportResearchCSV() {
+    try {
+        const response = await fetch("/api/research/export_csv");
+        const blob = await response.blob();
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = "neurosim_research_dataset.csv";
+        link.click();
+        URL.revokeObjectURL(link.href);
+    } catch (error) {
+        value("api-status", error.message);
+    }
+}
+
+async function exportResearchBIDS() {
+    try {
+        const bidsData = await api("/api/research/bids");
+        const blob = new Blob([JSON.stringify(bidsData, null, 2)], {type: "application/json"});
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = "bids_dataset_description.json";
+        link.click();
+        URL.revokeObjectURL(link.href);
+    } catch (error) {
+        value("api-status", error.message);
+    }
+}
+
+window.addEventListener("resize", resizeCanvases);
+window.addEventListener("DOMContentLoaded", () => {
+    resizeCanvases();
+    const chSel = document.getElementById("channel-select");
+    if (chSel) chSel.addEventListener("change", (event) => { selectedChannel = event.target.value; refreshRuntime(); });
+    const winSel = document.getElementById("window-select");
+    if (winSel) winSel.addEventListener("change", (event) => { selectedWindowSeconds = Number(event.target.value); refreshRuntime(); });
+    const nfSel = document.getElementById("nf-protocol-select");
+    if (nfSel) nfSel.addEventListener("change", refreshRuntime);
+    refreshRuntime();
+    window.setInterval(refreshRuntime, 500);
+});

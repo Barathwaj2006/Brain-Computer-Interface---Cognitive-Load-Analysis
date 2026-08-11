@@ -43,5 +43,22 @@ class TestSignalProcessing(unittest.TestCase):
     def test_beta_dominance(self):
         self._test_pure_band(0.05, 0.05, 0.05, 1.0, 'BETA')
 
+    def test_advanced_scientific_metrics(self):
+        """Verify calculation of spectral entropy, sample entropy, LZC, and artifact burden."""
+        waveform, _ = self.generator.generate_chunk(1250)
+        filtered = self.filter_obj.process(waveform)
+        freqs, psd = self.psd_analyzer.compute_psd(filtered)
+        metrics = self.psd_analyzer.analyze_bands(freqs, psd)
+
+        self.assertIn('spectral_entropy', metrics)
+        self.assertIn('sample_entropy', metrics)
+        self.assertIn('lzc', metrics)
+        self.assertIn('faa', metrics)
+        self.assertIn('usable_data_pct', metrics)
+        self.assertIn('artifact_burden_pct', metrics)
+        self.assertGreaterEqual(metrics['spectral_entropy'], 0.0)
+        self.assertLessEqual(metrics['spectral_entropy'], 1.0)
+
+
 if __name__ == '__main__':
     unittest.main()
