@@ -3,192 +3,861 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NEUROSIM — Synthetic EEG Cognitive Analysis Platform</title>
+    <title>NEUROSIM : Scientific EEG Cognitive Analytics & DSP Platform</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="stylesheet" href="styles.css">
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#0B0F19">
+    <meta name="theme-color" content="#070B14">
+    <meta name="description" content="NeuroSim: Production-Grade Scientific EEG Cognitive Analytics, Real-Time Wi-Fi Telemetry & DSP Platform">
+    <meta property="og:title" content="NeuroSim : Real-Time EEG Cognitive Analytics">
+    <meta property="og:description" content="Scientific EEG cognitive analysis with 250Hz Wi-Fi telemetry and Radix-2 FFT DSP">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="/favicon.svg">
+    <meta name="twitter:card" content="summary">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
 
-    <!-- Sidebar Navigation -->
-    <div id="sidebar">
+    <!-- Left Navigation Sidebar -->
+    <aside id="sidebar">
         <div class="brand-header">
-            <div class="brand-title">NEUROSIM</div>
-            <div class="brand-sub">COGNITIVE ANALYSIS WEB APP</div>
+            <div class="brand-logo-wrap">
+                <span class="brand-icon">◉/╲◉</span>
+                <span class="brand-title">NEUROSIM</span>
+            </div>
+            <div class="brand-sub">RESEARCH WORKSTATION</div>
+            <div class="badge-research">SCIENTIFIC GRADE • 250 HZ</div>
         </div>
-        <ul class="nav-list">
-            <li class="nav-item active" onclick="switchTab('monitor')">📈 Live Monitor</li>
-            <li class="nav-item" onclick="switchTab('band')">📊 Band Analysis</li>
-            <li class="nav-item" onclick="switchTab('session')">🔴 Session Control</li>
-            <li class="nav-item" onclick="switchTab('history')">📁 History Archive</li>
-            <li class="nav-item" onclick="switchTab('settings')">⚙ Settings</li>
-        </ul>
-    </div>
 
-    <!-- Main Content Area -->
-    <div id="main-content">
-        <header>
-            <div class="header-title">LIVE MONITORING DASHBOARD</div>
-            <div style="display: flex; gap: 12px; align-items: center;">
-                <button class="btn" style="padding: 6px 12px; font-size: 11px;" onclick="connectESP32Serial()">🔌 CONNECT ESP32</button>
-                <div class="badge" id="mode-badge">SIMULATION MODE</div>
+        <ul class="nav-list">
+            <li class="nav-item active" data-tab="monitor" onclick="switchTab('monitor')">
+                <svg class="nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                </svg>
+                <span class="nav-label">Live Monitor</span>
+            </li>
+            <li class="nav-item" data-tab="signal-lab" onclick="switchTab('signal-lab')">
+                <svg class="nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M6 18h8"></path><path d="M3 22h18"></path><path d="M14 22a7 7 0 1 0 0-14h-1"></path>
+                    <path d="M9 14h2"></path><path d="M9 12a2 2 0 0 1-2-2V6h6v4a2 2 0 0 1-2 2Z"></path>
+                </svg>
+                <span class="nav-label">Signal Laboratory</span>
+            </li>
+            <li class="nav-item" data-tab="topo-map" onclick="switchTab('topo-map')">
+                <svg class="nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
+                    <line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line>
+                </svg>
+                <span class="nav-label">10-20 Topo Map</span>
+            </li>
+            <li class="nav-item" data-tab="classification" onclick="switchTab('classification')">
+                <svg class="nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"></path>
+                    <path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"></path>
+                    <path d="M7 21h10"></path><path d="M12 3v18"></path>
+                </svg>
+                <span class="nav-label">Dual Classification</span>
+            </li>
+            <li class="nav-item" data-tab="validation-bench" onclick="switchTab('validation-bench')">
+                <svg class="nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M10 2v7.31L4.15 19.4A2 2 0 0 0 5.86 22h12.28a2 2 0 0 0 1.71-2.6L14 9.31V2"></path>
+                    <path d="M8.5 2h7"></path><path d="M7 16h10"></path>
+                </svg>
+                <span class="nav-label">DSP Benchmark</span>
+            </li>
+            <li class="nav-item" data-tab="wifi-hardware" onclick="switchTab('wifi-hardware')">
+                <svg class="nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4.93 19.07A10 10 0 0 1 19.07 4.93"></path>
+                    <path d="M7.76 16.24A6 6 0 0 1 16.24 7.76"></path>
+                    <path d="M10.59 13.41A2 2 0 0 1 13.41 10.59"></path>
+                    <line x1="2" y1="22" x2="6.3" y2="17.7"></line>
+                </svg>
+                <span class="nav-label">Wi-Fi Hardware</span>
+            </li>
+            <li class="nav-item" data-tab="history" onclick="switchTab('history')">
+                <svg class="nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                </svg>
+                <span class="nav-label">Session Archive</span>
+            </li>
+            <li class="nav-item" data-tab="report" onclick="switchTab('report')">
+                <svg class="nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line>
+                </svg>
+                <span class="nav-label">Report Exporter</span>
+            </li>
+        </ul>
+
+        <!-- Sidebar Telemetry Footer -->
+        <div class="sidebar-footer">
+            <div class="footer-label">WI-FI STREAM GATEWAY</div>
+            <div class="footer-val" id="sb-source">LISTENING ON LAPTOP WI-FI</div>
+            <div class="footer-ip" id="sb-ip">192.168.29.155:5005</div>
+            <div class="footer-fps">
+                <span>UI: <strong id="val-fps">60</strong> FPS</span>
+                <span>DSP: <strong id="val-fs">250</strong> Hz</span>
+                <span>Drop: <strong id="val-loss-rate">0.0%</strong></span>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Workspace Area -->
+    <main id="main-content">
+        <!-- Top Application Header -->
+        <header id="top-header">
+            <div class="header-left">
+                <h1 class="header-title" id="page-title">LIVE MONITORING WORKSTATION</h1>
+                <div class="header-subtitle">Radix-2 Cooley-Tukey FFT • Welch Periodogram • Dual Classification</div>
+            </div>
+
+            <div class="header-right">
+                <!-- Researcher Profile Badge -->
+                <div class="user-profile-badge" id="header-user-badge">
+                    <div class="user-avatar" id="header-user-avatar">CR</div>
+                    <span class="user-name" id="header-user-name">Clinical Researcher</span>
+                    <button class="user-logout-btn" onclick="openAuthModal()" title="Switch Account">Sign In / Switch</button>
+                </div>
+
+                <!-- DSP Filter Toolbar -->
+                <div class="filter-toolbar">
+                    <button class="btn btn-tool active" id="btn-toggle-bpf" onclick="toggleBandpassFilter()" title="0.5-40Hz Butterworth Bandpass">
+                        BPF 0.5-40Hz: <strong id="lbl-bpf-state">ON</strong>
+                    </button>
+                    <button class="btn btn-tool" id="btn-toggle-notch" onclick="cycleNotchFilter()" title="AC Powerline Interference Notch Filter">
+                        Notch: <strong id="lbl-notch-state">50Hz</strong>
+                    </button>
+                    <button class="btn btn-tool" id="btn-toggle-audio" onclick="toggleAudioBiofeedback()" title="Web Audio Neurofeedback Tone">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 4px;">
+                            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                            <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                        </svg>Biofeedback: <strong id="lbl-audio-state">OFF</strong>
+                    </button>
+                </div>
+
+                <!-- Hardware Wi-Fi Status Badge -->
+                <div class="connection-status-badge badge-disconnected" id="header-status-badge">
+                    <span class="status-dot"></span>
+                    <span id="header-status-text">LISTENING ON LAPTOP WI-FI</span>
+                </div>
+
+                <!-- Session Record Quick Button -->
+                <button class="btn btn-record" id="btn-quick-record" onclick="toggleQuickRecord()">
+                    <span class="rec-dot"></span>
+                    <span id="btn-record-text">RECORD SESSION</span>
+                </button>
             </div>
         </header>
 
-        <!-- Live Monitor Screen -->
-        <div id="screen-monitor" class="view-screen active">
-            <div class="grid-4">
-                <div class="metric-card">
-                    <div class="metric-label">COGNITIVE LOAD</div>
-                    <div class="metric-val" id="m-load">MODERATE</div>
-                    <div class="metric-sub">Primary Classification</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-label">DOMINANT BAND</div>
-                    <div class="metric-val" id="m-dom" style="color: var(--purple);">ALPHA (10Hz)</div>
-                    <div class="metric-sub">Peak Spectral Power</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-label">STRESS INDEX</div>
-                    <div class="metric-val" id="m-stress" style="color: var(--amber);">0.48</div>
-                    <div class="metric-sub">Beta / (Alpha + Theta)</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-label">SIGNAL QUALITY</div>
-                    <div class="metric-val" id="m-qual" style="color: var(--emerald);">EXCELLENT</div>
-                    <div class="metric-sub">250 Hz Sampling</div>
-                </div>
+        <!-- Disagreement Alert Banner -->
+        <div class="disagreement-banner" id="disagreement-banner" style="display: none;">
+            <div class="disagreement-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path>
+                    <line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
             </div>
+            <div class="disagreement-text">
+                <strong>CLASSIFIER CONFLICT DETECTED:</strong>
+                <span id="disagreement-detail">Rule Classifier predicts LOW while ML Classifier predicts MODERATE. Review spectral feature parameters.</span>
+            </div>
+            <button class="btn" style="padding: 4px 10px; font-size: 11px; margin-left: auto;" onclick="switchTab('classification')">Review Consensus</button>
+        </div>
 
-            <div class="grid-2">
-                <div>
-                    <div class="glass-card">
-                        <div class="card-title">Live EEG Signal Waveform (uV)</div>
-                        <canvas id="waveCanvas"></canvas>
+        <div class="workspace-body">
+            
+            <!-- ============================================================= -->
+            <!-- 1. LIVE MONITOR SCREEN                                        -->
+            <!-- ============================================================= -->
+            <section id="screen-monitor" class="view-screen active">
+                <!-- Top Key Performance Metrics Cards -->
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-label">COGNITIVE WORKLOAD</div>
+                        <div class="metric-value" id="m-load" style="color: var(--cyan);">MODERATE</div>
+                        <div class="metric-sub" id="m-load-conf">Rule Margin: 82% • ML: 85%</div>
                     </div>
+
+                    <div class="metric-card">
+                        <div class="metric-label">SPECTRAL STRESS INDEX</div>
+                        <div class="metric-value" id="m-stress" style="color: var(--amber);">0.45</div>
+                        <div class="metric-sub">β / (α + θ) • Balanced Focus</div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="metric-label">DOMINANT RHYTHM</div>
+                        <div class="metric-value" id="m-dom" style="color: var(--purple);">ALPHA (10.0 Hz)</div>
+                        <div class="metric-sub" id="m-dom-sub">Welch PSD Peak Power</div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="metric-label">PACKET INTEGRITY</div>
+                        <div class="metric-value" id="m-packets" style="color: var(--emerald);">100%</div>
+                        <div class="metric-sub" id="m-drop-sub">0 drops (0.0% loss) • 250 Hz</div>
+                    </div>
+                </div>
+
+                <!-- Dual Visualizer: Waveform & PSD -->
+                <div class="charts-grid">
+                    <!-- Left: Oscilloscope Trace -->
                     <div class="glass-card">
-                        <div class="card-title">Power Spectral Density (PSD) Spectrum (0-40 Hz)</div>
+                        <div class="card-header">
+                            <div class="card-title">Live Oscilloscope Trace (μV)</div>
+                            <div class="card-controls">
+                                <span class="tag-pill">250 Hz</span>
+                                <span class="tag-pill">±50 μV Scale</span>
+                                <button class="btn-icon" onclick="resetWaveformView()" title="Reset Buffer">⟳</button>
+                            </div>
+                        </div>
+                        <div class="canvas-container">
+                            <canvas id="waveCanvas"></canvas>
+                        </div>
+                        <div class="trace-legend">
+                            <span class="legend-item"><span class="legend-color" style="background: var(--cyan);"></span> Filtered Waveform</span>
+                            <span class="legend-item"><span class="legend-color" style="background: rgba(255,255,255,0.25);"></span> Raw Unfiltered Waveform</span>
+                        </div>
+                    </div>
+
+                    <!-- Right: Band Powers & Ratios -->
+                    <div class="glass-card">
+                        <div class="card-header">
+                            <div class="card-title">Real-Time Band Power Decomposition</div>
+                            <span class="tag-pill">Welch Periodogram Averaging</span>
+                        </div>
+
+                        <div class="band-bars-wrap">
+                            <div class="band-bar-item">
+                                <div class="band-bar-header">
+                                    <span class="band-tag" style="color: var(--cyan);">DELTA (0.5 - 4 Hz)</span>
+                                    <strong id="lbl-delta">25.0%</strong>
+                                </div>
+                                <div class="progress-bar-bg">
+                                    <div class="progress-bar-fill" id="fill-delta" style="width: 25%; background: var(--cyan);"></div>
+                                </div>
+                            </div>
+
+                            <div class="band-bar-item">
+                                <div class="band-bar-header">
+                                    <span class="band-tag" style="color: var(--emerald);">THETA (4 - 8 Hz)</span>
+                                    <strong id="lbl-theta">25.0%</strong>
+                                </div>
+                                <div class="progress-bar-bg">
+                                    <div class="progress-bar-fill" id="fill-theta" style="width: 25%; background: var(--emerald);"></div>
+                                </div>
+                            </div>
+
+                            <div class="band-bar-item">
+                                <div class="band-bar-header">
+                                    <span class="band-tag" style="color: var(--blue);">ALPHA (8 - 13 Hz)</span>
+                                    <strong id="lbl-alpha">25.0%</strong>
+                                </div>
+                                <div class="progress-bar-bg">
+                                    <div class="progress-bar-fill" id="fill-alpha" style="width: 25%; background: var(--blue);"></div>
+                                </div>
+                            </div>
+
+                            <div class="band-bar-item">
+                                <div class="band-bar-header">
+                                    <span class="band-tag" style="color: var(--amber);">BETA (13 - 30 Hz)</span>
+                                    <strong id="lbl-beta">25.0%</strong>
+                                </div>
+                                <div class="progress-bar-bg">
+                                    <div class="progress-bar-fill" id="fill-beta" style="width: 25%; background: var(--amber);"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Secondary Metrics Grid -->
+                        <div class="ratios-subgrid">
+                            <div class="ratio-box">
+                                <div class="ratio-label">Theta/Beta (TBR)</div>
+                                <div class="ratio-value" id="val-tbr">1.00</div>
+                            </div>
+                            <div class="ratio-box">
+                                <div class="ratio-label">Alpha/Beta (ABR)</div>
+                                <div class="ratio-value" id="val-abr">1.00</div>
+                            </div>
+                            <div class="ratio-box">
+                                <div class="ratio-label">Engagement</div>
+                                <div class="ratio-value" id="val-eng">0.50</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bottom Full-Width PSD Spectrum -->
+                <div class="glass-card">
+                    <div class="card-header">
+                        <div class="card-title">Power Spectral Density (PSD) Spectrum (0 - 40 Hz)</div>
+                        <div class="card-controls">
+                            <span class="tag-pill">Radix-2 FFT</span>
+                            <span class="tag-pill">Hann Window (50% Overlap)</span>
+                            <span class="tag-pill">Resolution: 0.49 Hz</span>
+                        </div>
+                    </div>
+                    <div class="canvas-container-half">
                         <canvas id="psdCanvas"></canvas>
                     </div>
                 </div>
+            </section>
 
-                <div>
-                    <div class="glass-card">
-                        <div class="card-title">Real-Time Band Power Distribution</div>
-                        
-                        <div class="bar-container">
-                            <div class="bar-header"><span>DELTA (0.5-4 Hz)</span><span id="lbl-delta">25.0 %</span></div>
-                            <div class="bar-bg"><div class="bar-fill" id="fill-delta" style="width: 25%; background: var(--cyan);"></div></div>
+            <!-- ============================================================= -->
+            <!-- 2. 5-STAGE SIGNAL LABORATORY SCREEN                           -->
+            <!-- ============================================================= -->
+            <section id="screen-signal-lab" class="view-screen">
+                <div class="lab-layout">
+                    <!-- Left Stage Navigator -->
+                    <div class="glass-card lab-stages-nav">
+                        <div class="card-title" style="margin-bottom: 12px;">DSP RESEARCH PIPELINE</div>
+                        <div class="stage-nav-item active" onclick="setLabStage(0)">
+                            <div class="stage-number">01</div>
+                            <div class="stage-info">
+                                <strong>Raw Composite Waveform</strong>
+                                <span>Unfiltered Analog Microvolts</span>
+                            </div>
                         </div>
-
-                        <div class="bar-container">
-                            <div class="bar-header"><span>THETA (4-8 Hz)</span><span id="lbl-theta">25.0 %</span></div>
-                            <div class="bar-bg"><div class="bar-fill" id="fill-theta" style="width: 25%; background: var(--emerald);"></div></div>
+                        <div class="stage-nav-item" onclick="setLabStage(1)">
+                            <div class="stage-number">02</div>
+                            <div class="stage-info">
+                                <strong>Butterworth Bandpass Filter</strong>
+                                <span>0.5 - 40.0 Hz • DC Detrended</span>
+                            </div>
                         </div>
-
-                        <div class="bar-container">
-                            <div class="bar-header"><span>ALPHA (8-13 Hz)</span><span id="lbl-alpha">25.0 %</span></div>
-                            <div class="bar-bg"><div class="bar-fill" id="fill-alpha" style="width: 25%; background: var(--purple);"></div></div>
+                        <div class="stage-nav-item" onclick="setLabStage(2)">
+                            <div class="stage-number">03</div>
+                            <div class="stage-info">
+                                <strong>Welch Periodogram PSD</strong>
+                                <span>Power Spectral Density (μV²/Hz)</span>
+                            </div>
                         </div>
-
-                        <div class="bar-container">
-                            <div class="bar-header"><span>BETA (13-30 Hz)</span><span id="lbl-beta">25.0 %</span></div>
-                            <div class="bar-bg"><div class="bar-fill" id="fill-beta" style="width: 25%; background: var(--amber);"></div></div>
+                        <div class="stage-nav-item" onclick="setLabStage(3)">
+                            <div class="stage-number">04</div>
+                            <div class="stage-info">
+                                <strong>Band Power Integration</strong>
+                                <span>Trapezoidal Spectral Integration</span>
+                            </div>
+                        </div>
+                        <div class="stage-nav-item" onclick="setLabStage(4)">
+                            <div class="stage-number">05</div>
+                            <div class="stage-info">
+                                <strong>Feature Vector & Decision</strong>
+                                <span>Classification Matrix & CDS</span>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="glass-card" style="border-left: 3px solid var(--rose);">
-                        <div class="card-title" style="color: var(--rose);">Biomedical Disclaimer</div>
-                        <p style="font-size: 11px; color: var(--text-muted); line-height: 1.4;">
-                            This application processes synthetic EEG-like signals for research, simulation, and analysis. The results are not intended for medical diagnostics.
+                    <!-- Right Stage Visualization Card -->
+                    <div class="glass-card lab-stage-content">
+                        <div class="card-header">
+                            <div class="card-title" id="lab-stage-title">STAGE 1: RAW COMPOSITE WAVEFORM (μV)</div>
+                            <span class="tag-pill" id="lab-stage-badge">Live Buffer</span>
+                        </div>
+                        <div class="lab-stage-desc" id="lab-stage-desc">
+                            Incoming analog waveform stream from the ESP32 Wi-Fi hardware containing composite sinusoidal waves plus simulated electrode noise.
+                        </div>
+                        <div class="canvas-container-lab">
+                            <canvas id="labCanvas"></canvas>
+                        </div>
+                        <div class="lab-parameters" id="lab-parameters-wrap">
+                            <!-- Dynamic Parameter Metrics -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ============================================================= -->
+            <!-- 3. 10-20 SPATIAL TOPOGRAPHIC BRAIN HEATMAP SCREEN             -->
+            <!-- ============================================================= -->
+            <section id="screen-topo-map" class="view-screen">
+                <div class="topo-layout">
+                    <!-- Topo Heatmap Canvas -->
+                    <div class="glass-card topo-card">
+                        <div class="card-header">
+                            <div class="card-title">Continuous 2D Spatial Brain Potential (Shepard's IDW)</div>
+                            <span class="tag-pill">Inverse Distance Weighting</span>
+                        </div>
+                        <div class="topo-canvas-wrap">
+                            <canvas id="topoCanvas" width="480" height="480"></canvas>
+                        </div>
+                        <div class="topo-colormap-legend">
+                            <span>-30 μV (Low)</span>
+                            <div class="colormap-gradient-bar"></div>
+                            <span>+30 μV (High)</span>
+                        </div>
+                    </div>
+
+                    <!-- Electrode Montage Table -->
+                    <div class="glass-card topo-table-card">
+                        <div class="card-header">
+                            <div class="card-title">10-20 Electrode Montage & Contact Impedance</div>
+                            <span class="tag-pill">&lt; 5 kΩ Clinical Threshold</span>
+                        </div>
+                        <table class="medical-table">
+                            <thead>
+                                <tr>
+                                    <th>Electrode</th>
+                                    <th>Anatomical Region</th>
+                                    <th>Contact Impedance</th>
+                                    <th>Localized Voltage</th>
+                                    <th>Contact State</th>
+                                </tr>
+                            </thead>
+                            <tbody id="electrode-table-body">
+                                <!-- Injected dynamically by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ============================================================= -->
+            <!-- 4. DUAL CLASSIFICATION SCREEN                                 -->
+            <!-- ============================================================= -->
+            <section id="screen-classification" class="view-screen">
+                <div class="dual-class-grid">
+                    <!-- Rule-Based Heuristic Card -->
+                    <div class="glass-card">
+                        <div class="card-header">
+                            <div class="card-title">Rule-Based Clinical Classifier</div>
+                            <span class="tag-pill">Deterministic Heuristics</span>
+                        </div>
+                        <div class="class-state-display" id="rule-state-box">
+                            <div class="state-title" id="rule-state-val">MODERATE</div>
+                            <div class="state-sub">Rule Margin: <span id="rule-margin-val">82.4%</span></div>
+                        </div>
+                        <p class="class-desc" id="rule-desc">
+                            Prominent alpha rhythm observed with balanced beta synchrony. Indicates relaxed alertness, steady cognitive engagement, or resting baseline.
+                        </p>
+                        <div class="rule-threshold-list">
+                            <div class="threshold-item">
+                                <span>High Workload Criteria</span>
+                                <strong>Beta ≥ 35% or Stress Index ≥ 0.80</strong>
+                            </div>
+                            <div class="threshold-item">
+                                <span>Moderate Workload Criteria</span>
+                                <strong>Alpha ≥ 35% or (Alpha ≥ 30% & Beta &lt; 30%)</strong>
+                            </div>
+                            <div class="threshold-item">
+                                <span>Low Workload Criteria</span>
+                                <strong>Delta/Theta Dominant Synchrony</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Machine Learning Random Forest Card -->
+                    <div class="glass-card">
+                        <div class="card-header">
+                            <div class="card-title">Ensemble Decision Forest ML Classifier</div>
+                            <span class="tag-pill">Statistical Multi-Tree Model</span>
+                        </div>
+                        <div class="class-state-display" id="ml-state-box">
+                            <div class="state-title" id="ml-state-val" style="color: var(--cyan);">MODERATE</div>
+                            <div class="state-sub">Class Probability: <span id="ml-conf-val">85.6%</span></div>
+                        </div>
+                        <div class="ml-prob-bars">
+                            <div class="prob-row">
+                                <span>P(LOW):</span>
+                                <div class="prob-track"><div class="prob-fill" id="prob-low" style="width: 10%;"></div></div>
+                                <span id="lbl-prob-low">10%</span>
+                            </div>
+                            <div class="prob-row">
+                                <span>P(MODERATE):</span>
+                                <div class="prob-track"><div class="prob-fill" id="prob-mod" style="width: 75%; background: var(--cyan);"></div></div>
+                                <span id="lbl-prob-mod">75%</span>
+                            </div>
+                            <div class="prob-row">
+                                <span>P(HIGH):</span>
+                                <div class="prob-track"><div class="prob-fill" id="prob-high" style="width: 15%; background: var(--rose);"></div></div>
+                                <span id="lbl-prob-high">15%</span>
+                            </div>
+                        </div>
+                        <div class="feature-vector-box" style="margin-top: 16px;">
+                            <div class="fv-title">8-Dimensional Normalized Feature Vector:</div>
+                            <div class="fv-values" id="fv-display">
+                                [δ: 0.25, θ: 0.25, α: 0.25, β: 0.25, TBR: 1.00, ABR: 1.00, Stress: 0.50, Power: 2.15]
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ============================================================= -->
+            <!-- 5. AUTOMATED DSP VALIDATION BENCHMARK SCREEN                  -->
+            <!-- ============================================================= -->
+            <section id="screen-validation-bench" class="view-screen">
+                <div class="glass-card">
+                    <div class="card-header">
+                        <div>
+                            <div class="card-title">Automated DSP Pipeline Validation Bench</div>
+                            <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">
+                                Automated frequency sweep certification: generates pure reference sinusoidal test signals to benchmark FFT bin accuracy and band detection.
+                            </div>
+                        </div>
+                        <button class="btn btn-primary" onclick="runAutomatedDSPBenchmark()" style="display: inline-flex; align-items: center; gap: 6px;">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                            RUN DSP VALIDATION SUITE
+                        </button>
+                    </div>
+
+                    <table class="medical-table" style="margin-top: 16px;">
+                        <thead>
+                            <tr>
+                                <th>Test Target Band</th>
+                                <th>Target Frequency (Hz)</th>
+                                <th>Detected Peak Frequency</th>
+                                <th>Absolute Error Margin</th>
+                                <th>Classification Result</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="benchmark-table-body">
+                            <tr>
+                                <td>DELTA RHYTHM</td>
+                                <td>2.0 Hz</td>
+                                <td>--</td>
+                                <td>--</td>
+                                <td>--</td>
+                                <td><span class="tag-pill">PENDING</span></td>
+                            </tr>
+                            <tr>
+                                <td>THETA RHYTHM</td>
+                                <td>6.0 Hz</td>
+                                <td>--</td>
+                                <td>--</td>
+                                <td>--</td>
+                                <td><span class="tag-pill">PENDING</span></td>
+                            </tr>
+                            <tr>
+                                <td>ALPHA RHYTHM</td>
+                                <td>10.0 Hz</td>
+                                <td>--</td>
+                                <td>--</td>
+                                <td>--</td>
+                                <td><span class="tag-pill">PENDING</span></td>
+                            </tr>
+                            <tr>
+                                <td>BETA RHYTHM</td>
+                                <td>20.0 Hz</td>
+                                <td>--</td>
+                                <td>--</td>
+                                <td>--</td>
+                                <td><span class="tag-pill">PENDING</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="benchmark-summary-box" id="benchmark-summary" style="display: none; margin-top: 16px;">
+                        <span class="badge-pass" id="bench-status-badge">DSP SUITE CERTIFIED: ALL BANDS PASSED</span>
+                        <p style="font-size: 12px; color: var(--text-muted); margin-top: 6px;">
+                            The in-browser Welch Radix-2 FFT and Butterworth filter engine successfully identified all four physiological EEG rhythm bands with frequency peak errors well under the &plusmn;0.5 Hz clinical tolerance threshold.
                         </p>
                     </div>
                 </div>
+            </section>
+
+            <!-- ============================================================= -->
+            <!-- 6. WI-FI HARDWARE CENTER SCREEN                               -->
+            <!-- ============================================================= -->
+            <section id="screen-wifi-hardware" class="view-screen">
+                <div class="hardware-grid">
+                    <!-- Left: Laptop Wi-Fi Telemetry & Settings -->
+                    <div class="glass-card">
+                        <div class="card-header">
+                            <div class="card-title">Laptop Wi-Fi Hardware Receiver Gateway</div>
+                            <div class="badge-status-pill" id="hw-station-status">LISTENING ON 0.0.0.0:5005</div>
+                        </div>
+
+                        <div class="wifi-info-box">
+                            <div class="wifi-ip-title">Your Laptop's Wi-Fi IP Address:</div>
+                            <div class="wifi-ip-highlight" id="laptop-wifi-ip-display">192.168.29.155</div>
+                            <div class="wifi-ip-sub">Connect your ESP32 or Wi-Fi hardware to this Wi-Fi network and stream UDP packets to this IP.</div>
+                        </div>
+
+                        <div class="hw-stats-grid">
+                            <div class="hw-stat-item">
+                                <div class="hw-stat-label">UDP Port</div>
+                                <div class="hw-stat-val">5005 (UDP)</div>
+                            </div>
+                            <div class="hw-stat-item">
+                                <div class="hw-stat-label">Packets Received</div>
+                                <div class="hw-stat-val" id="hw-total-packets">0</div>
+                            </div>
+                            <div class="hw-stat-item">
+                                <div class="hw-stat-label">Dropped Packets</div>
+                                <div class="hw-stat-val" id="hw-dropped-packets">0</div>
+                            </div>
+                            <div class="hw-stat-item">
+                                <div class="hw-stat-label">Packet Drop Rate</div>
+                                <div class="hw-stat-val" id="hw-drop-rate">0.0%</div>
+                            </div>
+                            <div class="hw-stat-item">
+                                <div class="hw-stat-label">Live Sample Rate</div>
+                                <div class="hw-stat-val" id="hw-sample-rate">0 Hz</div>
+                            </div>
+                            <div class="hw-stat-item">
+                                <div class="hw-stat-label">Hardware Sender IP</div>
+                                <div class="hw-stat-val" id="hw-sender-ip">Waiting...</div>
+                            </div>
+                        </div>
+
+                        <!-- Switch to Simulator Demo -->
+                        <div class="sim-toggle-wrap">
+                            <div class="sim-toggle-header">
+                                <strong>Fallback Testing Mode:</strong>
+                                <span>If hardware is not currently connected to your laptop's Wi-Fi, activate the demo synthesizer below.</span>
+                            </div>
+                            <button class="btn btn-simulator" id="btn-toggle-sim" onclick="toggleSimulatorMode()" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
+                                <span>ACTIVATE DEMO SIMULATOR</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Right: ESP32 Setup Guide & Simulator Controls -->
+                    <div class="glass-card">
+                        <div class="card-header">
+                            <div class="card-title">Interactive Synthesizer & Pinout Instructions</div>
+                            <span class="tag-pill">Manual Signal Controls</span>
+                        </div>
+
+                        <!-- Simulator Sliders -->
+                        <div class="slider-group" id="sim-sliders">
+                            <div class="slider-item">
+                                <div class="slider-header">
+                                    <span style="color: var(--cyan);">DELTA (0.5 - 4 Hz)</span>
+                                    <span id="val-sld-delta">30%</span>
+                                </div>
+                                <input type="range" id="sld-delta" min="1" max="100" value="30" oninput="updateSimSliders()">
+                            </div>
+                            <div class="slider-item">
+                                <div class="slider-header">
+                                    <span style="color: var(--emerald);">THETA (4 - 8 Hz)</span>
+                                    <span id="val-sld-theta">30%</span>
+                                </div>
+                                <input type="range" id="sld-theta" min="1" max="100" value="30" oninput="updateSimSliders()">
+                            </div>
+                            <div class="slider-item">
+                                <div class="slider-header">
+                                    <span style="color: var(--blue);">ALPHA (8 - 13 Hz)</span>
+                                    <span id="val-sld-alpha">70%</span>
+                                </div>
+                                <input type="range" id="sld-alpha" min="1" max="100" value="70" oninput="updateSimSliders()">
+                            </div>
+                            <div class="slider-item">
+                                <div class="slider-header">
+                                    <span style="color: var(--amber);">BETA (13 - 30 Hz)</span>
+                                    <span id="val-sld-beta">30%</span>
+                                </div>
+                                <input type="range" id="sld-beta" min="1" max="100" value="30" oninput="updateSimSliders()">
+                            </div>
+                            <div class="slider-item">
+                                <div class="slider-header">
+                                    <span>NOISE JITTER</span>
+                                    <span id="val-sld-noise">15%</span>
+                                </div>
+                                <input type="range" id="sld-noise" min="0" max="100" value="15" oninput="updateSimSliders()">
+                            </div>
+                        </div>
+
+                        <div class="presets-row">
+                            <button class="btn btn-preset" onclick="loadPreset('deep_sleep')">Deep Sleep (Delta)</button>
+                            <button class="btn btn-preset" onclick="loadPreset('relaxed')">Relaxed Alpha</button>
+                            <button class="btn btn-preset" onclick="loadPreset('high_stress')">High Cognitive Load</button>
+                        </div>
+
+                        <!-- ESP32 Firmware Path Note -->
+                        <div class="firmware-note">
+                            <strong>ESP32 DevKit V1 Wi-Fi Firmware Source:</strong><br>
+                            <code>firmware/esp32/neurosim_wifi_esp32.ino</code>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ============================================================= -->
+            <!-- 7. SESSION ARCHIVE & COMPARISON SCREEN                         -->
+            <!-- ============================================================= -->
+            <section id="screen-history" class="view-screen">
+                <div class="glass-card">
+                    <div class="card-header">
+                        <div class="card-title">Session Telemetry Archive & Clinical Data Export</div>
+                        <div class="card-controls">
+                            <a href="/api/export/csv" class="btn" download style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                                Export Live CSV
+                            </a>
+                            <a href="/api/export/json" class="btn" download style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                                Export Live JSON
+                            </a>
+                            <button class="btn" onclick="openSessionCompareModal()" style="display: inline-flex; align-items: center; gap: 6px;">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"></path><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"></path><path d="M7 21h10"></path><path d="M12 3v18"></path></svg>
+                                Compare Sessions (A vs B)
+                            </button>
+                            <button class="btn" onclick="clearAllSessions()" style="display: inline-flex; align-items: center; gap: 6px;">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                Clear
+                            </button>
+                        </div>
+                    </div>
+
+                    <table class="medical-table">
+                        <thead>
+                            <tr>
+                                <th>Session ID</th>
+                                <th>Timestamp</th>
+                                <th>Duration</th>
+                                <th>Samples</th>
+                                <th>Cognitive State</th>
+                                <th>Stress Index</th>
+                                <th>Telemetry Source</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-table-body">
+                            <!-- Injected by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Session A vs B Comparison View (Collapsible) -->
+                <div class="glass-card" id="session-compare-card" style="display: none;">
+                    <div class="card-header">
+                        <div class="card-title">Session Variance Delta Comparison (Session A vs Session B)</div>
+                        <button class="btn-icon" onclick="closeSessionCompare()">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                        </button>
+                    </div>
+                    <div class="compare-grid" id="compare-grid-content">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- ============================================================= -->
+            <!-- 8. MEDICAL REPORT EXPORTER SCREEN                             -->
+            <!-- ============================================================= -->
+            <section id="screen-report" class="view-screen">
+                <div class="glass-card report-preview-card">
+                    <div class="card-header">
+                        <div class="card-title">Clinical & Research Session Report Exporter</div>
+                        <button class="btn btn-primary" onclick="exportCurrentSessionPDF()" style="display: inline-flex; align-items: center; gap: 8px;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                            PRINT / GENERATE CLINICAL PDF REPORT
+                        </button>
+                    </div>
+
+                    <div class="report-sheet" id="report-sheet">
+                        <div class="report-sheet-header">
+                            <div>
+                                <div class="report-brand">◉/╲◉ NEUROSIM RESEARCH PLATFORM</div>
+                                <div class="report-sub">Cognitive Workload & Spectral Power Clinical Report</div>
+                            </div>
+                            <div class="report-meta">
+                                <div><strong>Date:</strong> <span id="rep-date">2026-09-18</span></div>
+                                <div><strong>Session:</strong> <span id="rep-id">SESS-LIVE</span></div>
+                            </div>
+                        </div>
+
+                        <hr class="report-divider">
+
+                        <div class="report-summary-grid">
+                            <div class="rep-box">
+                                <div class="rep-lbl">Cognitive State</div>
+                                <div class="rep-val" id="rep-load">MODERATE WORKLOAD</div>
+                            </div>
+                            <div class="rep-box">
+                                <div class="rep-lbl">Stress Index</div>
+                                <div class="rep-val" id="rep-stress">0.45</div>
+                            </div>
+                            <div class="rep-box">
+                                <div class="rep-lbl">Dominant Rhythm</div>
+                                <div class="rep-val" id="rep-dom">ALPHA (10.0 Hz)</div>
+                            </div>
+                            <div class="rep-box">
+                                <div class="rep-lbl">Theta/Beta (TBR)</div>
+                                <div class="rep-val" id="rep-tbr">1.02</div>
+                            </div>
+                        </div>
+
+                        <div class="report-narrative-box">
+                            <div class="narrative-title">Automated AI Clinical Interpretation & Diagnostic Summary:</div>
+                            <p id="rep-narrative">
+                                Real-time spectral power analysis indicates dominant alpha frequency synchronization (10.0 Hz) across central and occipital recording channels. The Spectral Stress Index of 0.45 reflects balanced cognitive workload with adequate attentional engagement. Both rule-based heuristic margins and random forest probabilistic models are in clinical consensus.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- Clinical Authentication Modal (Name, Email, Mobile, OTP) -->
+    <div id="auth-modal" style="display: none;">
+        <div class="auth-card">
+            <div class="auth-header">
+                <div class="auth-badge">CLINICAL ACCESS GATEWAY</div>
+                <h2 class="auth-title">Researcher Authentication</h2>
+                <div class="auth-subtitle">Verify your clinical credentials via One-Time Password (OTP) to establish direct laptop Wi-Fi telemetry.</div>
+            </div>
+
+            <form class="auth-form" id="auth-form" onsubmit="event.preventDefault(); submitVerifyOTP();">
+                <div class="auth-field">
+                    <label class="auth-label" for="auth-name">FULL NAME</label>
+                    <input type="text" id="auth-name" class="auth-input" placeholder="Dr. Jane Doe" required value="Dr. Jane Doe">
+                </div>
+
+                <div class="auth-field">
+                    <label class="auth-label" for="auth-email">INSTITUTIONAL EMAIL</label>
+                    <input type="email" id="auth-email" class="auth-input" placeholder="jane.doe@hospital.org" required value="jane.doe@hospital.org">
+                </div>
+
+                <div class="auth-field">
+                    <label class="auth-label" for="auth-mobile">MOBILE NUMBER</label>
+                    <div class="auth-otp-row">
+                        <input type="tel" id="auth-mobile" class="auth-input" style="flex: 1;" placeholder="+1 555-0199" required value="+15551234567">
+                        <button type="button" class="btn btn-primary btn-auth-send" id="btn-send-otp" onclick="requestOTP()">
+                            Send OTP
+                        </button>
+                    </div>
+                    <div class="auth-timer" id="auth-timer-text" style="display: none;">Resend OTP in <span id="auth-countdown">30</span>s</div>
+                </div>
+
+                <div class="auth-field" id="field-otp-wrap" style="display: none;">
+                    <label class="auth-label" for="auth-otp">6-DIGIT OTP VERIFICATION CODE</label>
+                    <input type="text" id="auth-otp" class="auth-input auth-otp-input" maxlength="6" placeholder="------" autocomplete="one-time-code">
+                    <div style="font-size: 11px; color: var(--cyan); margin-top: 4px;" id="auth-dev-otp-hint"></div>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-auth-submit" id="btn-verify-otp" style="display: none;">
+                    Verify & Connect to Laptop Wi-Fi
+                </button>
+            </form>
+
+            <div class="auth-footer">
+                Compliant with Clinical Research Protocols. View our <a href="/privacy.html" target="_blank">Privacy Policy</a> & <a href="/terms.html" target="_blank">Terms of Service</a>.
             </div>
         </div>
-
-        <!-- Band Analysis Screen -->
-        <div id="screen-band" class="view-screen">
-            <div class="glass-card">
-                <div class="card-title">Clinical Ratios & Spectral Metrics</div>
-                <div class="grid-4">
-                    <div class="metric-card"><div class="metric-label">Theta/Beta Ratio (TBR)</div><div class="metric-val" id="b-tbr">1.00</div></div>
-                    <div class="metric-card"><div class="metric-label">Alpha/Beta Ratio (ABR)</div><div class="metric-val" id="b-abr">1.00</div></div>
-                    <div class="metric-card"><div class="metric-label">Engagement Index</div><div class="metric-val" id="b-eng">0.50</div></div>
-                    <div class="metric-card"><div class="metric-label">Fatigue Index</div><div class="metric-val">0.45</div></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Session Control Screen -->
-        <div id="screen-session" class="view-screen">
-            <div class="glass-card">
-                <div class="card-title">Session Recording Controls</div>
-                <div style="display: flex; gap: 14px; margin-bottom: 24px;">
-                    <button class="btn btn-emerald" onclick="startSession()">▶ START RECORDING</button>
-                    <button class="btn btn-rose" onclick="stopSession()">⏹ STOP & SAVE</button>
-                    <button class="btn" onclick="downloadCurrentReport()">📄 EXPORT PDF REPORT</button>
-                </div>
-                <div class="grid-4">
-                    <div class="metric-card"><div class="metric-label">Session ID</div><div class="metric-val" id="s-id">SESS-NONE</div></div>
-                    <div class="metric-card"><div class="metric-label">Duration</div><div class="metric-val" id="s-dur">00:00</div></div>
-                    <div class="metric-card"><div class="metric-label">Samples Logged</div><div class="metric-val" id="s-samples">0</div></div>
-                    <div class="metric-card"><div class="metric-label">Status</div><div class="metric-val" style="color:var(--emerald);">READY</div></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- History Screen -->
-        <div id="screen-history" class="view-screen">
-            <div class="glass-card">
-                <div class="card-title">Session Archive History</div>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Session ID</th>
-                            <th>Date & Time</th>
-                            <th>Duration</th>
-                            <th>State</th>
-                            <th>Stress Index</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="history-table-body">
-                        <!-- Populated dynamically -->
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Settings Screen -->
-        <div id="screen-settings" class="view-screen">
-            <div class="glass-card">
-                <div class="card-title">Synthetic Waveform Generator Controls</div>
-                <div class="slider-row">
-                    <label>Delta Component (2 Hz):</label>
-                    <input type="range" id="sld-delta" min="0" max="100" value="30" oninput="updateSim()">
-                </div>
-                <div class="slider-row">
-                    <label>Theta Component (6 Hz):</label>
-                    <input type="range" id="sld-theta" min="0" max="100" value="40" oninput="updateSim()">
-                </div>
-                <div class="slider-row">
-                    <label>Alpha Component (10 Hz):</label>
-                    <input type="range" id="sld-alpha" min="0" max="100" value="80" oninput="updateSim()">
-                </div>
-                <div class="slider-row">
-                    <label>Beta Component (20 Hz):</label>
-                    <input type="range" id="sld-beta" min="0" max="100" value="30" oninput="updateSim()">
-                </div>
-                <div class="slider-row">
-                    <label>Noise Level:</label>
-                    <input type="range" id="sld-noise" min="0" max="100" value="15" oninput="updateSim()">
-                </div>
-            </div>
-        </div>
-
     </div>
 
+    <!-- Cookie & Telemetry Storage Consent Banner -->
+    <div id="cookie-banner" style="display: none;">
+        <div class="cookie-text">
+            <strong>Clinical Data & Telemetry Notice:</strong> NeuroSim stores session parameters, cryptographic tokens, and calibrated DSP filter coefficients in local storage for real-time telemetry processing. No patient metrics are shared with external third-party advertisers. Review our <a href="/privacy.html" target="_blank">Privacy Policy</a> and <a href="/terms.html" target="_blank">Terms of Service</a>.
+        </div>
+        <div class="cookie-actions">
+            <button class="btn btn-primary" onclick="acceptCookies('all')">Accept All</button>
+            <button class="btn" onclick="acceptCookies('essential')">Essential Only</button>
+        </div>
+    </div>
+
+    <!-- Toast Notifications Container -->
+    <div id="toast-container"></div>
+
+    <!-- Scripts -->
     <script src="pdf_export.js"></script>
     <script src="app.js"></script>
 </body>

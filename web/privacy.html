@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy | NEUROSIM Clinical Workstation</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .legal-page {
+            min-height: 100vh;
+            background-color: #070B14;
+            color: #F8FAFC;
+            padding: 40px 24px;
+            display: flex;
+            justify-content: center;
+            overflow-y: auto;
+        }
+        .legal-container {
+            max-width: 860px;
+            width: 100%;
+        }
+        .legal-nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 32px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .legal-nav-brand {
+            font-size: 16px;
+            font-weight: 800;
+            color: #0EA5E9;
+            letter-spacing: 1.5px;
+            text-decoration: none;
+        }
+        .legal-nav-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #94A3B8;
+            text-decoration: none;
+            padding: 6px 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+        .legal-nav-back:hover {
+            color: #F8FAFC;
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .legal-card {
+            background-color: #0F172A;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 6px;
+            padding: 40px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+        }
+        .legal-tag {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            font-weight: 700;
+            color: #0EA5E9;
+            letter-spacing: 1.5px;
+            margin-bottom: 8px;
+        }
+        h1 {
+            font-size: 26px;
+            font-weight: 800;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+        .effective-date {
+            font-size: 12px;
+            color: #64748B;
+            margin-bottom: 32px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+        h2 {
+            font-size: 16px;
+            font-weight: 700;
+            color: #38BDF8;
+            margin-top: 28px;
+            margin-bottom: 12px;
+            letter-spacing: 0.5px;
+        }
+        p, li {
+            font-size: 13px;
+            line-height: 1.7;
+            color: #94A3B8;
+            margin-bottom: 12px;
+        }
+        ul {
+            padding-left: 20px;
+            margin-bottom: 16px;
+        }
+        .notice-box {
+            background: rgba(14, 165, 233, 0.08);
+            border-left: 3px solid #0EA5E9;
+            padding: 16px;
+            border-radius: 4px;
+            margin: 20px 0;
+            font-size: 12px;
+            color: #CBD5E1;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="legal-page">
+        <div class="legal-container">
+            <div class="legal-nav">
+                <a href="/" class="legal-nav-brand">NEUROSIM WORKSTATION</a>
+                <a href="/" class="legal-nav-back">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="19" y1="12" x2="5" y2="12"></line>
+                        <polyline points="12 19 5 12 12 5"></polyline>
+                    </svg>
+                    Back to Workstation
+                </a>
+            </div>
+
+            <div class="legal-card">
+                <div class="legal-tag">CLINICAL PRIVACY & DATA GOVERNANCE</div>
+                <h1>Privacy Policy</h1>
+                <div class="effective-date">Effective Date: September 18, 2026 | Revision: 2.4-PRODUCTION</div>
+
+                <div class="notice-box">
+                    <strong>Notice Regarding Research & Biometric Telemetry:</strong> NeuroSim operates as a local-first clinical electroencephalography (EEG) analytics platform. All biometric and voltage time-series data captured from hardware devices (via laptop Wi-Fi UDP port 5005) is processed locally inside your runtime environment and is not transmitted to external third-party servers.
+                </div>
+
+                <h2>1. Information Collected</h2>
+                <p>During standard operation of the NeuroSim platform, the following data categories may be collected and stored locally:</p>
+                <ul>
+                    <li><strong>Authentication Metadata:</strong> Full name, institutional email address, and mobile phone number for secure One-Time Password (OTP) verification and cryptographic session token generation.</li>
+                    <li><strong>Electrophysiological Telemetry:</strong> Microvolt values, sequence indices, timestamp epochs, and mathematical checksums streamed from connected hardware sensors.</li>
+                    <li><strong>Clinical Analytics:</strong> Spectral power densities (Delta, Theta, Alpha, Beta), Theta/Beta ratios, Alpha/Beta ratios, and calculated cognitive engagement metrics.</li>
+                    <li><strong>System Audit Logs:</strong> Client IP address, session timestamps, hardware connection events, and diagnostic error reports.</li>
+                </ul>
+
+                <h2>2. Storage and Data Retention</h2>
+                <p>All recorded telemetry sessions and user credentials reside exclusively within the local encrypted SQLite database (<code>db/neurosim.db</code>) on your host machine. We do not maintain off-site cloud mirrors of your raw EEG recordings unless explicitly configured by your institution.</p>
+
+                <h2>3. Security & Cryptographic Safeguards</h2>
+                <p>NeuroSim enforces the following technical safeguards:</p>
+                <ul>
+                    <li>Checksum validation on all incoming UDP datagrams to eliminate corrupted or injected packets.</li>
+                    <li>Sliding-window token bucket rate limiting per IP to prevent denial-of-service disruptions.</li>
+                    <li>Session tokens generated via cryptographically secure pseudo-random number generators (CSPRNG).</li>
+                    <li>Automated database backup capabilities with SHA-256 verification.</li>
+                </ul>
+
+                <h2>4. Data Subject Rights & Portability</h2>
+                <p>Researchers and subjects retain complete ownership over generated data files. You may export telemetry at any time via RFC 4180 CSV (<code>/api/export/csv</code>) or structured JSON (<code>/api/export/json</code>), or purge individual session records from the archive interface.</p>
+
+                <h2>5. Contact & Data Protection Inquiries</h2>
+                <p>For questions concerning data governance, HIPAA/GDPR clinical compliance, or institutional deployment, contact the system administrator or open an issue in the official project repository.</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

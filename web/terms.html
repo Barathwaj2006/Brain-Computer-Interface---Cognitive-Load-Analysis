@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terms of Service | NEUROSIM Clinical Workstation</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .legal-page {
+            min-height: 100vh;
+            background-color: #070B14;
+            color: #F8FAFC;
+            padding: 40px 24px;
+            display: flex;
+            justify-content: center;
+            overflow-y: auto;
+        }
+        .legal-container {
+            max-width: 860px;
+            width: 100%;
+        }
+        .legal-nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 32px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .legal-nav-brand {
+            font-size: 16px;
+            font-weight: 800;
+            color: #0EA5E9;
+            letter-spacing: 1.5px;
+            text-decoration: none;
+        }
+        .legal-nav-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #94A3B8;
+            text-decoration: none;
+            padding: 6px 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+        .legal-nav-back:hover {
+            color: #F8FAFC;
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .legal-card {
+            background-color: #0F172A;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 6px;
+            padding: 40px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+        }
+        .legal-tag {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            font-weight: 700;
+            color: #0EA5E9;
+            letter-spacing: 1.5px;
+            margin-bottom: 8px;
+        }
+        h1 {
+            font-size: 26px;
+            font-weight: 800;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+        .effective-date {
+            font-size: 12px;
+            color: #64748B;
+            margin-bottom: 32px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+        h2 {
+            font-size: 16px;
+            font-weight: 700;
+            color: #38BDF8;
+            margin-top: 28px;
+            margin-bottom: 12px;
+            letter-spacing: 0.5px;
+        }
+        p, li {
+            font-size: 13px;
+            line-height: 1.7;
+            color: #94A3B8;
+            margin-bottom: 12px;
+        }
+        ul {
+            padding-left: 20px;
+            margin-bottom: 16px;
+        }
+        .disclaimer-box {
+            background: rgba(239, 68, 68, 0.08);
+            border-left: 3px solid #EF4444;
+            padding: 16px;
+            border-radius: 4px;
+            margin: 20px 0;
+            font-size: 12px;
+            color: #FCA5A5;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="legal-page">
+        <div class="legal-container">
+            <div class="legal-nav">
+                <a href="/" class="legal-nav-brand">NEUROSIM WORKSTATION</a>
+                <a href="/" class="legal-nav-back">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="19" y1="12" x2="5" y2="12"></line>
+                        <polyline points="12 19 5 12 12 5"></polyline>
+                    </svg>
+                    Back to Workstation
+                </a>
+            </div>
+
+            <div class="legal-card">
+                <div class="legal-tag">TERMS OF USE & RESEARCH COMPLIANCE</div>
+                <h1>Terms of Service</h1>
+                <div class="effective-date">Effective Date: September 18, 2026 | Revision: 2.4-PRODUCTION</div>
+
+                <div class="disclaimer-box">
+                    <strong>CRITICAL MEDICAL DISCLAIMER:</strong> NeuroSim is intended strictly for scientific research, academic prototyping, biofeedback experimentation, and educational purposes. It is NOT certified as a medical diagnostic device under FDA 510(k), CE mark Class IIa/IIb, or equivalent medical device regulations. It must NOT be used as the primary basis for clinical diagnosis, critical patient monitoring, surgical intervention, or medication prescribing.
+                </div>
+
+                <h2>1. Acceptance of Terms</h2>
+                <p>By accessing or utilizing the NeuroSim web application, local telemetry gateway, or WebSocket endpoints, you certify that you have read, understood, and agreed to be bound by these Terms of Service.</p>
+
+                <h2>2. Hardware & Electrical Safety</h2>
+                <p>When connecting custom EEG acquisition hardware (such as ESP32, ADS1299, OpenBCI, or custom differential analog front-ends) to your laptop Wi-Fi network:</p>
+                <ul>
+                    <li>You are solely responsible for ensuring appropriate galvanic isolation conforming to IEC 60601-1 standards to prevent hazardous electrical currents.</li>
+                    <li>Only battery-powered or medically isolated power supplies should be used for scalp contact electrodes.</li>
+                    <li>The authors and contributors of NeuroSim assume no liability for hardware malfunction or electrical hazards arising from user-constructed electronics.</li>
+                </ul>
+
+                <h2>3. Permitted Use & Fair Consumption</h2>
+                <p>NeuroSim includes automated rate limiting and local spending/computation caps. Users agree not to attempt to bypass sliding window throttles or initiate automated high-volume denial of service tests without prior system reconfiguration.</p>
+
+                <h2>4. Intellectual Property & Academic Attribution</h2>
+                <p>The signal processing algorithms (including Radix-2 Cooley-Tukey FFT implementations and Shepard's Inverse Distance Weighting interpolation routines) are provided under open academic licensing. Publications deriving experimental metrics from this platform should cite NeuroSim accordingly.</p>
+
+                <h2>5. Limitation of Liability</h2>
+                <p>To the maximum extent permitted by applicable law, NeuroSim and its developers disclaim all warranties, express or implied, including merchantability and fitness for a particular clinical purpose. Under no circumstances shall the developers be held liable for direct or indirect damages resulting from software use or signal interpretation.</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

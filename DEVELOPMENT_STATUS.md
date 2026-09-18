@@ -1,7 +1,7 @@
 # Current Development Status
 
 ## Project
-NeuroSim × Pokidex
+NeuroSim — Real-Time EEG Cognitive Analytics Web Platform
 
 ## Last Agent
 Antigravity

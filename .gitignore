@@ -27,6 +27,10 @@ htmlcov/
 *.log
 *.sqlite
 *.db
+*.db-shm
+*.db-wal
+db/
+logs/
 
 # OS Generated Files
 .DS_Store

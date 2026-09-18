@@ -1,33 +1,32 @@
-# 🧠 NeuroSim — Intelligent EEG Cognitive Analytics & BCI Research Platform
+# 🧠 NeuroSim — Intelligent EEG Cognitive Analytics & Research Web Platform
 
-[![Build Windows Executable](https://img.shields.io/badge/Build-Executable%20Passing-emerald.svg)](dist/NeuroSim.exe)
+[![Web Application](https://img.shields.io/badge/Platform-Web%20Application%20%28HTML5%20%2F%20Canvas%20%2F%20JS%29-0284C7.svg)](http://localhost:8000)
+[![Wi-Fi Stream](https://img.shields.io/badge/Hardware-Direct%20Laptop%20Wi--Fi%20%28UDP%205005%29-10B981.svg)]()
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Python Version](https://img.shields.io/badge/Python-3.11%20%7C%203.12-blue.svg)](https://www.python.org/)
-[![UI Framework](https://img.shields.io/badge/GUI-PySide6%20%2F%20Qt-0078D6.svg)](https://www.qt.io/)
-[![Platform](https://img.shields.io/badge/Platform-Windows%20Desktop%20%28x64%29-0078D6.svg)](dist/NeuroSim.exe)
+[![Python Version](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
 [![Domain](https://img.shields.io/badge/Domain-Neuroscience%20%26%20BCI-purple.svg)]()
 
-> **NeuroSim** is a professional desktop application designed for real-time Electroencephalography (EEG) signal processing, spectral band power decomposition, 10-20 International System spatial topographic brain mapping, dual-model cognitive load classification (Rule-Based Heuristics vs Random Forest Machine Learning), real-time Bluetooth/Wi-Fi/USB hardware device acquisition, and automated session report generation.
+> **NeuroSim** is a real-time web application and neural analytics platform designed for Electroencephalography (EEG) signal processing, Welch Power Spectral Density (PSD) analysis, 10-20 International System spatial topographic brain mapping, dual-model cognitive load classification (Rule-Based Heuristics vs Random Forest Machine Learning), direct laptop Wi-Fi hardware telemetry acquisition, and automated session report generation.
 
 ---
 
 ## 📌 Table of Contents
 
-- [Overview & Architecture](#-overview--architecture)
+- [Overview & Web Architecture](#-overview--web-architecture)
 - [Key Features & Capabilities](#-key-features--capabilities)
-- [Hardware Connectivity & Device Discovery](#-hardware-connectivity--device-discovery)
+- [Direct Laptop Wi-Fi Hardware Acquisition](#-direct-laptop-wi-fi-hardware-acquisition)
+- [Quick Start](#-quick-start)
+- [ESP32 Hardware Pinout & Wi-Fi Firmware](#-esp32-hardware-pinout--wi-fi-firmware)
 - [Repository Structure](#-repository-structure)
-- [Installation & Quick Start](#-installation--quick-start)
-- [Building Standalone Executable](#-building-standalone-executable)
 - [Testing & Verification](#-testing--verification)
 - [Research Scope & Disclaimers](#-research-scope--disclaimers)
 - [License](#-license)
 
 ---
 
-## 🧠 Overview & Architecture
+## 🧠 Overview & Web Architecture
 
-NeuroSim processes continuous time-series EEG waveforms at **250 Hz** through a 5-stage medical-grade digital signal processing (DSP) pipeline:
+NeuroSim runs as a high-performance **Web Application** accessed via your web browser. Incoming analog signals stream directly over your **laptop's Wi-Fi network** into the web dashboard at **250 Hz**, processing through a 5-stage digital signal processing (DSP) pipeline:
 
 $$\text{Raw EEG Waveform} \xrightarrow[\text{Bandpass (0.5--40 Hz)}]{\text{Butterworth Filter}} \text{Filtered Signal} \xrightarrow[\text{5-sec Hann Window}]{\text{Welch FFT PSD}} \text{Power Spectrum} \xrightarrow[\Delta, \Theta, \alpha, \beta]{\text{Band Ratios}} \text{Feature Vector} \xrightarrow[\text{Dual Model}]{\text{ML + Rule-Based}} \text{Cognitive Load}$$
 
@@ -41,39 +40,74 @@ $$\text{Raw EEG Waveform} \xrightarrow[\text{Bandpass (0.5--40 Hz)}]{\text{Butte
 
 ## ✨ Key Features & Capabilities
 
-### 1. 📊 **Dual Model Cognitive Load Classification**
-- **Random Forest ML Classifier**: Trained on spectral band features, predicting statistical confidence percentages ($0-100\%$).
-- **Rule-Based Clinical Classifier**: Heuristic threshold evaluator producing explicit `"Rule Margin"` scores.
-- **Disagreement Warning Flag**: Automatically highlights classifier conflicts with an alert banner when ML and Rule-Based models predict differing load states (`LOW`, `MODERATE`, `HIGH`).
+### 1. 📈 **Live Oscilloscope & Welch PSD Workstation**
+- **60 FPS Real-Time Canvas**: Continuous scrolling waveform viewer with microvolt grid and ground line.
+- **Dynamic Welch PSD Spectrum**: Hann-windowed frequency decomposition ($0 - 40\text{ Hz}$).
+- **Spectral Band Decomposition**: Real-time progress bars and percentage distribution across Delta ($0.5-4\text{ Hz}$), Theta ($4-8\text{ Hz}$), Alpha ($8-13\text{ Hz}$), and Beta ($13-30\text{ Hz}$).
 
 ### 2. 🔬 **5-Stage Signal Laboratory (DSP Pipeline Viewer)**
-Interactive inspection workstation allowing researchers to view every stage of signal transformation:
-- **Stage 1**: Unfiltered composite waveform ($\mu\text{V}$).
-- **Stage 2**: Butterworth bandpass filtered signal ($0.5-40\text{ Hz}$).
+Interactive inspection workstation allowing researchers and evaluators to inspect every stage of the DSP pipeline:
+- **Stage 1**: Raw composite waveform ($\mu\text{V}$).
+- **Stage 2**: Butterworth bandpass filtered signal ($0.5-40\text{ Hz}$, DC offset removed).
 - **Stage 3**: Welch Power Spectral Density distribution ($0-40\text{ Hz}$, $\mu\text{V}^2/\text{Hz}$).
 - **Stage 4**: Integrated band power bar graph ($\Delta, \Theta, \alpha, \beta$).
 - **Stage 5**: Clinical feature vector numerical matrix (TBR, ABR, Stress Index, Latency).
 
-### 3. 🗺️ **10-20 Spatial Topo Map & Oscilloscope Trace**
-- **2D Topographic Brain Heatmap**: Real-time spatial power mapping across 8 electrode locations (`Fp1`, `Fp2`, `C3`, `C4`, `P3`, `P4`, `O1`, `O2`).
-- **8-Channel Oscilloscope Montage**: Multi-channel voltage trace viewer.
-- **Time-Frequency Spectrogram Waterfall**: 2D spectrotemporal heatmap over time.
+### 3. 🗺️ **10-20 Spatial Topographic Brain Heatmap**
+- **2D Topographic Brain Heatmap**: Real-time spatial power mapping across 8 standard electrode locations (`Fp1`, `Fp2`, `C3`, `C4`, `P3`, `P4`, `O1`, `O2`).
+- **Electrode Contact Impedance Table**: Contact quality verification (< 5 k$\Omega$ threshold).
 
-### 4. 📄 **Automated PDF Report Exporter & AI Narrative**
-- One-click ReportLab PDF generation exporting session statistics, spectral band ratios, cognitive state classifications, and AI-generated clinical narrative summaries.
+### 4. ⚖️ **Dual Model Cognitive Load Classification**
+- **Random Forest ML Classifier**: Statistical confidence percentages ($0-100\%$).
+- **Rule-Based Clinical Classifier**: Heuristic threshold evaluator producing explicit `"Rule Margin"` scores.
+- **Disagreement Warning Banner**: Automatically alerts researchers whenever the ML model and Rule-Based model predict differing cognitive states (`LOW`, `MODERATE`, `HIGH`).
 
-### 5. 📂 **SQLite Session Archive**
-- Persistent local SQLite database for session telemetry recording, review, variance delta comparisons (Session A vs Session B), and history management.
+### 5. 📡 **Direct Laptop Wi-Fi Hardware Station**
+- Directly receives UDP telemetry packets sent to your laptop's Wi-Fi IP address on port `5005`.
+- Displays active laptop Wi-Fi IP, packet counter, drop rate %, live sample rate (Hz), and sender IP.
+- Includes a **Demo Simulator** toggle with manual sliders and presets for testing without hardware.
+
+### 6. 📄 **Medical PDF Report Exporter & AI Narrative**
+- One-click printable medical report generation exporting session statistics, spectral band ratios, cognitive state classifications, and research interpretation summaries.
+
+### 7. 📁 **Session History Archive**
+- Persistent local session recording with duration timer, sample counters, state tags, and search.
 
 ---
 
-## 📡 Hardware Connectivity & Device Discovery
+## 📡 Direct Laptop Wi-Fi Hardware Acquisition
 
-NeuroSim features a **Real Hardware Device Discovery & Network Scanner Engine** (`src/acquisition/device_scanner.py`) supporting real hardware without forced dummy connections:
+NeuroSim eliminates serial cables by receiving telemetry directly over the **laptop's Wi-Fi interface**:
 
-- 🔵 **Bluetooth SPP & USB Serial Scanner**: Discovers active physical serial hardware and Bluetooth Serial Port Profile (SPP) devices on the system.
-- 📶 **Wi-Fi Network Stream Receiver (`WifiStreamThread`)**: Receives real-time UDP broadcast streams or TCP socket packets over local Wi-Fi.
-- 🛡️ **Packet Integrity Checksum Protocol**: Validates incoming 4-part telemetry packets (`SAMPLE,<value>,<sequence>,<checksum>`) using sum-mod-256 validation and logs packet drop percentages.
+1. **Connect Hardware**: Connect your ESP32 or Wi-Fi hardware to the same Wi-Fi network as your laptop (or your laptop's Mobile Hotspot).
+2. **Target Destination**: Program your ESP32 to send UDP datagrams to:
+   - **Target IP**: Your laptop's active Wi-Fi IP (auto-detected and displayed on the web dashboard).
+   - **Target Port**: `5005` (UDP).
+3. **Packet Protocol**:
+   $$\text{SAMPLE},<\text{waveform\_}\mu\text{V}>,<\text{sequence\_number}>,<\text{checksum}>$$
+   Where:
+   $$\text{checksum} = (\text{sequenceNumber} + \lfloor|\text{waveform}| \times 100\rfloor) \pmod{256}$$
+
+---
+
+## 🚀 Quick Start
+
+Launch the NeuroSim web platform with a single command:
+
+```powershell
+python server.py
+```
+
+Your default browser will immediately open to:
+* **Local Web Dashboard:** [http://localhost:8000](http://localhost:8000)
+* **Wi-Fi Network URL:** `http://<your-laptop-wifi-ip>:8000`
+
+---
+
+## 🔌 ESP32 Hardware Pinout & Wi-Fi Firmware
+
+Upload the Wi-Fi telemetry firmware to your ESP32 DevKit V1:
+[`firmware/esp32/neurosim_wifi_esp32.ino`](firmware/esp32/neurosim_wifi_esp32.ino)
 
 ### ESP32 DevKit V1 Hardware Pinout
 
@@ -84,128 +118,60 @@ NeuroSim features a **Real Hardware Device Discovery & Network Scanner Engine** 
 | **Channel 3** | **Alpha (8 – 13 Hz)** | **GPIO 32** (ADC1_CH4) | `0.00V - 3.30V` / `0 - 4095` |
 | **Channel 4** | **Beta (13 – 30 Hz)** | **GPIO 33** (ADC1_CH5) | `0.00V - 3.30V` / `0 - 4095` |
 
-*Firmware C++ code available at:* [`firmware/esp32/neurosim_esp32.ino`](firmware/esp32/neurosim_esp32.ino)
-
 ---
 
 ## 📂 Repository Structure
 
 ```text
-neurosim-eeg-cognitive-analysis/
-├── dist/                        # Compiled standalone executable build (NeuroSim.exe)
+NeuroSim/
+├── server.py                   # Master Web Server & Laptop Wi-Fi UDP Gateway
+├── serve_local.py              # Convenient launcher proxying to server.py
 ├── firmware/
 │   └── esp32/
-│       └── neurosim_esp32.ino  # ESP32 C++ firmware with checksum protocol
-├── models/
-│   └── trained_rf_model.joblib # Trained Random Forest ML Classifier
-├── reports/                     # Generated PDF session report archive
-├── scripts/
-│   ├── build_executable.py      # PyInstaller build automation script
-│   ├── generate_branding_assets.py # Asset generator script for logos/icons
-│   ├── train_ml_model.py       # Random Forest training & OOD evaluation script
-│   └── verify_medical.py        # System verification diagnostic runner
-├── src/
-│   ├── app/
-│   │   └── config.py            # Centralized parameters, colors, and branding
-│   ├── acquisition/
-│   │   ├── device_scanner.py    # Real Bluetooth SPP & Wi-Fi stream scanner
-│   │   └── serial_reader.py     # Hardware serial reader thread & checksum validator
-│   ├── classification/
-│   │   ├── ml_classifier.py     # Random Forest classifier with path resolver
-│   │   └── rule_classifier.py   # Clinical rule heuristic classifier
-│   ├── database/
-│   │   └── db_manager.py        # SQLite database session persistence manager
-│   ├── processing/
-│   │   ├── filter.py            # Butterworth 0.5-40 Hz bandpass filter
-│   │   └── psd.py               # Welch PSD, band extraction, & self-tests
-│   ├── reporting/
-│   │   ├── ai_engine.py         # Deterministic research narrative generator
-│   │   └── pdf_generator.py     # ReportLab PDF session report generator
-│   ├── simulation/
-│   │   └── eeg_generator.py     # Synthetic EEG signal generator
-│   ├── ui/
-│   │   ├── components/          # Reusable UI widgets (AppHeader, Sidebar, etc.)
-│   │   ├── screens/             # 15 interactive application screen modules
-│   │   └── main_window.py       # Main Qt window layout and DSP dispatcher
-│   ├── visualization/
-│   │   ├── spectrogram_widget.py# 2D Time-Frequency Spectrogram waterfall plot
-│   │   ├── spectrogram_view.py  # Compatibility re-export module
-│   │   └── styles.py            # Glassmorphism & Qt design stylesheet
-│   └── main.py                  # PySide6 application launch entry point
-├── tests/                       # Automated unit test suite (16 test cases)
-├── NeuroSim.spec                # PyInstaller build specification file
-├── README.md                    # Project documentation
-└── requirements.txt             # Python dependencies manifest
-```
-
----
-
-## 💻 Installation & Quick Start
-
-### **Option 1: Launch Pre-Compiled Executable (`NeuroSim.exe`)**
-Double-click the pre-compiled executable in `dist/`:
-```powershell
-dist/NeuroSim.exe
-```
-
-### **Option 2: Run from Python Source**
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/Barathwaj2006/Brain-Computer-Interface---Cognitive-Load-Analysis.git
-   cd Brain-Computer-Interface---Cognitive-Load-Analysis
-   ```
-2. Create and activate a Python virtual environment:
-   ```powershell
-   python -m venv venv
-   .\venv\Scripts\activate
-   ```
-3. Install dependencies:
-   ```powershell
-   pip install -r requirements.txt
-   ```
-4. Launch the application:
-   ```powershell
-   python src/main.py
-   ```
-
----
-
-## 🛠️ Building Standalone Executable
-
-To compile a standalone Windows executable using PyInstaller:
-
-```powershell
-# Standard Single-File Bundle (dist/NeuroSim.exe)
-python scripts/build_executable.py
-
-# Fast-Startup Directory Build (--onedir)
-python scripts/build_executable.py --onedir
+│       ├── neurosim_wifi_esp32.ino # ESP32 DevKit V1 Direct Laptop Wi-Fi Firmware
+│       └── neurosim_esp32.ino      # Legacy USB Serial Firmware
+├── web/                        # Complete Web Application (Website)
+│   ├── index.html              # Main HTML5 Single-Page Medical Workstation
+│   ├── styles.css              # Clean High-Contrast Dark Slate/Cyan Stylesheet
+│   ├── app.js                  # In-Browser Radix-2 FFT DSP, 60 FPS Canvas & Wi-Fi Client
+│   ├── pdf_export.js           # Medical Session Report Generator
+│   ├── 404.html                # Custom 404 Not Found Page
+│   ├── privacy.html            # Clinical Privacy Policy (HIPAA / GDPR Principles)
+│   ├── terms.html              # Research Terms of Service & Electrical Isolation Guide
+│   ├── favicon.svg             # Vector Waveform Favicon
+│   ├── robots.txt              # Search Engine Directives
+│   ├── sitemap.xml             # XML Sitemap
+│   └── manifest.json           # Web App Manifest
+├── server.py                   # Production Wi-Fi UDP Receiver, WebSocket Hub, SQLite DB & Auth Gateway
+├── tests/                      # Automated Test Suite (15 Unit & Integration Tests)
+│   ├── test_dsp_mathematics.py       # Radix-2 FFT and Shepard IDW Mathematical Verification
+│   ├── test_wifi_web_server.py       # Wi-Fi UDP and Web API automated test
+│   ├── test_websocket_stream.py      # Live UDP-to-WebSocket relay verification test
+│   ├── test_high_throughput_stream.py# 250 Hz UDP streaming packet drop test (0% drop)
+│   └── test_production_hardening.py  # SQLite indexes, OTP auth, rate limits, backup/restore
+├── README.md                   # Project Documentation
+└── requirements.txt            # Python Dependencies
 ```
 
 ---
 
 ## 🧪 Testing & Verification
 
-Run the full automated unit test suite and system verification runner:
+Run the full automated test suite (15 tests covering DSP mathematics, high-throughput UDP streaming, WebSocket relay, rate limiting, and SQLite persistence):
 
 ```powershell
-# Run Unit Tests
-python -m unittest discover tests
-
-# Run System Verification Suite
-python scripts/verify_medical.py
+python -m unittest tests/test_dsp_mathematics.py tests/test_high_throughput_stream.py tests/test_websocket_stream.py tests/test_wifi_web_server.py tests/test_production_hardening.py
 ```
 
 ---
 
 ## ⚠️ Research Scope & Disclaimers
 
-1. **Synthetic Signal Simulation**: NeuroSim is an educational and scientific demonstration platform designed for BCI research. It is **not** a medical device and is not intended for clinical diagnostic use.
-2. **Model Evaluation Bounds**: The Machine Learning classifier is evaluated on synthetic EEG profiles. Clinical deployment requires benchmark human dataset validation (e.g. PhysioNet EEG Motor Movement/Imagery Database).
-3. **Signal Quality Heuristics**: Contact quality and signal stability indicators represent spectral power heuristics rather than physical electrode-skin impedance measurements.
+1. **Synthetic Signal Simulation**: NeuroSim is an educational and scientific demonstration platform designed for BCI research and simulation. It is not a certified medical device and is not intended for clinical diagnostic use.
+2. **Signal Quality Heuristics**: Contact quality and signal stability indicators represent spectral power heuristics rather than physical electrode-skin impedance measurements.
 
 ---
 
 ## 📄 License
 
-This project is licensed under the **[MIT License](LICENSE)** — feel free to use, adapt, and build upon it for research and educational purposes.
+This project is licensed under the **[MIT License](LICENSE)**.

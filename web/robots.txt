@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /db/
+
+Sitemap: http://localhost:8000/sitemap.xml
