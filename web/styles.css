@@ -1603,3 +1603,295 @@ input[type="range"] {
     }
 }
 
+/* ========================================================================== */
+/* Interactive Oscilloscope & Usability UI Styles                             */
+/* ========================================================================== */
+.oscilloscope-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding: 6px 12px;
+    background: rgba(15, 23, 42, 0.6);
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    margin-bottom: 8px;
+    font-size: 11px;
+}
+
+.oscilloscope-toolbar .control-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.oscilloscope-toolbar label {
+    color: var(--text-muted);
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-right: 2px;
+}
+
+.btn-scope-opt {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-muted);
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.btn-scope-opt:hover {
+    background: rgba(14, 165, 233, 0.15);
+    color: var(--cyan);
+    border-color: var(--cyan);
+}
+
+.btn-scope-opt.active {
+    background: var(--cyan);
+    color: #070B14;
+    font-weight: 700;
+    border-color: var(--cyan);
+}
+
+.btn-freeze {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #fff;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+
+.btn-freeze:hover {
+    background: rgba(245, 158, 11, 0.15);
+    color: var(--amber);
+    border-color: var(--amber);
+}
+
+.btn-freeze.frozen {
+    background: var(--amber);
+    color: #070B14;
+    border-color: var(--amber);
+    box-shadow: 0 0 12px rgba(245, 158, 11, 0.4);
+}
+
+.canvas-container {
+    position: relative;
+}
+
+.freeze-watermark {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: rgba(245, 158, 11, 0.2);
+    border: 1px solid var(--amber);
+    color: var(--amber);
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    pointer-events: none;
+    animation: pulse 1.5s infinite;
+}
+
+/* Quick Simulation Preset Chips */
+.monitor-presets-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.monitor-preset-lbl {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.preset-chip {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: var(--text);
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.preset-chip:hover {
+    background: rgba(14, 165, 233, 0.12);
+    border-color: var(--cyan);
+    color: var(--cyan);
+}
+
+/* Topo Canvas Tooltip */
+.topo-canvas-wrap {
+    position: relative;
+    display: inline-block;
+}
+
+#topo-tooltip {
+    position: absolute;
+    display: none;
+    pointer-events: none;
+    background: rgba(15, 23, 42, 0.95);
+    border: 1px solid var(--cyan);
+    border-radius: 6px;
+    padding: 8px 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(8px);
+    z-index: 100;
+    font-size: 11px;
+    line-height: 1.4;
+    white-space: nowrap;
+    transform: translate(-50%, -120%);
+}
+
+#topo-tooltip .tt-title {
+    font-weight: 800;
+    color: #fff;
+    font-size: 12px;
+    margin-bottom: 2px;
+}
+
+#topo-tooltip .tt-region {
+    color: var(--cyan);
+    font-size: 10px;
+    margin-bottom: 4px;
+}
+
+#topo-tooltip .tt-stat {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    color: var(--text-muted);
+}
+
+#topo-tooltip .tt-stat strong {
+    color: #fff;
+}
+
+/* History Search Bar */
+.history-filter-bar {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+}
+
+.history-search-input {
+    flex: 1;
+    min-width: 220px;
+    background: rgba(15, 23, 42, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 6px;
+    padding: 7px 12px;
+    color: #fff;
+    font-size: 12px;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+.history-search-input:focus {
+    border-color: var(--cyan);
+    box-shadow: 0 0 8px rgba(14, 165, 233, 0.2);
+}
+
+.history-filter-select {
+    background: rgba(15, 23, 42, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 6px;
+    padding: 7px 12px;
+    color: #fff;
+    font-size: 12px;
+    outline: none;
+    cursor: pointer;
+}
+
+/* Keyboard Shortcut Keycap */
+kbd.keycap {
+    display: inline-block;
+    background: #1E293B;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 4px;
+    padding: 2px 7px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--cyan);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.shortcut-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    font-size: 12px;
+}
+
+.shortcut-row:last-child {
+    border-bottom: none;
+}
+
+.shortcut-desc {
+    color: var(--text);
+}
+
+.tour-card-item {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 14px;
+    margin-bottom: 10px;
+}
+
+.tour-card-item .tour-step-badge {
+    font-size: 10px;
+    font-weight: 800;
+    color: var(--cyan);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+
+.tour-card-item .tour-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 4px;
+}
+
+.tour-card-item .tour-text {
+    font-size: 11.5px;
+    color: var(--text-muted);
+    line-height: 1.45;
+}
+
+

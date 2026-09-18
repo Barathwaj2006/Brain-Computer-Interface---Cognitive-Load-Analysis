@@ -39,6 +39,15 @@ let audioCtx = null;
 let bioOscillator = null;
 let bioGainNode = null;
 let isAudioActive = false;
+let biofeedbackVolume = 0.5; // Master audio volume multiplier (0.0 - 1.0)
+
+// Interactive Oscilloscope Display State
+let isStreamFrozen = false;
+const frozenRawBuffer = new Float32Array(BUFFER_SIZE);
+const frozenFilteredBuffer = new Float32Array(BUFFER_SIZE);
+let displayScaleUv = 50.0;          // Microvolts scale range: ±25, ±50, ±100, ±200 μV
+let displaySamplesCount = 500;       // Display sample window: 250 (1s), 500 (2s), 750 (3s), 1250 (5s)
+let activeColormap = "coolwarm";     // "coolwarm", "viridis", "plasma", "jet"
 
 // Simulator Parameters (when Hardware is idle or simulator active)
 const simParams = {
@@ -629,6 +638,90 @@ function renderLoop(timestamp) {
     requestAnimationFrame(renderLoop);
 }
 
+// Interactive Oscilloscope Toolbar Handlers
+function toggleFreezeStream() {
+    isStreamFrozen = !isStreamFrozen;
+    const btn = document.getElementById('btn-freeze-stream');
+    const watermark = document.getElementById('freeze-watermark');
+
+    if (isStreamFrozen) {
+        frozenRawBuffer.set(rawSignalBuffer);
+        frozenFilteredBuffer.set(filteredSignalBuffer);
+        if (btn) {
+            btn.classList.add('btn-frozen');
+            btn.innerHTML = `
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                <span>RESUME</span>
+            `;
+        }
+        if (watermark) watermark.style.display = 'block';
+        showToast("Oscilloscope display FROZEN (background data processing continues)", "info", 2000);
+    } else {
+        if (btn) {
+            btn.classList.remove('btn-frozen');
+            btn.innerHTML = `
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+                <span>FREEZE</span>
+            `;
+        }
+        if (watermark) watermark.style.display = 'none';
+        showToast("Oscilloscope RESUMED live stream", "info", 2000);
+    }
+}
+
+function setVoltageScale(uv) {
+    displayScaleUv = parseFloat(uv) || 50.0;
+    document.querySelectorAll('.scale-btn').forEach(b => {
+        b.classList.toggle('active', parseFloat(b.dataset.scale) === displayScaleUv);
+    });
+}
+
+function setTimebaseWindow(samples, label) {
+    displaySamplesCount = parseInt(samples) || 500;
+    document.querySelectorAll('.timebase-btn').forEach(b => {
+        b.classList.toggle('active', parseInt(b.dataset.timebase) === displaySamplesCount);
+    });
+    if (label) showToast(`Oscilloscope timebase window: ${label}`, "info", 1500);
+}
+
+function autoScaleOscilloscope() {
+    const N = Math.min(BUFFER_SIZE, displaySamplesCount);
+    let maxAmp = 5.0;
+    for (let i = 0; i < N; i++) {
+        const idx = (writeIndex - N + i + BUFFER_SIZE) % BUFFER_SIZE;
+        const amp = Math.abs(filteredSignalBuffer[idx]);
+        if (amp > maxAmp) maxAmp = amp;
+    }
+
+    let target = 50;
+    if (maxAmp <= 20) target = 25;
+    else if (maxAmp <= 45) target = 50;
+    else if (maxAmp <= 90) target = 100;
+    else target = 200;
+
+    setVoltageScale(target);
+    showToast(`Auto-scaled to ±${target} μV (Peak amplitude: ${maxAmp.toFixed(1)} μV)`, "info", 2000);
+}
+
+function loadMonitorPreset(presetKey) {
+    document.querySelectorAll('.btn-preset-chip').forEach(c => c.classList.remove('active'));
+    if (window.event && window.event.currentTarget) {
+        window.event.currentTarget.classList.add('active');
+    }
+
+    if (presetKey === 'deep_sleep') {
+        loadPreset('deep_sleep');
+    } else if (presetKey === 'relaxed') {
+        loadPreset('relaxed');
+    } else if (presetKey === 'high_stress') {
+        loadPreset('high_stress');
+    } else if (presetKey === 'reset') {
+        setSliderValues(30, 30, 70, 30, 15);
+        if (!isSimulatorMode) toggleSimulatorMode();
+    }
+    showToast(`Simulation preset: ${presetKey.replace('_', ' ').toUpperCase()}`, "info", 1500);
+}
+
 function drawWaveform() {
     const w = waveCanvas.width;
     const h = waveCanvas.height;
@@ -641,13 +734,25 @@ function drawWaveform() {
         waveCtx.beginPath(); waveCtx.moveTo(0, y); waveCtx.lineTo(w, y); waveCtx.stroke();
     }
 
-    // Ground line
-    waveCtx.strokeStyle = 'rgba(14, 165, 233, 0.15)';
-    waveCtx.beginPath(); waveCtx.moveTo(0, h / 2); waveCtx.lineTo(w, h / 2); waveCtx.stroke();
+    // Ground line (0 μV)
+    const midY = h / 2;
+    waveCtx.strokeStyle = 'rgba(14, 165, 233, 0.2)';
+    waveCtx.beginPath(); waveCtx.moveTo(0, midY); waveCtx.lineTo(w, midY); waveCtx.stroke();
 
-    const displaySamples = 500;
+    // Scale grid markers and axis labels
+    const scale = (midY) / displayScaleUv;
+    waveCtx.font = '10px "JetBrains Mono", monospace';
+    waveCtx.fillStyle = 'rgba(148, 163, 184, 0.5)';
+    waveCtx.textAlign = 'left';
+    waveCtx.fillText(`+${displayScaleUv} μV`, 8, 14);
+    waveCtx.fillText(`0 μV`, 8, midY - 4);
+    waveCtx.fillText(`-${displayScaleUv} μV`, 8, h - 8);
+
+    const displaySamples = Math.min(BUFFER_SIZE, displaySamplesCount);
     const step = w / displaySamples;
-    const scale = (h / 2) / 60.0;
+
+    const rawBuf = isStreamFrozen ? frozenRawBuffer : rawSignalBuffer;
+    const filtBuf = isStreamFrozen ? frozenFilteredBuffer : filteredSignalBuffer;
 
     // Trace 1: Raw Unfiltered Signal (Faint Gray/White)
     waveCtx.beginPath();
@@ -655,9 +760,9 @@ function drawWaveform() {
     waveCtx.lineWidth = 1;
     for (let i = 0; i < displaySamples; i++) {
         const idx = (writeIndex - displaySamples + i + BUFFER_SIZE) % BUFFER_SIZE;
-        const val = rawSignalBuffer[idx];
+        const val = rawBuf[idx];
         const x = i * step;
-        const y = h / 2 - (val * scale);
+        const y = midY - (val * scale);
         if (i === 0) waveCtx.moveTo(x, y); else waveCtx.lineTo(x, y);
     }
     waveCtx.stroke();
@@ -670,9 +775,9 @@ function drawWaveform() {
     waveCtx.shadowBlur = 6;
     for (let i = 0; i < displaySamples; i++) {
         const idx = (writeIndex - displaySamples + i + BUFFER_SIZE) % BUFFER_SIZE;
-        const val = filteredSignalBuffer[idx];
+        const val = filtBuf[idx];
         const x = i * step;
-        const y = h / 2 - (val * scale);
+        const y = midY - (val * scale);
         if (i === 0) waveCtx.moveTo(x, y); else waveCtx.lineTo(x, y);
     }
     waveCtx.stroke();
@@ -748,42 +853,124 @@ const offscreenTopoCtx = offscreenTopoCanvas.getContext('2d');
 const topoImgData = offscreenTopoCtx.createImageData(GRID_RES, GRID_RES);
 
 const ELECTRODES_1020_COORDS = [
-    { id: "Fp1", x: -0.30, y: 0.70 },
-    { id: "Fp2", x: 0.30,  y: 0.70 },
-    { id: "C3",  x: -0.55, y: 0.00 },
-    { id: "C4",  x: 0.55,  y: 0.00 },
-    { id: "P3",  x: -0.40, y: -0.50 },
-    { id: "P4",  x: 0.40,  y: -0.50 },
-    { id: "O1",  x: -0.25, y: -0.80 },
-    { id: "O2",  x: 0.25,  y: -0.80 }
+    { id: "Fp1", name: "Frontopolar 1", region: "Left Pre-frontal (Executive / Attention)", x: -0.30, y: 0.70 },
+    { id: "Fp2", name: "Frontopolar 2", region: "Right Pre-frontal (Emotional Regulation)", x: 0.30,  y: 0.70 },
+    { id: "C3",  name: "Central 3", region: "Left Central Motor / Sensory Strip", x: -0.55, y: 0.00 },
+    { id: "C4",  name: "Central 4", region: "Right Central Motor / Sensory Strip", x: 0.55,  y: 0.00 },
+    { id: "P3",  name: "Parietal 3", region: "Left Parietal (Spatial Integration)", x: -0.40, y: -0.50 },
+    { id: "P4",  name: "Parietal 4", region: "Right Parietal (Somatosensory / Attention)", x: 0.40,  y: -0.50 },
+    { id: "O1",  name: "Occipital 1", region: "Left Occipital (Primary Visual Cortex)", x: -0.25, y: -0.80 },
+    { id: "O2",  name: "Occipital 2", region: "Right Occipital (Visual Processing)", x: 0.25,  y: -0.80 }
 ];
 
-// Scientific Colormap: Blue (-30uV) -> Cyan -> Emerald -> Amber -> Red (+30uV)
+function setTopoColormap(scheme) {
+    activeColormap = scheme || "coolwarm";
+    const bar = document.getElementById('topo-gradient-bar');
+    if (bar) {
+        if (activeColormap === 'viridis') {
+            bar.style.background = 'linear-gradient(90deg, #440154, #3b528b, #21918c, #5ec962, #fde725)';
+        } else if (activeColormap === 'plasma') {
+            bar.style.background = 'linear-gradient(90deg, #0d0887, #7e03a8, #cc4778, #f89540, #f0f921)';
+        } else if (activeColormap === 'jet') {
+            bar.style.background = 'linear-gradient(90deg, #00008f, #00ffff, #00ff00, #ffff00, #ff0000)';
+        } else {
+            bar.style.background = 'linear-gradient(90deg, #0e3aa8, #0ea5e9, #10b981, #f59e0b, #ef4444)';
+        }
+    }
+    drawContinuousTopoMap();
+}
+
+// Scientific Colormaps: Cool-Warm (Clinical), Viridis (Perceptual), Plasma (High-Contrast), Jet (Rainbow)
 function getScientificColor(normVal) {
-    // normVal from 0.0 to 1.0
     const v = Math.max(0.0, Math.min(1.0, normVal));
     let r = 0, g = 0, b = 0;
 
+    if (activeColormap === 'viridis') {
+        if (v < 0.25) {
+            const t = v / 0.25;
+            r = Math.round(68 * (1 - t) + 59 * t);
+            g = Math.round(1 * (1 - t) + 82 * t);
+            b = Math.round(84 * (1 - t) + 139 * t);
+        } else if (v < 0.5) {
+            const t = (v - 0.25) / 0.25;
+            r = Math.round(59 * (1 - t) + 33 * t);
+            g = Math.round(82 * (1 - t) + 145 * t);
+            b = Math.round(139 * (1 - t) + 140 * t);
+        } else if (v < 0.75) {
+            const t = (v - 0.5) / 0.25;
+            r = Math.round(33 * (1 - t) + 94 * t);
+            g = Math.round(145 * (1 - t) + 201 * t);
+            b = Math.round(140 * (1 - t) + 98 * t);
+        } else {
+            const t = (v - 0.75) / 0.25;
+            r = Math.round(94 * (1 - t) + 253 * t);
+            g = Math.round(201 * (1 - t) + 231 * t);
+            b = Math.round(98 * (1 - t) + 37 * t);
+        }
+        return [r, g, b];
+    }
+
+    if (activeColormap === 'plasma') {
+        if (v < 0.25) {
+            const t = v / 0.25;
+            r = Math.round(13 * (1 - t) + 126 * t);
+            g = Math.round(8 * (1 - t) + 3 * t);
+            b = Math.round(135 * (1 - t) + 168 * t);
+        } else if (v < 0.5) {
+            const t = (v - 0.25) / 0.25;
+            r = Math.round(126 * (1 - t) + 204 * t);
+            g = Math.round(3 * (1 - t) + 71 * t);
+            b = Math.round(168 * (1 - t) + 120 * t);
+        } else if (v < 0.75) {
+            const t = (v - 0.5) / 0.25;
+            r = Math.round(204 * (1 - t) + 248 * t);
+            g = Math.round(71 * (1 - t) + 149 * t);
+            b = Math.round(120 * (1 - t) + 64 * t);
+        } else {
+            const t = (v - 0.75) / 0.25;
+            r = Math.round(248 * (1 - t) + 240 * t);
+            g = Math.round(149 * (1 - t) + 249 * t);
+            b = Math.round(64 * (1 - t) + 33 * t);
+        }
+        return [r, g, b];
+    }
+
+    if (activeColormap === 'jet') {
+        if (v < 0.125) {
+            r = 0; g = 0; b = Math.round(128 + 127 * (v / 0.125));
+        } else if (v < 0.375) {
+            const t = (v - 0.125) / 0.25;
+            r = 0; g = Math.round(255 * t); b = 255;
+        } else if (v < 0.625) {
+            const t = (v - 0.375) / 0.25;
+            r = Math.round(255 * t); g = 255; b = Math.round(255 * (1 - t));
+        } else if (v < 0.875) {
+            const t = (v - 0.625) / 0.25;
+            r = 255; g = Math.round(255 * (1 - t)); b = 0;
+        } else {
+            const t = (v - 0.875) / 0.125;
+            r = Math.round(255 - 127 * t); g = 0; b = 0;
+        }
+        return [r, g, b];
+    }
+
+    // Default: Cool-Warm (Clinical)
     if (v < 0.25) {
-        // Navy to Cyan
         const t = v / 0.25;
         r = Math.round(14 * (1 - t) + 14 * t);
         g = Math.round(58 * (1 - t) + 165 * t);
         b = Math.round(138 * (1 - t) + 233 * t);
     } else if (v < 0.5) {
-        // Cyan to Emerald
         const t = (v - 0.25) / 0.25;
         r = Math.round(14 * (1 - t) + 16 * t);
         g = Math.round(165 * (1 - t) + 185 * t);
         b = Math.round(233 * (1 - t) + 129 * t);
     } else if (v < 0.75) {
-        // Emerald to Amber
         const t = (v - 0.5) / 0.25;
         r = Math.round(16 * (1 - t) + 245 * t);
         g = Math.round(185 * (1 - t) + 158 * t);
         b = Math.round(129 * (1 - t) + 11 * t);
     } else {
-        // Amber to Red
         const t = (v - 0.75) / 0.25;
         r = Math.round(245 * (1 - t) + 239 * t);
         g = Math.round(158 * (1 - t) + 68 * t);
@@ -903,6 +1090,59 @@ function drawContinuousTopoMap() {
         topoCtx.fillStyle = '#FFFFFF';
         topoCtx.font = 'bold 11px Inter, sans-serif';
         topoCtx.fillText(e.id, ex + 10, ey + 4);
+    });
+}
+
+function initTopoTooltip() {
+    const canvas = document.getElementById('topoCanvas');
+    const tooltip = document.getElementById('topo-tooltip');
+    if (!canvas || !tooltip) return;
+
+    canvas.addEventListener('mousemove', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = (e.clientX - rect.left) * (canvas.width / rect.width);
+        const mouseY = (e.clientY - rect.top) * (canvas.height / rect.height);
+
+        const cx = canvas.width / 2;
+        const cy = canvas.height / 2;
+        const radius = Math.min(canvas.width, canvas.height) * 0.42;
+
+        let matched = null;
+        let minDist = 24; // px hit radius
+
+        for (const el of ELECTRODES_1020_COORDS) {
+            const ex = cx + (el.x * radius * 0.95);
+            const ey = cy - (el.y * radius * 0.95);
+            const dist = Math.hypot(mouseX - ex, mouseY - ey);
+            if (dist < minDist) {
+                minDist = dist;
+                matched = el;
+            }
+        }
+
+        if (matched) {
+            const pot = electrodePotentials[matched.id] || 0.0;
+            const containerRect = canvas.parentElement.getBoundingClientRect();
+            const posX = Math.min(containerRect.width - 240, Math.max(10, e.clientX - containerRect.left + 14));
+            const posY = Math.min(containerRect.height - 130, Math.max(10, e.clientY - containerRect.top - 10));
+
+            tooltip.innerHTML = `
+                <div class="topo-tooltip-title">${matched.id} &bull; ${matched.name}</div>
+                <div class="topo-tooltip-row"><span>Region:</span> <strong>${matched.region}</strong></div>
+                <div class="topo-tooltip-row"><span>Localized Potential:</span> <strong>${pot.toFixed(2)} μV</strong></div>
+                <div class="topo-tooltip-row"><span>Contact State:</span> <strong style="color: var(--emerald);">PASS (&lt;5.0 kΩ)</strong></div>
+                <div class="topo-tooltip-row"><span>Dominant Rhythm:</span> <strong>${currentMetrics.dominantBand} (${currentMetrics.dominantFreq.toFixed(1)} Hz)</strong></div>
+            `;
+            tooltip.style.left = `${posX}px`;
+            tooltip.style.top = `${posY}px`;
+            tooltip.style.display = 'block';
+        } else {
+            tooltip.style.display = 'none';
+        }
+    });
+
+    canvas.addEventListener('mouseleave', () => {
+        tooltip.style.display = 'none';
     });
 }
 
@@ -1173,6 +1413,16 @@ function toggleArtifactFilter() {
 // ------------------------------------------------------------------------------
 // 11. Web Audio Biofeedback Engine
 // ------------------------------------------------------------------------------
+function setBiofeedbackVolume(vol) {
+    biofeedbackVolume = Math.max(0.0, Math.min(1.0, parseFloat(vol) || 0.5));
+    const lbl = document.getElementById('val-audio-vol');
+    if (lbl) lbl.innerText = `${Math.round(biofeedbackVolume * 100)}%`;
+    if (bioGainNode && audioCtx) {
+        const baseVol = currentMetrics.stressIndex >= 0.80 ? 0.08 : 0.03;
+        bioGainNode.gain.setTargetAtTime(baseVol * (biofeedbackVolume * 2.0), audioCtx.currentTime, 0.05);
+    }
+}
+
 function toggleAudioBiofeedback() {
     isAudioActive = !isAudioActive;
     const btn = document.getElementById('btn-toggle-audio');
@@ -1190,7 +1440,8 @@ function toggleAudioBiofeedback() {
 
         bioOscillator.type = 'sine';
         bioOscillator.frequency.setValueAtTime(220, audioCtx.currentTime); // A3 note
-        bioGainNode.gain.setValueAtTime(0.04, audioCtx.currentTime); // Soft volume
+        const currentGain = 0.04 * (biofeedbackVolume * 2.0);
+        bioGainNode.gain.setValueAtTime(currentGain, audioCtx.currentTime); // Scaled volume
 
         bioOscillator.connect(bioGainNode);
         bioGainNode.connect(audioCtx.destination);
@@ -1209,13 +1460,14 @@ function toggleAudioBiofeedback() {
 }
 
 function updateAudioBiofeedback(peakFreq, stress) {
-    if (!bioOscillator || !audioCtx) return;
+    if (!bioOscillator || !audioCtx || !bioGainNode) return;
     // Map dominant frequency (0-30Hz) to musical pitch (150Hz to 400Hz)
     const targetFreq = 160 + (peakFreq * 8.0);
     bioOscillator.frequency.setTargetAtTime(targetFreq, audioCtx.currentTime, 0.1);
 
-    // Gently swell volume if cognitive stress index exceeds 0.80
-    const targetVol = stress >= 0.80 ? 0.08 : 0.03;
+    // Gently swell volume if cognitive stress index exceeds 0.80, scaled by user volume
+    const baseVol = stress >= 0.80 ? 0.08 : 0.03;
+    const targetVol = baseVol * (biofeedbackVolume * 2.0);
     bioGainNode.gain.setTargetAtTime(targetVol, audioCtx.currentTime, 0.1);
 }
 
@@ -1800,11 +2052,38 @@ async function syncSessionToBackend(session) {
     }
 }
 
-function renderHistoryTable() {
+let currentHistoryFilter = "ALL";
+let currentHistorySearch = "";
+
+function filterHistoryTable(query) {
+    if (typeof query === 'string') currentHistorySearch = query.trim().toLowerCase();
+    const stateEl = document.getElementById('hist-filter-state');
+    if (stateEl) currentHistoryFilter = stateEl.value;
+
+    let history = JSON.parse(localStorage.getItem('neurosim_sessions') || '[]');
+
+    if (currentHistoryFilter !== 'ALL') {
+        history = history.filter(item => (item.loadState || '').toUpperCase() === currentHistoryFilter);
+    }
+
+    if (currentHistorySearch) {
+        history = history.filter(item => {
+            const idMatch = (item.id || '').toLowerCase().includes(currentHistorySearch);
+            const dateMatch = (item.date || '').toLowerCase().includes(currentHistorySearch);
+            const stateMatch = (item.loadState || '').toLowerCase().includes(currentHistorySearch);
+            const srcMatch = (item.source || '').toLowerCase().includes(currentHistorySearch);
+            return idMatch || dateMatch || stateMatch || srcMatch;
+        });
+    }
+
+    renderHistoryTable(history);
+}
+
+function renderHistoryTable(customList = null) {
     const tbody = document.getElementById('history-table-body');
     if (!tbody) return;
 
-    const history = JSON.parse(localStorage.getItem('neurosim_sessions') || '[]');
+    const history = customList !== null ? customList : JSON.parse(localStorage.getItem('neurosim_sessions') || '[]');
     if (history.length === 0) {
         tbody.innerHTML = `
             <tr>
@@ -1813,7 +2092,7 @@ function renderHistoryTable() {
                         <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                             <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
                         </svg>
-                        <div class="empty-state-title">No Recorded Sessions Found</div>
+                        <div class="empty-state-title">No Matching Sessions Found</div>
                         <div class="empty-state-desc">Capture real-time EEG telemetry from your laptop's Wi-Fi or click RECORD SESSION in the header to archive clinical metrics.</div>
                     </div>
                 </td>
@@ -1828,14 +2107,40 @@ function renderHistoryTable() {
             <td>${item.date}</td>
             <td>${item.duration}</td>
             <td>${item.samples}</td>
-            <td><span class="badge-pass" style="background: ${item.loadState === 'HIGH' ? 'rgba(239,68,68,0.15)' : 'rgba(14,165,233,0.15)'}; color: ${item.loadState === 'HIGH' ? '#EF4444' : '#0EA5E9'};">${item.loadState}</span></td>
+            <td><span class="badge-pass" style="background: ${item.loadState === 'HIGH' ? 'rgba(239,68,68,0.15)' : (item.loadState === 'LOW' ? 'rgba(16,185,129,0.15)' : 'rgba(14,165,233,0.15)')}; color: ${item.loadState === 'HIGH' ? '#EF4444' : (item.loadState === 'LOW' ? '#10B981' : '#0EA5E9')};">${item.loadState}</span></td>
             <td>${item.stressIndex}</td>
             <td>${item.source}</td>
             <td>
-                <button class="btn" style="padding: 4px 8px; font-size: 11px;" onclick='downloadSpecificReport(${JSON.stringify(item)})'>Report</button>
+                <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+                    <button class="btn" style="padding: 3px 6px; font-size: 10px;" onclick='downloadSpecificReport(${JSON.stringify(item)})' title="Export PDF">PDF</button>
+                    <button class="btn" style="padding: 3px 6px; font-size: 10px;" onclick="exportSessionEDF('${item.id}')" title="Export EDF+">EDF+</button>
+                    <button class="btn" style="padding: 3px 6px; font-size: 10px;" onclick="exportSessionFHIR('${item.id}')" title="Export HL7 FHIR">FHIR</button>
+                    <button class="btn" style="padding: 3px 6px; font-size: 10px; border-color: rgba(239,68,68,0.4); color: var(--rose);" onclick="deleteSession('${item.id}')" title="Delete Session">Del</button>
+                </div>
             </td>
         </tr>
     `).join('');
+}
+
+function deleteSession(sessionId) {
+    let history = JSON.parse(localStorage.getItem('neurosim_sessions') || '[]');
+    const prevCount = history.length;
+    history = history.filter(item => item.id !== sessionId);
+    if (history.length < prevCount) {
+        localStorage.setItem('neurosim_sessions', JSON.stringify(history));
+        filterHistoryTable();
+        showToast(`Session ${sessionId} removed from archive.`, "info", 2000);
+    }
+}
+
+function exportSessionEDF(sessionId) {
+    showToast(`Downloading EDF+ binary for ${sessionId}...`, "info");
+    window.location.href = `/api/export/edf?session_id=${encodeURIComponent(sessionId)}`;
+}
+
+function exportSessionFHIR(sessionId) {
+    showToast(`Opening HL7 FHIR bundle for ${sessionId}...`, "info");
+    window.open(`/api/fhir/DiagnosticReport?session_id=${encodeURIComponent(sessionId)}`, '_blank');
 }
 
 function openSessionCompareModal() {
@@ -2157,6 +2462,106 @@ function debounce(func, wait = 300) {
     };
 }
 
+// ------------------------------------------------------------------------------
+// 20. Help Modal, Guided Tour & Global Keyboard Shortcuts
+// ------------------------------------------------------------------------------
+function openHelpModal(initialTab = 'shortcuts') {
+    const modal = document.getElementById('help-modal');
+    if (modal) modal.style.display = 'flex';
+    switchHelpTab(initialTab);
+}
+
+function closeHelpModal() {
+    const modal = document.getElementById('help-modal');
+    if (modal) modal.style.display = 'none';
+}
+
+function switchHelpTab(tab) {
+    const pShortcuts = document.getElementById('help-panel-shortcuts');
+    const pTour = document.getElementById('help-panel-tour');
+    const btnShortcuts = document.getElementById('btn-tab-shortcuts');
+    const btnTour = document.getElementById('btn-tab-tour');
+
+    if (tab === 'shortcuts') {
+        if (pShortcuts) pShortcuts.style.display = 'block';
+        if (pTour) pTour.style.display = 'none';
+        if (btnShortcuts) btnShortcuts.className = 'btn btn-primary';
+        if (btnTour) btnTour.className = 'btn';
+    } else {
+        if (pShortcuts) pShortcuts.style.display = 'none';
+        if (pTour) pTour.style.display = 'block';
+        if (btnShortcuts) btnShortcuts.className = 'btn';
+        if (btnTour) btnTour.className = 'btn btn-primary';
+    }
+}
+
+function initKeyboardShortcuts() {
+    window.addEventListener('keydown', (e) => {
+        // If user is currently focused on an input, textarea, or select, do not intercept keys
+        const tag = (e.target && e.target.tagName) ? e.target.tagName.toUpperCase() : '';
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') {
+            if (e.key === 'Escape') {
+                e.target.blur();
+            }
+            return;
+        }
+
+        // Hotkey bindings
+        if (e.code === 'Space') {
+            e.preventDefault();
+            toggleFreezeStream();
+        } else if (e.code === 'KeyR') {
+            e.preventDefault();
+            toggleQuickRecord();
+        } else if (e.code === 'KeyB') {
+            e.preventDefault();
+            toggleAudioBiofeedback();
+        } else if (e.code === 'KeyN') {
+            e.preventDefault();
+            cycleNotchFilter();
+            showToast(`50Hz Notch Filter: ${notchFilterMode}`, "info", 1500);
+        } else if (e.code === 'KeyA') {
+            e.preventDefault();
+            autoScaleOscilloscope();
+        } else if (e.code === 'KeyI') {
+            e.preventDefault();
+            openImpedanceModal();
+        } else if (e.code === 'KeyP') {
+            e.preventDefault();
+            exportCurrentSessionPDF();
+        } else if (e.key === '?' || e.code === 'F1') {
+            e.preventDefault();
+            const modal = document.getElementById('help-modal');
+            if (modal && modal.style.display === 'flex') {
+                closeHelpModal();
+            } else {
+                openHelpModal('shortcuts');
+            }
+        } else if (e.code === 'Escape') {
+            closeHelpModal();
+            closeImpedanceModal();
+            closeSessionCompare();
+            if (typeof closeAuthModal === 'function') closeAuthModal();
+        } else if (e.code.startsWith('Digit')) {
+            const digit = parseInt(e.code.replace('Digit', ''));
+            const screenMap = {
+                1: 'monitor',
+                2: 'signal-lab',
+                3: 'topo-map',
+                4: 'classification',
+                5: 'validation-bench',
+                6: 'wifi-hardware',
+                7: 'history',
+                8: 'report'
+            };
+            if (screenMap[digit]) {
+                e.preventDefault();
+                switchTab(screenMap[digit]);
+            }
+        }
+    });
+}
+
 // Initialize Application
 window.addEventListener('DOMContentLoaded', () => {
     checkCookieConsent();
@@ -2165,6 +2570,8 @@ window.addEventListener('DOMContentLoaded', () => {
     initHardwareWebSocket();
     updateSimSliders();
     renderHistoryTable();
+    initTopoTooltip();
+    initKeyboardShortcuts();
 
     // Launch Decoupled Precision 20 Hz DSP Loop (every 50ms)
     setInterval(executeWelchDSP, 50);
