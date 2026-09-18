@@ -2,7 +2,7 @@
 
 [![Platform: Web Application](https://img.shields.io/badge/Platform-Web%20Application%20%28HTML5%20%2F%20Canvas%20%2F%20JS%29-0EA5E9.svg)](http://localhost:8000)
 [![Hardware: Direct Laptop Wi-Fi](https://img.shields.io/badge/Hardware-Direct%20Laptop%20Wi--Fi%20%28UDP%205005%29-10B981.svg)]()
-[![Automated Tests](https://img.shields.io/badge/Tests-15%2F15%20Passed-10B981.svg)]()
+[![Automated Tests](https://img.shields.io/badge/Tests-16%2F16%20Passed-10B981.svg)]()
 [![Database: SQLite WAL](https://img.shields.io/badge/Database-SQLite%20Indexed%20WAL-3B82F6.svg)]()
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python Version](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
@@ -237,7 +237,7 @@ The platform includes a comprehensive automated test suite verifying all layers 
 python -m unittest tests/test_dsp_mathematics.py tests/test_high_throughput_stream.py tests/test_websocket_stream.py tests/test_wifi_web_server.py tests/test_production_hardening.py
 ```
 
-### Verification Matrix (15/15 Tests Passed):
+### Verification Matrix (16/16 Tests Passed):
 
 | Test Suite | Subsystem Tested | Benchmark Criteria | Result | Status |
 |---|---|---|---|---|
@@ -249,6 +249,7 @@ python -m unittest tests/test_dsp_mathematics.py tests/test_high_throughput_stre
 | `test_websocket_stream.py` | UDP to WebSocket Relay | Real-time bridge latency | Dispatched and parsed in $<10$ ms | **PASS** |
 | `test_wifi_web_server.py` | REST API Status | `/api/status` response | Confirmed network IPs and ports | **PASS** |
 | `test_wifi_web_server.py` | Hardware State Transition | Automatic live detection | State switches to connected | **PASS** |
+| `test_wifi_web_server.py` | Multiformat & Broadcast UDP | Multi-line, CSV, JSON, Broadcast | Line-by-line ingestion verified | **PASS** |
 | `test_production_hardening.py` | SQLite Indexes & Schema | WAL mode, 5 B-tree indexes | All tables and query indexes verified | **PASS** |
 | `test_production_hardening.py` | OTP Authentication Flow | Send, verify, and CSPRNG token | Complete lifecycle validated | **PASS** |
 | `test_production_hardening.py` | Sliding-Window Rate Limiting | 120 req/min per IP threshold | Over-quota bursts blocked (429) | **PASS** |

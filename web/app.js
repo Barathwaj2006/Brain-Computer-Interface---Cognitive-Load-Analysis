@@ -20,6 +20,8 @@ let writeIndex = 0;
 let totalSamplesReceived = 0;
 
 // Hardware & Wi-Fi Connection State
+const WS_PORT = 8765;
+let wsPort = 8765;
 let isHardwareActive = false;
 let isSimulatorMode = false;
 let wsClient = null;
@@ -1203,17 +1205,43 @@ function updateAudioBiofeedback(peakFreq, stress) {
 }
 
 // ------------------------------------------------------------------------------
-// 12. Resilient WebSocket Telemetry Client
+// 12. Resilient WebSocket Telemetry Client & Diagnostic Logging
 // ------------------------------------------------------------------------------
+const recentPackets = [];
+
+function logRecentPacket(sender, val, seq) {
+    const now = new Date().toLocaleTimeString();
+    const formattedVal = (typeof val === 'number') ? val.toFixed(2) : String(val);
+    recentPackets.unshift({ time: now, sender: sender || "ESP32", val: formattedVal, seq: seq !== undefined ? seq : '-' });
+    if (recentPackets.length > 8) recentPackets.pop();
+
+    const logEl = document.getElementById('hw-packet-log');
+    if (logEl) {
+        logEl.innerHTML = recentPackets.map(p => `
+            <div style="display: flex; justify-content: space-between; padding: 4px 8px; border-bottom: 1px solid rgba(255,255,255,0.05); font-family: 'JetBrains Mono', monospace; font-size: 11px;">
+                <span style="color: #64748B;">[${p.time}]</span>
+                <span style="color: var(--cyan);">${p.sender}</span>
+                <span style="color: #F8FAFC; font-weight: 600;">${p.val} μV</span>
+                <span style="color: #94A3B8;">#${p.seq}</span>
+            </div>
+        `).join('');
+    }
+}
+
 function initHardwareWebSocket() {
     const wsHost = window.location.hostname || "localhost";
-    const wsUrl = `ws://${wsHost}:${WS_PORT || 8765}`;
+    const wsProto = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const wsUrl = `${wsProto}//${wsHost}:${WS_PORT}`;
 
     try {
+        if (wsClient && (wsClient.readyState === WebSocket.OPEN || wsClient.readyState === WebSocket.CONNECTING)) {
+            return;
+        }
+
         wsClient = new WebSocket(wsUrl);
 
         wsClient.onopen = () => {
-            console.log("[NeuroSim] Connected to Laptop Wi-Fi Telemetry WebSocket Hub.");
+            console.log("[NeuroSim] Connected to Laptop Wi-Fi Telemetry WebSocket Hub: " + wsUrl);
             // Heartbeat ping every 3s
             if (wsHeartbeatTimer) clearInterval(wsHeartbeatTimer);
             wsHeartbeatTimer = setInterval(() => {
@@ -1232,15 +1260,18 @@ function initHardwareWebSocket() {
                     isHardwareActive = true;
                     ingestSample(msg.val);
                     updateHardwareUIState(true);
+                    logRecentPacket(msg.sender || "ESP32", msg.val, msg.seq);
                 } else if (msg.type === "batch") {
                     isHardwareActive = true;
                     msg.samples.forEach(s => ingestSample(s.val));
+                    const last = msg.samples[msg.samples.length - 1];
+                    if (last) logRecentPacket(last.sender || "ESP32", last.val, last.seq);
                     updateHardwareUIState(true);
                 } else if (msg.type === "telemetry" || msg.type === "handshake") {
                     if (msg.wifi_ip) {
                         wifiIp = msg.wifi_ip;
                         udpPort = msg.udp_port || 5005;
-                        updateIpDisplays();
+                        updateIpDisplays(msg.all_ips);
                     }
                     if (msg.stats || msg.telemetry) {
                         const stats = msg.stats || msg.telemetry;
@@ -1253,12 +1284,17 @@ function initHardwareWebSocket() {
             }
         };
 
+        wsClient.onerror = (e) => {
+            console.warn("[NeuroSim] WebSocket connection notice:", e);
+        };
+
         wsClient.onclose = () => {
             if (wsHeartbeatTimer) clearInterval(wsHeartbeatTimer);
             setTimeout(initHardwareWebSocket, 2000);
         };
     } catch (e) {
         console.warn("[NeuroSim] WebSocket initiation error:", e);
+        setTimeout(initHardwareWebSocket, 3000);
     }
 }
 
@@ -1274,17 +1310,17 @@ function updateTelemetryStats(stats) {
     if (droppedEl) droppedEl.innerText = stats.dropped_packets || 0;
     if (dropRateEl) dropRateEl.innerText = `${(stats.drop_rate_pct || 0).toFixed(1)}%`;
     if (rateEl) rateEl.innerText = `${stats.sample_rate_hz || 0} Hz`;
-    if (senderEl) senderEl.innerText = stats.source_ip || "Waiting...";
+    if (senderEl) senderEl.innerText = stats.source_ip || (stats.hardware_connected ? "ESP32 (Wi-Fi)" : "Waiting...");
     if (valLoss) valLoss.innerText = `${(stats.drop_rate_pct || 0).toFixed(1)}%`;
 
     const mPackets = document.getElementById('m-packets');
     const mDropSub = document.getElementById('m-drop-sub');
     if (mPackets) {
-        const rate = (100.0 - (stats.drop_rate_pct || 0)).toFixed(1);
+        const rate = Math.max(0, (100.0 - (stats.drop_rate_pct || 0))).toFixed(1);
         mPackets.innerText = `${rate}%`;
     }
     if (mDropSub) {
-        mDropSub.innerText = `${stats.dropped_packets || 0} drops (${(stats.drop_rate_pct || 0).toFixed(1)}% loss) • ${stats.sample_rate_hz || 250} Hz`;
+        mDropSub.innerText = `${stats.dropped_packets || 0} drops (${(stats.drop_rate_pct || 0).toFixed(1)}% loss) • ${stats.sample_rate_hz || (stats.hardware_connected ? 250 : 0)} Hz`;
     }
 
     updateHardwareUIState(stats.hardware_connected);
@@ -1320,11 +1356,16 @@ function updateHardwareUIState(active) {
     }
 }
 
-function updateIpDisplays() {
+function updateIpDisplays(allIps) {
     const d1 = document.getElementById('laptop-wifi-ip-display');
     const d2 = document.getElementById('sb-ip');
+    const allEl = document.getElementById('laptop-all-ips-display');
     if (d1) d1.innerText = wifiIp;
     if (d2) d2.innerText = `${wifiIp}:${udpPort}`;
+    if (allEl && Array.isArray(allIps) && allIps.length > 1) {
+        allEl.innerText = `Alternative Interfaces: ${allIps.join(', ')}`;
+        allEl.style.display = 'block';
+    }
 }
 
 async function fetchRestStatus() {
@@ -1335,10 +1376,38 @@ async function fetchRestStatus() {
             if (data.wifi_ip) {
                 wifiIp = data.wifi_ip;
                 udpPort = data.udp_port || 5005;
-                updateIpDisplays();
+                updateIpDisplays(data.all_ips);
+            }
+            if (data.total_packets !== undefined) {
+                updateTelemetryStats(data);
             }
         }
     } catch (e) {}
+}
+
+async function triggerTestUdp() {
+    const btn = document.getElementById('btn-test-udp');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerText = "Sending Test Packet...";
+    }
+    try {
+        const res = await fetch('/api/test-udp');
+        const data = await res.json();
+        if (data.success) {
+            showToast(`Test UDP packet sent to socket (${data.sample} μV, seq ${data.seq})!`, "success");
+            fetchRestStatus();
+        } else {
+            showToast("Failed to send test packet: " + (data.error || "Unknown"), "error");
+        }
+    } catch (e) {
+        showToast("Error triggering UDP test.", "error");
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerText = "TEST DIRECT WI-FI CONNECTION";
+        }
+    }
 }
 
 // ------------------------------------------------------------------------------
@@ -1872,6 +1941,9 @@ window.addEventListener('DOMContentLoaded', () => {
 
     // Launch Decoupled Precision 20 Hz DSP Loop (every 50ms)
     setInterval(executeWelchDSP, 50);
+
+    // Periodic REST fallback poll (every 2000ms)
+    setInterval(fetchRestStatus, 2000);
 
     // Launch 60 FPS Canvas Rendering Loop
     requestAnimationFrame(renderLoop);

@@ -572,7 +572,14 @@
                         <div class="wifi-info-box">
                             <div class="wifi-ip-title">Your Laptop's Wi-Fi IP Address:</div>
                             <div class="wifi-ip-highlight" id="laptop-wifi-ip-display">192.168.29.155</div>
-                            <div class="wifi-ip-sub">Connect your ESP32 or Wi-Fi hardware to this Wi-Fi network and stream UDP packets to this IP.</div>
+                            <div class="wifi-ip-sub" id="laptop-all-ips-display" style="display: none; margin-top: 4px; color: var(--emerald); font-weight: 600;"></div>
+                            <div class="wifi-ip-sub">Connect your ESP32 or Wi-Fi hardware to this Wi-Fi network and stream UDP packets to this IP on port 5005.</div>
+                            <div style="margin-top: 12px; display: flex; gap: 8px;">
+                                <button type="button" class="btn btn-primary" id="btn-test-udp" onclick="triggerTestUdp()" style="flex: 1; font-size: 11px; padding: 8px 12px; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                                    TEST DIRECT WI-FI CONNECTION
+                                </button>
+                            </div>
                         </div>
 
                         <div class="hw-stats-grid">
@@ -599,6 +606,17 @@
                             <div class="hw-stat-item">
                                 <div class="hw-stat-label">Hardware Sender IP</div>
                                 <div class="hw-stat-val" id="hw-sender-ip">Waiting...</div>
+                            </div>
+                        </div>
+
+                        <!-- Live Raw UDP Packet Monitor -->
+                        <div style="margin-top: 16px; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 4px; padding: 12px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; color: var(--cyan); letter-spacing: 1px;">LIVE WI-FI PACKET MONITOR (PORT 5005)</span>
+                                <span style="font-size: 10px; color: #64748B;">Auto-refresh</span>
+                            </div>
+                            <div id="hw-packet-log" style="min-height: 70px; max-height: 130px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px;">
+                                <div style="color: #64748B; font-size: 11px; font-family: 'JetBrains Mono', monospace; padding: 8px; text-align: center;">Waiting for incoming UDP datagrams...</div>
                             </div>
                         </div>
 

@@ -91,7 +91,8 @@ class TelemetryState:
 
             if self.last_sequence >= 0 and seq > self.last_sequence + 1:
                 gap = seq - self.last_sequence - 1
-                self.dropped_packets += gap
+                if gap < 200:  # Sensible threshold: only count genuine intra-session packet loss
+                    self.dropped_packets += gap
             self.last_sequence = seq
 
             self.sample_history.append((now, seq, val, chk_ok))
@@ -106,7 +107,7 @@ class TelemetryState:
     def get_status_dict(self):
         with self.lock:
             now = time.time()
-            is_active = (now - self.last_packet_time) < 2.0 if self.last_packet_time > 0 else False
+            is_active = (now - self.last_packet_time) < 3.5 if self.last_packet_time > 0 else False
             drop_pct = (self.dropped_packets / max(1, self.total_packets)) * 100.0
 
             return {
@@ -115,7 +116,7 @@ class TelemetryState:
                 "dropped_packets": self.dropped_packets,
                 "drop_rate_pct": round(drop_pct, 2),
                 "sample_rate_hz": self.sample_rate_hz if is_active else 0.0,
-                "source_ip": self.source_ip if is_active else None,
+                "source_ip": self.source_ip if (is_active or self.total_packets > 0) else None,
                 "active_ws_clients": len(self.connected_ws_clients),
                 "history_samples_count": len(self.sample_history)
             }
@@ -619,7 +620,28 @@ class NeuroSimHTTPHandler(SimpleHTTPRequestHandler):
             self.send_json_response(200, {"success": True, "user": user})
             return
 
-        # 4. Paginated Sessions Archive
+        # 4. Instant UDP Socket Self-Test Route
+        elif parsed.path == '/api/test-udp':
+            try:
+                test_val = round(15.0 + 12.0 * (time.time() % 3.0), 2)
+                test_seq = telemetry_state.last_sequence + 1 if telemetry_state.last_sequence >= 0 else 1
+                test_chk = (test_seq + int(abs(test_val) * 100)) % 256
+                packet = f"SAMPLE,{test_val},{test_seq},{test_chk}".encode('utf-8')
+                test_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                test_sock.sendto(packet, ("127.0.0.1", UDP_PORT))
+                test_sock.close()
+                self.send_json_response(200, {
+                    "success": True,
+                    "sample": test_val,
+                    "seq": test_seq,
+                    "udp_port": UDP_PORT,
+                    "message": f"Successfully streamed UDP datagram to port {UDP_PORT}"
+                })
+            except Exception as e:
+                self.send_json_response(500, {"success": False, "error": str(e)})
+            return
+
+        # 5. Paginated Sessions Archive
         elif parsed.path == '/api/sessions':
             page = int(query_params.get('page', [1])[0])
             limit = int(query_params.get('limit', [10])[0])
@@ -899,6 +921,12 @@ def run_udp_receiver():
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
+    # Enable Subnet Broadcast Reception (255.255.255.255)
+    try:
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+    except Exception as e:
+        server_logger.warning(f"SO_BROADCAST warning: {e}")
+
     # 2MB Receive Buffer to eliminate OS socket drops under Windows
     try:
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 2 * 1024 * 1024)
@@ -914,17 +942,77 @@ def run_udp_receiver():
             if not text:
                 continue
 
-            # Format 1: SAMPLE,<val>,<seq>,<checksum>
-            if text.startswith("SAMPLE,"):
-                parts = text.split(",")
-                if len(parts) >= 4:
-                    val = float(parts[1])
-                    seq = int(parts[2])
-                    chk = int(parts[3])
+            # Process line-by-line in case multiple samples were batched in one UDP packet
+            lines = text.splitlines()
+            for raw_line in lines:
+                line = raw_line.strip()
+                if not line:
+                    continue
 
-                    # Checksum verification: (seq + floor(|val| * 100)) % 256
-                    calc_chk = (seq + int(abs(val) * 100)) % 256
-                    chk_ok = (chk == calc_chk)
+                val = None
+                seq = None
+                chk_ok = True
+
+                # Format 1: SAMPLE,<val>,<seq>,<checksum> or SAMPLE,<val>,<seq> or SAMPLE,<val>
+                if line.upper().startswith("SAMPLE"):
+                    parts = [p.strip() for p in line.split(",")]
+                    if len(parts) >= 4:
+                        try:
+                            val = float(parts[1])
+                            seq = int(parts[2])
+                            chk = int(parts[3])
+                            calc_chk = (seq + int(abs(val) * 100)) % 256
+                            chk_ok = (chk == calc_chk)
+                        except (ValueError, IndexError):
+                            pass
+                    elif len(parts) == 3:
+                        try:
+                            val = float(parts[1])
+                            seq = int(parts[2])
+                        except (ValueError, IndexError):
+                            pass
+                    elif len(parts) == 2:
+                        try:
+                            val = float(parts[1])
+                        except (ValueError, IndexError):
+                            pass
+
+                # Format 2: JSON payload
+                elif line.startswith("{") and line.endswith("}"):
+                    try:
+                        obj = json.loads(line)
+                        val = float(obj.get("val", obj.get("value", obj.get("sample", obj.get("eeg", 0.0)))))
+                        seq = int(obj.get("seq", obj.get("sequence", 0)))
+                    except Exception:
+                        pass
+
+                # Format 3: Multi-channel CSV (e.g. 4 ADC channels for Delta, Theta, Alpha, Beta)
+                elif "," in line:
+                    parts = [p.strip() for p in line.split(",")]
+                    try:
+                        nums = [float(p) for p in parts if p]
+                        if len(nums) == 4:
+                            # 4-channel composite EEG waveform sum
+                            val = sum(nums)
+                        elif len(nums) >= 2:
+                            val = nums[0]
+                            seq = int(nums[1])
+                        elif len(nums) == 1:
+                            val = nums[0]
+                    except Exception:
+                        pass
+
+                # Format 4: Raw single numerical reading (e.g. 15.25 or EEG: 15.25)
+                else:
+                    clean = line.replace("EEG:", "").replace("DATA:", "").replace("RAW:", "").replace("VAL:", "").strip()
+                    try:
+                        val = float(clean)
+                    except ValueError:
+                        pass
+
+                if val is not None:
+                    if seq is None:
+                        seq = telemetry_state.last_sequence + 1 if telemetry_state.last_sequence >= 0 else 1
 
                     telemetry_state.update_sample(val, seq, chk_ok, addr[0])
 
@@ -940,29 +1028,6 @@ def run_udp_receiver():
                                 "timestamp": time.time()
                             }
                         )
-            # Format 2: JSON payload
-            elif text.startswith("{") and text.endswith("}"):
-                try:
-                    obj = json.loads(text)
-                    val = float(obj.get("val", obj.get("value", 0.0)))
-                    seq = int(obj.get("seq", obj.get("sequence", 0)))
-                    telemetry_state.update_sample(val, seq, True, addr[0])
-
-                    if async_loop and sample_queue and not sample_queue.full():
-                        async_loop.call_soon_threadsafe(
-                            sample_queue.put_nowait,
-                            {
-                                "type": "sample",
-                                "val": val,
-                                "seq": seq,
-                                "chk_ok": True,
-                                "sender": addr[0],
-                                "timestamp": time.time()
-                            }
-                        )
-                except Exception:
-                    pass
-
         except Exception:
             time.sleep(0.005)
 

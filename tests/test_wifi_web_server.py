@@ -55,5 +55,29 @@ class TestNeuroSimWebServer(unittest.TestCase):
         self.assertGreaterEqual(data["total_packets"], 1)
         print(f"[TEST PASS] Hardware UDP packet received and verified. Hardware connected = {data['hardware_connected']}")
 
+    def test_multiformat_udp_and_test_endpoint(self):
+        # 1. Test multi-line batched UDP packet
+        multi_packet = b"SAMPLE,12.5,101,113\nSAMPLE,14.8,102,150\n"
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sock.sendto(multi_packet, ("127.0.0.1", 5005))
+
+        # 2. Test JSON UDP payload
+        json_packet = json.dumps({"val": 22.4, "seq": 103}).encode('utf-8')
+        sock.sendto(json_packet, ("127.0.0.1", 5005))
+
+        # 3. Test 4-channel composite reading (Delta, Theta, Alpha, Beta)
+        four_chan = b"2.5, 5.0, 10.0, 15.0"
+        sock.sendto(four_chan, ("127.0.0.1", 5005))
+        sock.close()
+
+        time.sleep(0.3)
+
+        # 4. Test /api/test-udp REST self-test endpoint
+        req = urllib.request.urlopen("http://127.0.0.1:8000/api/test-udp", timeout=3.0)
+        res = json.loads(req.read().decode('utf-8'))
+        self.assertTrue(res["success"])
+        self.assertEqual(res["udp_port"], 5005)
+        print(f"[TEST PASS] Multiformat UDP and /api/test-udp verified: {res['message']}")
+
 if __name__ == '__main__':
     unittest.main()

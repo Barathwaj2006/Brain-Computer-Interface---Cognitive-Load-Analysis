@@ -35,6 +35,7 @@ const char* LAPTOP_IP     = "192.168.29.155";      // Replace with your Laptop's
 const int   LAPTOP_PORT   = 5005;
 
 WiFiUDP udp;
+bool isAPMode = false;
 
 // -----------------------------------------------------------------------------
 // 2. Hardware ADC Pin Definitions
@@ -67,14 +68,14 @@ void setup() {
   pinMode(PIN_POT_BETA, INPUT);
   analogReadResolution(12); // 0 - 4095
 
-  // Connect to Wi-Fi
+  // 1. Attempt connecting to configured Wi-Fi router / Laptop Hotspot
   Serial.printf("[NeuroSim] Connecting to Wi-Fi SSID: %s\n", WIFI_SSID);
   WiFi.mode(WIFI_STA);
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 
   int attempts = 0;
-  while (WiFi.status() != WL_CONNECTED && attempts < 30) {
-    delay(500);
+  while (WiFi.status() != WL_CONNECTED && attempts < 20) {
+    delay(400);
     Serial.print(".");
     attempts++;
   }
@@ -82,9 +83,18 @@ void setup() {
   if (WiFi.status() == WL_CONNECTED) {
     Serial.println("\n[NeuroSim] Wi-Fi Connected!");
     Serial.printf("[NeuroSim] ESP32 IP: %s\n", WiFi.localIP().toString().c_str());
-    Serial.printf("[NeuroSim] Streaming UDP to Laptop Wi-Fi: %s:%d\n", LAPTOP_IP, LAPTOP_PORT);
+    Serial.printf("[NeuroSim] Streaming UDP to Laptop: %s:%d + Subnet Broadcast (255.255.255.255)\n", LAPTOP_IP, LAPTOP_PORT);
   } else {
-    Serial.println("\n[NeuroSim WARNING] Wi-Fi Connection failed. Verify SSID/Password.");
+    // 2. Fallback: Create Direct Wi-Fi Access Point (SoftAP)
+    Serial.println("\n[NeuroSim NOTICE] Wi-Fi router connection timed out.");
+    Serial.println("[NeuroSim] Activating Direct Access Point (SoftAP) Mode...");
+    WiFi.disconnect();
+    WiFi.mode(WIFI_AP);
+    WiFi.softAP("NeuroSim-ESP32-AP", "neurosim123");
+    isAPMode = true;
+    Serial.println("[NeuroSim] Created Wi-Fi Access Point: 'NeuroSim-ESP32-AP' (Password: neurosim123)");
+    Serial.printf("[NeuroSim] ESP32 Gateway IP: %s\n", WiFi.softAPIP().toString().c_str());
+    Serial.println("[NeuroSim] Connect your laptop Wi-Fi directly to 'NeuroSim-ESP32-AP' to stream without any external router!");
   }
 
   udp.begin(5006); // Local UDP listening port
@@ -126,8 +136,14 @@ void loop() {
     snprintf(packet, sizeof(packet), "SAMPLE,%.3f,%lu,%u", waveform, sequenceNumber, checksum);
 
     // Send UDP Datagram over Wi-Fi directly to Laptop
-    if (WiFi.status() == WL_CONNECTED) {
+    if (WiFi.status() == WL_CONNECTED || isAPMode) {
+      // 1. Unicast transmission to configured laptop IP
       udp.beginPacket(LAPTOP_IP, LAPTOP_PORT);
+      udp.write((const uint8_t*)packet, strlen(packet));
+      udp.endPacket();
+
+      // 2. Subnet Broadcast (255.255.255.255) ensures automatic delivery even if laptop IP changed
+      udp.beginPacket(IPAddress(255, 255, 255, 255), LAPTOP_PORT);
       udp.write((const uint8_t*)packet, strlen(packet));
       udp.endPacket();
     }
