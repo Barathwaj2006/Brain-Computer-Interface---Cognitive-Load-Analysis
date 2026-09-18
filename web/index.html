@@ -129,6 +129,15 @@
                     <button class="btn btn-tool" id="btn-toggle-notch" onclick="cycleNotchFilter()" title="AC Powerline Interference Notch Filter">
                         Notch: <strong id="lbl-notch-state">50Hz</strong>
                     </button>
+                    <button class="btn btn-tool active" id="btn-toggle-artifacts" onclick="toggleArtifactFilter()" title="Online Ocular Blink & Temporal EMG Clamping">
+                        Artifacts: <strong id="lbl-artifact-state">ON</strong>
+                    </button>
+                    <button class="btn btn-tool" id="btn-show-impedance" onclick="openImpedanceModal()" title="IEC 60601-2-26 Electrode Contact Impedance Map">
+                        Impedance: <strong id="lbl-impedance-summary" style="color:var(--emerald);">PASS (&lt;5kΩ)</strong>
+                    </button>
+                    <button class="btn btn-tool" id="btn-cal-test" onclick="runCalibrationSelfTest()" title="Run Internal Calibration & Signal Integrity Self-Test">
+                        Self-Test
+                    </button>
                     <button class="btn btn-tool" id="btn-toggle-audio" onclick="toggleAudioBiofeedback()" title="Web Audio Neurofeedback Tone">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 4px;">
                             <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
@@ -766,12 +775,26 @@
             <!-- ============================================================= -->
             <section id="screen-report" class="view-screen">
                 <div class="glass-card report-preview-card">
-                    <div class="card-header">
+                    <div class="card-header" style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; align-items: center;">
                         <div class="card-title">Clinical & Research Session Report Exporter</div>
-                        <button class="btn btn-primary" onclick="exportCurrentSessionPDF()" style="display: inline-flex; align-items: center; gap: 8px;">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
-                            PRINT / GENERATE CLINICAL PDF REPORT
-                        </button>
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                            <button class="btn btn-primary" onclick="exportCurrentSessionPDF()" style="display: inline-flex; align-items: center; gap: 6px;">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                                PRINT PDF
+                            </button>
+                            <button class="btn" onclick="downloadCurrentSessionEDF()" style="display: inline-flex; align-items: center; gap: 6px;" title="Export European Data Format (EDF+) Binary (IEC 60601-2-26)">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                EXPORT EDF+
+                            </button>
+                            <button class="btn" onclick="downloadCurrentSessionFHIR()" style="display: inline-flex; align-items: center; gap: 6px;" title="Export HL7 FHIR R4 DiagnosticReport Bundle (JSON)">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+                                EXPORT HL7/FHIR
+                            </button>
+                            <button class="btn" onclick="verifyAuditIntegrity()" style="display: inline-flex; align-items: center; gap: 6px;" title="Verify 21 CFR Part 11 SHA-256 Audit Trail Cryptographic Hash Chain">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                                VERIFY 21 CFR AUDIT
+                            </button>
+                        </div>
                     </div>
 
                     <div class="report-sheet" id="report-sheet">
@@ -828,6 +851,32 @@
                             <p id="rep-narrative">
                                 Real-time spectral power analysis indicates dominant alpha frequency synchronization (10.0 Hz) across central and occipital recording channels. The Spectral Stress Index of 0.45 reflects balanced cognitive workload with adequate attentional engagement. Both rule-based heuristic margins and random forest probabilistic models are in clinical consensus.
                             </p>
+                        </div>
+
+                        <!-- Explainable AI (XAI) Saliency & Electrophysiological Feature Attribution -->
+                        <div class="report-narrative-box" id="xai-saliency-box" style="margin-top: 12px; border-left: 3px solid var(--purple); background: rgba(168, 85, 247, 0.04);">
+                            <div class="narrative-title" style="color: var(--purple); font-weight: 700; margin-bottom: 4px;">Explainable AI (XAI) Saliency & Feature Attribution (FDA GMLP):</div>
+                            <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 8px;">
+                                Pre-softmax target-logit gradient sensitivity (&part;Logit / &part;Feature) identifying key electrophysiological markers driving the 443,972-parameter DNN prediction:
+                            </div>
+                            <div id="xai-saliency-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; font-size: 11px;">
+                                <div style="background: rgba(168, 85, 247, 0.08); border: 1px solid rgba(168, 85, 247, 0.25); border-radius: 4px; padding: 6px 10px;">
+                                    <strong style="color: var(--purple);">Rank 1:</strong> Stress Index (SSI)<br>
+                                    <span style="color: var(--text-muted);">Attribution: <strong>38.4%</strong> (Magnitude: 0.842)</span>
+                                </div>
+                                <div style="background: rgba(168, 85, 247, 0.08); border: 1px solid rgba(168, 85, 247, 0.25); border-radius: 4px; padding: 6px 10px;">
+                                    <strong style="color: var(--purple);">Rank 2:</strong> Theta/Beta Ratio (TBR)<br>
+                                    <span style="color: var(--text-muted);">Attribution: <strong>27.1%</strong> (Magnitude: 0.594)</span>
+                                </div>
+                                <div style="background: rgba(168, 85, 247, 0.08); border: 1px solid rgba(168, 85, 247, 0.25); border-radius: 4px; padding: 6px 10px;">
+                                    <strong style="color: var(--purple);">Rank 3:</strong> Beta Band Power<br>
+                                    <span style="color: var(--text-muted);">Attribution: <strong>19.8%</strong> (Magnitude: 0.435)</span>
+                                </div>
+                                <div style="background: rgba(168, 85, 247, 0.08); border: 1px solid rgba(168, 85, 247, 0.25); border-radius: 4px; padding: 6px 10px;">
+                                    <strong style="color: var(--purple);">Rank 4:</strong> Alpha Band Power<br>
+                                    <span style="color: var(--text-muted);">Attribution: <strong>14.7%</strong> (Magnitude: 0.322)</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -897,6 +946,36 @@
 
     <!-- Toast Notifications Container -->
     <div id="toast-container"></div>
+
+    <!-- Pre-flight Quality Assurance & Electrode Impedance Modal (IEC 60601-2-26) -->
+    <div id="impedance-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(7, 11, 20, 0.88); backdrop-filter: blur(8px); z-index: 9999; align-items: center; justify-content: center;">
+        <div class="auth-card" style="max-width: 620px; width: 90%;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+                <div>
+                    <div class="auth-badge">IEC 60601-2-26 PRE-FLIGHT QA</div>
+                    <h2 class="auth-title" style="font-size: 18px; margin: 4px 0 0 0; text-align: left;">Electrode Contact Impedance</h2>
+                    <div class="auth-subtitle" style="text-align: left; margin-bottom: 0;">Standard: &lt;5.0 kΩ Optimal (Green) • 5–10 kΩ Acceptable (Yellow) • &gt;10 kΩ Lead-Off (Red)</div>
+                </div>
+                <button type="button" onclick="closeImpedanceModal()" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 20px; padding: 4px 8px;">✕</button>
+            </div>
+
+            <div id="impedance-interlock-warning" style="display: none; background: rgba(239, 68, 68, 0.15); border: 1px solid var(--rose); padding: 10px 14px; border-radius: 6px; margin-bottom: 16px; font-size: 12px; color: #fca5a5;">
+                <strong>INTERLOCK ACTIVE:</strong> One or more electrodes exceed 5.0 kΩ. Adjust physical contact gel or authorize Physician Override to record.
+            </div>
+
+            <div id="impedance-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px;">
+                <!-- Filled dynamically by JavaScript with 8 channels (Fp1, Fp2, C3, C4, P3, P4, O1, O2) -->
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 14px;">
+                <button type="button" class="btn" onclick="refreshImpedance()" style="font-size: 12px;">Re-check Leads</button>
+                <div style="display: flex; gap: 8px;">
+                    <button type="button" class="btn" id="btn-override-impedance" onclick="promptClinicalOverride()" style="font-size: 12px; border-color: var(--amber); color: var(--amber);">Physician Override</button>
+                    <button type="button" class="btn btn-primary" id="btn-confirm-impedance" onclick="confirmImpedanceAndStart()" style="font-size: 12px;">Proceed to Record</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Scripts -->
     <script src="pdf_export.js"></script>
