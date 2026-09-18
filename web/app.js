@@ -1367,6 +1367,7 @@ function updateIpDisplays(allIps) {
         allEl.style.display = 'block';
     }
 }
+let lastHttpSampleSeq = -1;
 
 async function fetchRestStatus() {
     try {
@@ -1381,8 +1382,36 @@ async function fetchRestStatus() {
             if (data.total_packets !== undefined) {
                 updateTelemetryStats(data);
             }
+            // HTTP Fail-Safe Fallback Stream:
+            // Ingest recent samples if WebSocket connection is closed or blocked
+            if ((!wsClient || wsClient.readyState !== WebSocket.OPEN) && Array.isArray(data.recent_samples) && data.recent_samples.length > 0) {
+                let newIngested = false;
+                for (const s of data.recent_samples) {
+                    if (s.seq > lastHttpSampleSeq || lastHttpSampleSeq === -1) {
+                        lastHttpSampleSeq = s.seq;
+                        ingestSample(s.val);
+                        newIngested = true;
+                    }
+                }
+                if (newIngested) {
+                    isHardwareActive = true;
+                    updateHardwareUIState(true);
+                }
+            }
         }
     } catch (e) {}
+}
+
+function reconnectTelemetry() {
+    showToast("Reconnecting telemetry link to laptop Wi-Fi...", "info", 2000);
+    try {
+        if (wsClient) {
+            try { wsClient.close(); } catch(e) {}
+            wsClient = null;
+        }
+    } catch (e) {}
+    initHardwareWebSocket();
+    fetchRestStatus();
 }
 
 async function triggerTestUdp() {
@@ -1704,6 +1733,7 @@ function switchTab(tabKey) {
     if (tabKey === 'history') renderHistoryTable();
     if (tabKey === 'topo-map') drawContinuousTopoMap();
     if (tabKey === 'signal-lab') renderLabStage();
+    if (tabKey === 'report' && typeof updateReportScreenPreview === 'function') updateReportScreenPreview();
     setTimeout(resizeCanvases, 50);
 }
 

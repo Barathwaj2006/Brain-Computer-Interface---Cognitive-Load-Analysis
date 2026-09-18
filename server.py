@@ -560,6 +560,10 @@ class NeuroSimHTTPHandler(SimpleHTTPRequestHandler):
         # 1. Telemetry Status
         if parsed.path == '/api/status':
             status_data = telemetry_state.get_status_dict()
+            with telemetry_state.lock:
+                status_data["recent_samples"] = [
+                    {"val": s[2], "seq": s[1]} for s in telemetry_state.sample_history[-60:]
+                ]
             status_data.update({
                 "platform": "NeuroSim EEG Web Platform",
                 "version": "2.4.0-PRODUCTION",
@@ -576,7 +580,31 @@ class NeuroSimHTTPHandler(SimpleHTTPRequestHandler):
             })
             return
 
-        # 2. Uptime Health Monitoring
+        # 2. Deep Neural Network AI Report Synthesis (>300,000 Parameters)
+        elif parsed.path == '/api/ai-report':
+            try:
+                from src.classification.ai_report_model import DeepNeuroReportModel
+                deep_model = DeepNeuroReportModel.load_trained()
+
+                delta = float(query_params.get('delta', [25.0])[0])
+                theta = float(query_params.get('theta', [25.0])[0])
+                alpha = float(query_params.get('alpha', [25.0])[0])
+                beta  = float(query_params.get('beta', [25.0])[0])
+                stress = float(query_params.get('stress_index', [beta / max(0.1, alpha + theta)])[0])
+
+                report_data = deep_model.generate_full_clinical_report({
+                    'delta': delta, 'theta': theta, 'alpha': alpha, 'beta': beta,
+                    'stress_index': stress, 'total_samples': telemetry_state.total_packets
+                })
+                self.send_json_response(200, {
+                    "success": True,
+                    "report": report_data
+                })
+            except Exception as e:
+                self.send_json_response(500, {"success": False, "error": f"AI Report synthesis failed: {e}"})
+            return
+
+        # 3. Uptime Health Monitoring
         elif parsed.path == '/api/health':
             uptime = round(time.time() - START_TIME, 2)
             conn = DatabaseManager.get_connection()
@@ -952,6 +980,16 @@ def run_udp_receiver():
                 val = None
                 seq = None
                 chk_ok = True
+
+                # Hardware Auto-Discovery Beacon Handshake
+                if line.upper().startswith("DISCOVER") or line.upper().startswith("PING"):
+                    ack_packet = f"DISCOVER_ACK,{PRIMARY_WIFI_IP},{UDP_PORT}\n".encode('utf-8')
+                    try:
+                        sock.sendto(ack_packet, addr)
+                        server_logger.info(f"Handshake: Replied to discovery beacon from {addr[0]}:{addr[1]}")
+                    except Exception:
+                        pass
+                    continue
 
                 # Format 1: SAMPLE,<val>,<seq>,<checksum> or SAMPLE,<val>,<seq> or SAMPLE,<val>
                 if line.upper().startswith("SAMPLE"):

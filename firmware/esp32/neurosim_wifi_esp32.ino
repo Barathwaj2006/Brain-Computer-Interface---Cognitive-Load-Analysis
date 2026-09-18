@@ -98,6 +98,30 @@ void setup() {
   }
 
   udp.begin(5006); // Local UDP listening port
+
+  // 3. Automated Laptop Discovery Handshake (Auto-finds laptop IP)
+  if (WiFi.status() == WL_CONNECTED) {
+    Serial.println("[NeuroSim] Broadcasting Discovery Beacon to auto-locate laptop on network...");
+    const char* discMsg = "DISCOVER,NEUROSIM\n";
+    udp.beginPacket(IPAddress(255, 255, 255, 255), LAPTOP_PORT);
+    udp.write((const uint8_t*)discMsg, strlen(discMsg));
+    udp.endPacket();
+
+    // Listen for DISCOVER_ACK from laptop
+    unsigned long discStart = millis();
+    while (millis() - discStart < 1000) {
+      int packetSize = udp.parsePacket();
+      if (packetSize > 0) {
+        char reply[64] = {0};
+        udp.read(reply, sizeof(reply) - 1);
+        if (strncmp(reply, "DISCOVER_ACK", 12) == 0) {
+          Serial.printf("[NeuroSim] Handshake Verified! Auto-discovered Laptop Gateway: %s\n", reply);
+          break;
+        }
+      }
+      delay(50);
+    }
+  }
 }
 
 void loop() {
