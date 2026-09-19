@@ -93,8 +93,9 @@
 
         <!-- Sidebar Telemetry Footer -->
         <div class="sidebar-footer">
-            <div class="footer-label">WI-FI STREAM GATEWAY</div>
-            <div class="footer-val" id="sb-source">LISTENING ON LAPTOP WI-FI</div>
+            <div class="footer-label">NETWORK &amp; HARDWARE</div>
+            <div class="footer-val" id="sb-wifi-ssid" style="color: var(--emerald); font-weight: 700;">Wi-Fi: Netvennuma</div>
+            <div class="footer-val" id="sb-bt-name" style="font-size: 11px; color: var(--cyan); margin-top: 2px;">BT: Adapter Active</div>
             <div class="footer-ip" id="sb-ip">192.168.29.155:5005</div>
             <div class="footer-fps">
                 <span>UI: <strong id="val-fps">60</strong> FPS</span>
@@ -150,10 +151,20 @@
                     <input type="range" id="sld-audio-vol" min="0" max="100" value="40" oninput="setBiofeedbackVolume(this.value)" title="Biofeedback Audio Volume" style="width: 44px; accent-color: var(--cyan); vertical-align: middle; cursor: pointer;">
                 </div>
 
+                <!-- Hardware Wi-Fi Network & Bluetooth Status Live Indicators -->
+                <div class="header-net-pill" id="header-wifi-pill" onclick="switchTab('wifi-hardware')" title="Click to view Laptop Wi-Fi Details">
+                    <span class="net-dot net-dot-green"></span>
+                    <span>Wi-Fi: <strong id="header-wifi-ssid">Netvennuma</strong></span>
+                </div>
+                <div class="header-net-pill" id="header-bt-pill" onclick="switchTab('wifi-hardware')" title="Click to view Laptop Bluetooth Details">
+                    <span class="net-dot net-dot-blue" id="header-bt-dot"></span>
+                    <span>BT: <strong id="header-bt-device">Adapter Active</strong></span>
+                </div>
+
                 <!-- Hardware Wi-Fi Status Badge -->
                 <div class="connection-status-badge badge-disconnected" id="header-status-badge">
                     <span class="status-dot"></span>
-                    <span id="header-status-text">LISTENING ON LAPTOP WI-FI</span>
+                    <span id="header-status-text">LISTENING ON 0.0.0.0:5005</span>
                 </div>
                 <button class="btn btn-tool" id="btn-reconnect-telemetry" onclick="reconnectTelemetry()" title="Reconnect to Laptop Wi-Fi Telemetry Link" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px;">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -625,22 +636,45 @@
             </section>
 
             <!-- ============================================================= -->
-            <!-- 6. WI-FI HARDWARE CENTER SCREEN                               -->
+            <!-- 6. WI-FI HARDWARE & BLUETOOTH CENTER SCREEN                   -->
             <!-- ============================================================= -->
             <section id="screen-wifi-hardware" class="view-screen">
                 <div class="hardware-grid">
-                    <!-- Left: Laptop Wi-Fi Telemetry & Settings -->
+                    <!-- Left: Laptop Wi-Fi Network & Settings Gateway -->
                     <div class="glass-card">
                         <div class="card-header">
-                            <div class="card-title">Laptop Wi-Fi Hardware Receiver Gateway</div>
+                            <div>
+                                <div class="card-title">Laptop Wi-Fi Network &amp; UDP Gateway</div>
+                                <div style="font-size: 11px; color: var(--text-muted); margin-top: 3px;">Real-Time Host Laptop Wireless Telemetry</div>
+                            </div>
                             <div class="badge-status-pill" id="hw-station-status">LISTENING ON 0.0.0.0:5005</div>
                         </div>
 
                         <div class="wifi-info-box">
-                            <div class="wifi-ip-title">Your Laptop's Wi-Fi IP Address:</div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.08);">
+                                <div>
+                                    <div class="wifi-ip-title">Active Wi-Fi Network (SSID):</div>
+                                    <div style="font-size: 20px; font-weight: 800; color: #10B981; display: flex; align-items: center; gap: 8px;">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12.55a11 11 0 0 1 14.08 0"></path><path d="M1.42 9a16 16 0 0 1 21.16 0"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg>
+                                        <span id="hw-wifi-ssid-display">Netvennuma</span>
+                                    </div>
+                                </div>
+                                <div style="text-align: right;">
+                                    <div class="wifi-ip-title">Signal Quality:</div>
+                                    <div style="font-size: 13px; font-weight: 700; color: #38BDF8;" id="hw-wifi-signal-display">100% (5 GHz)</div>
+                                </div>
+                            </div>
+
+                            <div class="wifi-ip-title">Laptop's Wi-Fi IP Address:</div>
                             <div class="wifi-ip-highlight" id="laptop-wifi-ip-display">192.168.29.155</div>
                             <div class="wifi-ip-sub" id="laptop-all-ips-display" style="display: none; margin-top: 4px; color: var(--emerald); font-weight: 600;"></div>
-                            <div class="wifi-ip-sub">Connect your ESP32 or Wi-Fi hardware to this Wi-Fi network and stream UDP packets to this IP on port 5005.</div>
+                            <div class="wifi-ip-sub" style="margin-top: 6px;">
+                                <strong>Connection Rule:</strong> Connect your ESP32 or wireless hardware to Wi-Fi network <code id="hw-wifi-ssid-code" style="color: var(--emerald); background: rgba(16,185,129,0.15); padding: 1px 5px; border-radius: 3px;">Netvennuma</code> and stream UDP datagrams to IP <code style="color: var(--cyan);">192.168.29.155</code> on port <code style="color: var(--amber);">5005</code>.
+                            </div>
+                            <div class="wifi-ip-sub" id="hw-wifi-adapter-display" style="font-size: 10.5px; color: #64748B; margin-top: 4px;">
+                                Adapter: Realtek 8852BE-VT Wireless LAN WiFi 6 PCI-E NIC
+                            </div>
+
                             <div style="margin-top: 12px; display: flex; gap: 8px;">
                                 <button type="button" class="btn btn-primary" id="btn-test-udp" onclick="triggerTestUdp()" style="flex: 1; font-size: 11px; padding: 8px 12px; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
                                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
@@ -682,16 +716,52 @@
                                 <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; color: var(--cyan); letter-spacing: 1px;">LIVE WI-FI PACKET MONITOR (PORT 5005)</span>
                                 <span style="font-size: 10px; color: #64748B;">Auto-refresh</span>
                             </div>
-                            <div id="hw-packet-log" style="min-height: 70px; max-height: 130px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px;">
+                            <div id="hw-packet-log" style="min-height: 70px; max-height: 120px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px;">
                                 <div style="color: #64748B; font-size: 11px; font-family: 'JetBrains Mono', monospace; padding: 8px; text-align: center;">Waiting for incoming UDP datagrams...</div>
                             </div>
                         </div>
+                    </div>
 
-                        <!-- Switch to Simulator Demo -->
-                        <div class="sim-toggle-wrap">
+                    <!-- Right: Laptop Bluetooth Subsystem & Web Bluetooth Hub -->
+                    <div class="glass-card">
+                        <div class="card-header">
+                            <div>
+                                <div class="card-title">Laptop Bluetooth &amp; Peripheral Gateway</div>
+                                <div style="font-size: 11px; color: var(--text-muted); margin-top: 3px;" id="hw-bt-adapter-label">Realtek Wireless Bluetooth Adapter (Active)</div>
+                            </div>
+                            <span class="tag-pill" id="hw-bt-radio-pill" style="background: rgba(14,165,233,0.15); color: var(--cyan); border-color: rgba(14,165,233,0.3);">RADIO OK</span>
+                        </div>
+
+                        <!-- Active Connected Bluetooth Device Banner -->
+                        <div class="bt-active-banner">
+                            <div class="bt-active-info">
+                                <span class="bt-active-label">CONNECTED BLUETOOTH DEVICE</span>
+                                <div class="bt-active-name" id="bt-connected-name">Scanning / Standby...</div>
+                                <div class="bt-active-meta" id="bt-connected-meta">Waiting for active peripheral connection...</div>
+                            </div>
+                            <div id="bt-connected-badge" class="badge-status-pill">STANDBY</div>
+                        </div>
+
+                        <!-- Direct Browser Web Bluetooth Connect Button -->
+                        <button type="button" class="btn-bt-scan" id="btn-web-bt-connect" onclick="connectWebBluetooth()" style="width: 100%; justify-content: center; margin-bottom: 16px;">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6.5 6.5 17.5 17.5 12 23 12 1 17.5 6.5 6.5 17.5"></polyline></svg>
+                            <span>CONNECT DIRECT IN-BROWSER BLUETOOTH</span>
+                        </button>
+
+                        <!-- Paired Devices in Windows Registry -->
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <span style="font-size: 11px; font-weight: 700; color: var(--cyan); letter-spacing: 0.5px;">PAIRED BLUETOOTH DEVICES (WINDOWS REGISTRY):</span>
+                            <span style="font-size: 10px; color: #64748B;" id="bt-paired-count">25 devices</span>
+                        </div>
+                        <div id="bt-paired-list" style="max-height: 220px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; padding-right: 4px;">
+                            <!-- Populated dynamically with paired device records -->
+                        </div>
+
+                        <!-- Fallback Testing Simulator Switch -->
+                        <div class="sim-toggle-wrap" style="margin-top: 14px;">
                             <div class="sim-toggle-header">
                                 <strong>Fallback Testing Mode:</strong>
-                                <span>If hardware is not currently connected to your laptop's Wi-Fi, activate the demo synthesizer below.</span>
+                                <span>If wireless or Bluetooth hardware is not currently connected, toggle the demo synthesizer.</span>
                             </div>
                             <button class="btn btn-simulator" id="btn-toggle-sim" onclick="toggleSimulatorMode()" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
@@ -699,64 +769,64 @@
                             </button>
                         </div>
                     </div>
+                </div>
 
-                    <!-- Right: ESP32 Setup Guide & Simulator Controls -->
-                    <div class="glass-card">
-                        <div class="card-header">
-                            <div class="card-title">Interactive Synthesizer & Pinout Instructions</div>
-                            <span class="tag-pill">Manual Signal Controls</span>
-                        </div>
+                <!-- Bottom Full-Width Synthesizer Controls (Collapsible / Secondary) -->
+                <div class="glass-card" style="margin-top: 16px;">
+                    <div class="card-header">
+                        <div class="card-title">Interactive Signal Synthesizer &amp; Firmware Configuration</div>
+                        <span class="tag-pill">Manual Signal Controls</span>
+                    </div>
 
-                        <!-- Simulator Sliders -->
-                        <div class="slider-group" id="sim-sliders">
-                            <div class="slider-item">
-                                <div class="slider-header">
-                                    <span style="color: var(--cyan);">DELTA (0.5 - 4 Hz)</span>
-                                    <span id="val-sld-delta">30%</span>
-                                </div>
-                                <input type="range" id="sld-delta" min="1" max="100" value="30" oninput="updateSimSliders()">
+                    <!-- Simulator Sliders -->
+                    <div class="slider-group" id="sim-sliders">
+                        <div class="slider-item">
+                            <div class="slider-header">
+                                <span style="color: var(--cyan);">DELTA (0.5 - 4 Hz)</span>
+                                <span id="val-sld-delta">30%</span>
                             </div>
-                            <div class="slider-item">
-                                <div class="slider-header">
-                                    <span style="color: var(--emerald);">THETA (4 - 8 Hz)</span>
-                                    <span id="val-sld-theta">30%</span>
-                                </div>
-                                <input type="range" id="sld-theta" min="1" max="100" value="30" oninput="updateSimSliders()">
-                            </div>
-                            <div class="slider-item">
-                                <div class="slider-header">
-                                    <span style="color: var(--blue);">ALPHA (8 - 13 Hz)</span>
-                                    <span id="val-sld-alpha">70%</span>
-                                </div>
-                                <input type="range" id="sld-alpha" min="1" max="100" value="70" oninput="updateSimSliders()">
-                            </div>
-                            <div class="slider-item">
-                                <div class="slider-header">
-                                    <span style="color: var(--amber);">BETA (13 - 30 Hz)</span>
-                                    <span id="val-sld-beta">30%</span>
-                                </div>
-                                <input type="range" id="sld-beta" min="1" max="100" value="30" oninput="updateSimSliders()">
-                            </div>
-                            <div class="slider-item">
-                                <div class="slider-header">
-                                    <span>NOISE JITTER</span>
-                                    <span id="val-sld-noise">15%</span>
-                                </div>
-                                <input type="range" id="sld-noise" min="0" max="100" value="15" oninput="updateSimSliders()">
-                            </div>
+                            <input type="range" id="sld-delta" min="1" max="100" value="30" oninput="updateSimSliders()">
                         </div>
+                        <div class="slider-item">
+                            <div class="slider-header">
+                                <span style="color: var(--emerald);">THETA (4 - 8 Hz)</span>
+                                <span id="val-sld-theta">30%</span>
+                            </div>
+                            <input type="range" id="sld-theta" min="1" max="100" value="30" oninput="updateSimSliders()">
+                        </div>
+                        <div class="slider-item">
+                            <div class="slider-header">
+                                <span style="color: var(--blue);">ALPHA (8 - 13 Hz)</span>
+                                <span id="val-sld-alpha">70%</span>
+                            </div>
+                            <input type="range" id="sld-alpha" min="1" max="100" value="70" oninput="updateSimSliders()">
+                        </div>
+                        <div class="slider-item">
+                            <div class="slider-header">
+                                <span style="color: var(--amber);">BETA (13 - 30 Hz)</span>
+                                <span id="val-sld-beta">30%</span>
+                            </div>
+                            <input type="range" id="sld-beta" min="1" max="100" value="30" oninput="updateSimSliders()">
+                        </div>
+                        <div class="slider-item">
+                            <div class="slider-header">
+                                <span>NOISE JITTER</span>
+                                <span id="val-sld-noise">15%</span>
+                            </div>
+                            <input type="range" id="sld-noise" min="0" max="100" value="15" oninput="updateSimSliders()">
+                        </div>
+                    </div>
 
-                        <div class="presets-row">
-                            <button class="btn btn-preset" onclick="loadPreset('deep_sleep')">Deep Sleep (Delta)</button>
-                            <button class="btn btn-preset" onclick="loadPreset('relaxed')">Relaxed Alpha</button>
-                            <button class="btn btn-preset" onclick="loadPreset('high_stress')">High Cognitive Load</button>
-                        </div>
+                    <div class="presets-row">
+                        <button class="btn btn-preset" onclick="loadPreset('deep_sleep')">Deep Sleep (Delta)</button>
+                        <button class="btn btn-preset" onclick="loadPreset('relaxed')">Relaxed Alpha</button>
+                        <button class="btn btn-preset" onclick="loadPreset('high_stress')">High Cognitive Load</button>
+                    </div>
 
-                        <!-- ESP32 Firmware Path Note -->
-                        <div class="firmware-note">
-                            <strong>ESP32 DevKit V1 Wi-Fi Firmware Source:</strong><br>
-                            <code>firmware/esp32/neurosim_wifi_esp32.ino</code>
-                        </div>
+                    <!-- ESP32 Firmware Path Note -->
+                    <div class="firmware-note" style="margin-top: 14px;">
+                        <strong>ESP32 DevKit V1 Wi-Fi &amp; Bluetooth Firmware Source:</strong><br>
+                        <code>firmware/esp32/neurosim_wifi_esp32.ino</code>
                     </div>
                 </div>
             </section>

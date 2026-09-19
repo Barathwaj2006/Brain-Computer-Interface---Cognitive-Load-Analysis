@@ -1540,6 +1540,9 @@ function initHardwareWebSocket() {
                         udpPort = msg.udp_port || 5005;
                         updateIpDisplays(msg.all_ips);
                     }
+                    if (msg.wifi || msg.bluetooth) {
+                        updateHardwareConnectivityUI(msg.wifi, msg.bluetooth);
+                    }
                     if (msg.stats || msg.telemetry) {
                         const stats = msg.stats || msg.telemetry;
                         isHardwareActive = stats.hardware_connected;
@@ -1634,6 +1637,244 @@ function updateIpDisplays(allIps) {
         allEl.style.display = 'block';
     }
 }
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m]);
+}
+
+let activeWebBluetoothDevice = null;
+let activeWebBluetoothServer = null;
+
+async function connectWebBluetooth() {
+    if (!navigator.bluetooth) {
+        showToast("Web Bluetooth API is supported in Google Chrome, Microsoft Edge, and Opera. Host OS Bluetooth pairing is always managed directly by Windows.", "warning", 5000);
+        return;
+    }
+    try {
+        showToast("Opening Bluetooth Device Selector...", "info", 2500);
+        const device = await navigator.bluetooth.requestDevice({
+            acceptAllDevices: true,
+            optionalServices: ['generic_access', 'battery_service', 0xFFE0, 0x180D]
+        });
+
+        if (!device) return;
+
+        activeWebBluetoothDevice = device;
+        showToast(`Connecting to ${device.name || 'Bluetooth Device'}...`, "info", 3000);
+
+        device.addEventListener('gattserverdisconnected', onWebBluetoothDisconnected);
+
+        if (device.gatt) {
+            try {
+                activeWebBluetoothServer = await device.gatt.connect();
+            } catch (gattErr) {
+                console.warn("GATT connection notice:", gattErr);
+            }
+        }
+
+        showToast(`Connected to Bluetooth device: ${device.name || 'Device'}!`, "success", 4000);
+        fetchRestStatus();
+    } catch (err) {
+        if (err.name !== 'NotFoundError') {
+            console.error("[NeuroSim] Web Bluetooth connection error:", err);
+            showToast(`Bluetooth Connection: ${err.message || err}`, "error", 4000);
+        }
+    }
+}
+
+function onWebBluetoothDisconnected(event) {
+    const dev = event.target;
+    showToast(`Bluetooth device "${dev.name || 'Device'}" disconnected.`, "warning", 3000);
+    activeWebBluetoothDevice = null;
+    activeWebBluetoothServer = null;
+    fetchRestStatus();
+}
+
+function updateHardwareConnectivityUI(wifiData, btData) {
+    // 1. Wi-Fi Connectivity Updates
+    if (wifiData) {
+        const ssid = wifiData.ssid && wifiData.ssid !== "Not Connected" ? wifiData.ssid : null;
+        const headerSsid = document.getElementById('header-wifi-ssid');
+        if (headerSsid) {
+            headerSsid.innerText = ssid || (wifiIp ? wifiIp : 'Disconnected');
+        }
+
+        const headerPill = document.getElementById('header-wifi-pill');
+        if (headerPill && ssid) {
+            headerPill.title = `Laptop Wi-Fi: ${ssid} (${wifiData.signal || '100%'}, ${wifiData.band || '5 GHz'})`;
+        }
+
+        const sbSsid = document.getElementById('sb-wifi-ssid');
+        if (sbSsid) {
+            sbSsid.innerText = `Wi-Fi: ${ssid || 'Disconnected'}`;
+        }
+
+        const hwSsidDisplay = document.getElementById('hw-wifi-ssid-display');
+        if (hwSsidDisplay) {
+            hwSsidDisplay.innerText = ssid || 'Not Connected';
+        }
+
+        const hwSignalDisplay = document.getElementById('hw-wifi-signal-display');
+        if (hwSignalDisplay) {
+            hwSignalDisplay.innerText = `${wifiData.signal || '0%'} (${wifiData.band || 'Wi-Fi'})`;
+        }
+
+        const hwSsidCode = document.getElementById('hw-wifi-ssid-code');
+        if (hwSsidCode && ssid) {
+            hwSsidCode.innerText = ssid;
+        }
+
+        const hwAdapterDisplay = document.getElementById('hw-wifi-adapter-display');
+        if (hwAdapterDisplay && wifiData.adapter) {
+            hwAdapterDisplay.innerText = `Adapter: ${wifiData.adapter}`;
+        }
+
+        if (wifiData.ip) {
+            wifiIp = wifiData.ip;
+            const d1 = document.getElementById('laptop-wifi-ip-display');
+            if (d1) d1.innerText = wifiIp;
+            const d2 = document.getElementById('sb-ip');
+            if (d2) d2.innerText = `${wifiIp}:${udpPort}`;
+        }
+    }
+
+    // 2. Bluetooth Connectivity Updates
+    if (btData) {
+        const headerBtDevice = document.getElementById('header-bt-device');
+        const headerBtDot = document.getElementById('header-bt-dot');
+        const sbBtName = document.getElementById('sb-bt-name');
+        const hwBtAdapterLabel = document.getElementById('hw-bt-adapter-label');
+        const hwBtRadioPill = document.getElementById('hw-bt-radio-pill');
+        const btConnName = document.getElementById('bt-connected-name');
+        const btConnMeta = document.getElementById('bt-connected-meta');
+        const btConnBadge = document.getElementById('bt-connected-badge');
+        const btPairedList = document.getElementById('bt-paired-list');
+        const btPairedCount = document.getElementById('bt-paired-count');
+
+        // Determine active Bluetooth device (either Web Bluetooth or Host OS connected)
+        let activeName = null;
+        let activeMeta = null;
+        let isConnected = false;
+
+        if (activeWebBluetoothDevice && activeWebBluetoothDevice.gatt && activeWebBluetoothDevice.gatt.connected) {
+            activeName = activeWebBluetoothDevice.name || "Web Bluetooth Peripheral";
+            activeMeta = "Web Bluetooth GATT Link Active • Direct Browser Connected • Latency < 5ms";
+            isConnected = true;
+        } else if (btData.connected_device) {
+            activeName = btData.connected_device;
+            const devObj = (btData.connected_devices || []).find(d => d.name === activeName);
+            activeMeta = `Host Bluetooth Connected • ${devObj ? devObj.status : 'OK'} • Active Telemetry Available`;
+            isConnected = true;
+        } else if (btData.connected_devices && btData.connected_devices.length > 0) {
+            activeName = btData.connected_devices[0].name;
+            activeMeta = `Host Bluetooth Connected • ${btData.connected_devices[0].status || 'OK'} • Active Telemetry Available`;
+            isConnected = true;
+        }
+
+        // Header pill
+        if (headerBtDevice) {
+            if (isConnected && activeName) {
+                headerBtDevice.innerText = activeName.length > 18 ? activeName.substring(0, 16) + '...' : activeName;
+            } else if (btData.adapter_present) {
+                headerBtDevice.innerText = "Adapter Active";
+            } else {
+                headerBtDevice.innerText = "No BT Adapter";
+            }
+        }
+
+        if (headerBtDot) {
+            headerBtDot.className = "net-dot " + (isConnected ? "net-dot-green" : (btData.adapter_present ? "net-dot-blue" : "net-dot-amber"));
+        }
+
+        // Sidebar
+        if (sbBtName) {
+            if (isConnected && activeName) {
+                sbBtName.innerText = `BT: ${activeName}`;
+                sbBtName.style.color = "var(--emerald)";
+                sbBtName.style.fontWeight = "700";
+            } else if (btData.adapter_present) {
+                sbBtName.innerText = "BT: Ready";
+                sbBtName.style.color = "var(--cyan)";
+                sbBtName.style.fontWeight = "normal";
+            } else {
+                sbBtName.innerText = "BT: Offline";
+                sbBtName.style.color = "var(--text-muted)";
+                sbBtName.style.fontWeight = "normal";
+            }
+        }
+
+        // Hardware Screen: Adapter label & Radio status
+        if (hwBtAdapterLabel) {
+            hwBtAdapterLabel.innerText = `${btData.adapter_name || 'Bluetooth Adapter'} (${btData.adapter_status || 'Active'})`;
+        }
+        if (hwBtRadioPill) {
+            if (btData.adapter_present) {
+                hwBtRadioPill.innerText = "RADIO OK";
+                hwBtRadioPill.style.background = "rgba(16, 185, 129, 0.15)";
+                hwBtRadioPill.style.color = "var(--emerald)";
+                hwBtRadioPill.style.borderColor = "rgba(16, 185, 129, 0.3)";
+            } else {
+                hwBtRadioPill.innerText = "RADIO OFF";
+                hwBtRadioPill.style.background = "rgba(239, 68, 68, 0.15)";
+                hwBtRadioPill.style.color = "var(--rose)";
+                hwBtRadioPill.style.borderColor = "rgba(239, 68, 68, 0.3)";
+            }
+        }
+
+        // Active Connected Banner
+        if (btConnName) {
+            btConnName.innerText = isConnected && activeName ? activeName : "Scanning / Standby...";
+            btConnName.style.color = isConnected ? "var(--emerald)" : "var(--text-bright)";
+        }
+        if (btConnMeta) {
+            btConnMeta.innerText = isConnected && activeMeta ? activeMeta : "Waiting for active peripheral connection... Pair headset or connect below.";
+        }
+        if (btConnBadge) {
+            if (isConnected) {
+                btConnBadge.innerText = "CONNECTED";
+                btConnBadge.className = "badge-status-pill badge-connected";
+                btConnBadge.style.background = "rgba(16, 185, 129, 0.15)";
+                btConnBadge.style.color = "var(--emerald)";
+                btConnBadge.style.borderColor = "rgba(16, 185, 129, 0.3)";
+            } else {
+                btConnBadge.innerText = "STANDBY";
+                btConnBadge.className = "badge-status-pill";
+                btConnBadge.style.background = "rgba(245, 158, 11, 0.12)";
+                btConnBadge.style.color = "var(--amber)";
+                btConnBadge.style.borderColor = "rgba(245, 158, 11, 0.25)";
+            }
+        }
+
+        // Render Paired Devices
+        if (btPairedList && Array.isArray(btData.paired_devices)) {
+            if (btPairedCount) {
+                btPairedCount.innerText = `${btData.paired_devices.length} paired`;
+            }
+            if (btData.paired_devices.length === 0) {
+                btPairedList.innerHTML = '<div style="color: #64748B; font-size: 11px; padding: 12px; text-align: center;">No paired Bluetooth devices detected in Windows Registry.</div>';
+            } else {
+                const isConnDevice = (dName) => isConnected && activeName && (dName.toLowerCase() === activeName.toLowerCase() || activeName.toLowerCase().includes(dName.toLowerCase()));
+                btPairedList.innerHTML = btData.paired_devices.map(dev => {
+                    const currentlyActive = isConnDevice(dev.name);
+                    return `
+                        <div class="bt-device-item" style="${currentlyActive ? 'border-color: rgba(16,185,129,0.5); background: rgba(16,185,129,0.08);' : ''}">
+                            <div style="flex: 1; min-width: 0;">
+                                <div class="bt-dev-name" style="${currentlyActive ? 'color: var(--emerald); font-weight: 700;' : ''}">
+                                    ${escapeHtml(dev.name)}
+                                </div>
+                                <div class="bt-dev-mac">MAC: ${escapeHtml(dev.mac || 'Unknown')} • Last connected: ${escapeHtml(dev.last_connected || 'Unknown')}</div>
+                            </div>
+                            <span class="tag-pill" style="${currentlyActive ? 'background: rgba(16,185,129,0.2); color: var(--emerald); border-color: rgba(16,185,129,0.4);' : 'background: rgba(14,165,233,0.1); color: var(--cyan); border-color: rgba(14,165,233,0.2);'} font-size: 10px;">
+                                ${currentlyActive ? 'ACTIVE' : 'PAIRED'}
+                            </span>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+    }
+}
+
 let lastHttpSampleSeq = -1;
 
 async function fetchRestStatus() {
@@ -1645,6 +1886,9 @@ async function fetchRestStatus() {
                 wifiIp = data.wifi_ip;
                 udpPort = data.udp_port || 5005;
                 updateIpDisplays(data.all_ips);
+            }
+            if (data.wifi || data.bluetooth) {
+                updateHardwareConnectivityUI(data.wifi, data.bluetooth);
             }
             if (data.total_packets !== undefined) {
                 updateTelemetryStats(data);

@@ -1894,4 +1894,159 @@ kbd.keycap {
     line-height: 1.45;
 }
 
+/* ========================================================================== */
+/* Top Header Network & Bluetooth Live Status Indicators                       */
+/* ========================================================================== */
+.header-net-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(15, 23, 42, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    padding: 4px 11px;
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.header-net-pill:hover {
+    border-color: rgba(14, 165, 233, 0.4);
+    background: rgba(14, 165, 233, 0.08);
+    color: #fff;
+}
+
+.header-net-pill strong {
+    color: #F8FAFC;
+    font-weight: 700;
+}
+
+.net-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.net-dot-green {
+    background: #10B981;
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.8);
+    animation: netPulseGreen 2s infinite ease-in-out;
+}
+
+.net-dot-blue {
+    background: #0EA5E9;
+    box-shadow: 0 0 8px rgba(14, 165, 233, 0.8);
+    animation: netPulseBlue 2.5s infinite ease-in-out;
+}
+
+.net-dot-amber {
+    background: #F59E0B;
+    box-shadow: 0 0 6px rgba(245, 158, 11, 0.7);
+}
+
+@keyframes netPulseGreen {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.55; transform: scale(0.9); }
+}
+
+@keyframes netPulseBlue {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.9); }
+}
+
+/* ========================================================================== */
+/* Hardware Hub Bluetooth & Network Elements                                  */
+/* ========================================================================== */
+.bt-active-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: linear-gradient(135deg, rgba(14, 165, 233, 0.12), rgba(16, 185, 129, 0.08));
+    border: 1px solid rgba(14, 165, 233, 0.3);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+}
+
+.bt-active-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.bt-active-label {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--cyan);
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.bt-active-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: #fff;
+}
+
+.bt-active-meta {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.bt-device-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    margin-bottom: 6px;
+    font-size: 12px;
+    transition: all 0.15s ease;
+}
+
+.bt-device-item:hover {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.bt-device-item .bt-dev-title {
+    font-weight: 600;
+    color: #F8FAFC;
+}
+
+.bt-device-item .bt-dev-sub {
+    font-size: 10px;
+    color: #64748B;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.btn-bt-scan {
+    background: linear-gradient(135deg, #0284c7, #0369a1);
+    color: #fff;
+    border: 1px solid #38bdf8;
+    border-radius: 6px;
+    padding: 9px 16px;
+    font-weight: 700;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 10px rgba(2, 132, 199, 0.3);
+}
+
+.btn-bt-scan:hover {
+    background: linear-gradient(135deg, #0369a1, #075985);
+    box-shadow: 0 4px 14px rgba(2, 132, 199, 0.5);
+    transform: translateY(-1px);
+}
+
+
 

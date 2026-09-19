@@ -50,8 +50,10 @@ os.makedirs(LOG_DIR, exist_ok=True)
 from src.processing.impedance_manager import ImpedanceManager
 from src.reporting.edf_exporter import EDFExporter
 from src.reporting.fhir_exporter import FHIRExporter
+from src.acquisition.hardware_connectivity import connectivity_manager
 
 impedance_mgr = ImpedanceManager()
+connectivity_manager.start()
 
 # -------------------------------------------------------------------------------
 # Logging Setup
@@ -652,11 +654,18 @@ class NeuroSimHTTPHandler(SimpleHTTPRequestHandler):
                 status_data["recent_samples"] = [
                     {"val": s[2], "seq": s[1]} for s in telemetry_state.sample_history[-60:]
                 ]
+            hw_status = connectivity_manager.get_status()
             status_data.update({
                 "platform": "NeuroSim EEG Web Platform",
                 "version": "2.4.0-PRODUCTION",
-                "wifi_ip": PRIMARY_WIFI_IP,
+                "wifi_ip": hw_status["wifi"]["ip"] or PRIMARY_WIFI_IP,
                 "all_ips": detect_wifi_ips(),
+                "wifi_ssid": hw_status["wifi"]["ssid"],
+                "wifi_signal": hw_status["wifi"]["signal"],
+                "wifi_band": hw_status["wifi"]["band"],
+                "wifi_adapter": hw_status["wifi"]["adapter"],
+                "wifi": hw_status["wifi"],
+                "bluetooth": hw_status["bluetooth"],
                 "udp_port": UDP_PORT,
                 "ws_port": WS_PORT,
                 "http_port": HTTP_PORT,
@@ -665,6 +674,21 @@ class NeuroSimHTTPHandler(SimpleHTTPRequestHandler):
             self.send_json_response(200, status_data, {
                 "Cache-Control": "no-cache, no-store, must-revalidate",
                 "X-RateLimit-Remaining": remaining
+            })
+            return
+
+        # 1b. Dedicated Hardware & Network Connectivity Status Route
+        elif parsed.path == '/api/hardware/network':
+            hw_status = connectivity_manager.get_status()
+            self.send_json_response(200, {
+                "success": True,
+                "wifi": hw_status["wifi"],
+                "bluetooth": hw_status["bluetooth"],
+                "primary_ip": hw_status["wifi"]["ip"] or PRIMARY_WIFI_IP,
+                "all_ips": detect_wifi_ips(),
+                "timestamp": time.time()
+            }, {
+                "Cache-Control": "no-cache, no-store, must-revalidate"
             })
             return
 
@@ -1269,11 +1293,16 @@ async def ws_handler(websocket):
     telemetry_state.connected_ws_clients.add(websocket)
 
     # Initial handshake
+    hw_status = connectivity_manager.get_status()
     handshake = {
         "type": "handshake",
         "app": "NeuroSim",
         "version": "2.4.0-PRODUCTION",
-        "wifi_ip": PRIMARY_WIFI_IP,
+        "wifi_ip": hw_status["wifi"]["ip"] or PRIMARY_WIFI_IP,
+        "wifi_ssid": hw_status["wifi"]["ssid"],
+        "wifi_signal": hw_status["wifi"]["signal"],
+        "wifi": hw_status["wifi"],
+        "bluetooth": hw_status["bluetooth"],
         "udp_port": UDP_PORT,
         "telemetry": telemetry_state.get_status_dict()
     }
@@ -1328,9 +1357,14 @@ async def ws_broadcast_loop():
         if now - last_telemetry_time >= 0.5:
             last_telemetry_time = now
             if telemetry_state.connected_ws_clients:
+                hw_status = connectivity_manager.get_status()
                 stats_msg = json.dumps({
                     "type": "telemetry",
-                    "wifi_ip": PRIMARY_WIFI_IP,
+                    "wifi_ip": hw_status["wifi"]["ip"] or PRIMARY_WIFI_IP,
+                    "wifi_ssid": hw_status["wifi"]["ssid"],
+                    "wifi_signal": hw_status["wifi"]["signal"],
+                    "wifi": hw_status["wifi"],
+                    "bluetooth": hw_status["bluetooth"],
                     "stats": telemetry_state.get_status_dict()
                 })
                 dead_clients = set()
