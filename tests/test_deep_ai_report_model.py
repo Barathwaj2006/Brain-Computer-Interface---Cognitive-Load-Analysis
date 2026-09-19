@@ -23,12 +23,12 @@ class TestDeepNeuroReportModel(unittest.TestCase):
     def setUpClass(cls):
         cls.model = DeepNeuroReportModel.load_trained()
 
-    def test_parameter_count_exceeds_300k(self):
-        """Verify the model strictly exceeds the 300,000 parameter requirement."""
+    def test_parameter_count_exceeds_500k(self):
+        """Verify the model strictly exceeds the 500,000 parameter requirement."""
         param_count = self.model.total_parameters
         print(f"\n[TestDeepNeuroReportModel] Validated trainable parameters: {param_count:,}")
-        self.assertGreater(param_count, 300000, f"Parameter count {param_count} must exceed 300,000")
-        self.assertEqual(param_count, 443972, "Exact expected parameter count is 443,972")
+        self.assertGreaterEqual(param_count, 500000, f"Parameter count {param_count} must exceed 500,000")
+        self.assertEqual(param_count, 517828, "Exact expected parameter count is 517,828")
 
     def test_forward_pass_output_shape(self):
         """Verify forward pass computes valid probabilities across all 4 classes."""
@@ -57,7 +57,7 @@ class TestDeepNeuroReportModel(unittest.TestCase):
         
         self.assertIn('model_type', report)
         self.assertIn('parameter_count', report)
-        self.assertEqual(report['parameter_count'], 443972)
+        self.assertEqual(report['parameter_count'], 517828)
         self.assertIn('clinical_narrative', report)
         self.assertIn('1. RHYTHM DYNAMICS', report['clinical_narrative'])
         self.assertIn('2. DEEP NEURAL NETWORK EVALUATION', report['clinical_narrative'])
@@ -70,7 +70,7 @@ class TestDeepNeuroReportModel(unittest.TestCase):
         self.assertTrue(os.path.exists(WEB_WEIGHTS_PATH), "Weights JSON must exist in web/")
         with open(WEB_WEIGHTS_PATH, 'r') as f:
             data = json.load(f)
-        self.assertEqual(data.get('total_parameters'), 443972)
+        self.assertEqual(data.get('total_parameters'), 517828)
         self.assertEqual(len(data.get('layers', [])), 5)
         self.assertEqual(data.get('accuracy_pct'), 100.0)
 
@@ -82,7 +82,7 @@ class TestDeepNeuroReportModel(unittest.TestCase):
             data = json.loads(req.read().decode('utf-8'))
             self.assertTrue(data.get('success'))
             report = data.get('report')
-            self.assertEqual(report.get('parameter_count'), 443972)
+            self.assertEqual(report.get('parameter_count'), 517828)
             self.assertGreaterEqual(report.get('reliability_score_pct'), 90.0)
         except urllib.error.URLError:
             self.skipTest("Server not running on port 8000 during test execution")

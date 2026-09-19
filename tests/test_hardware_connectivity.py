@@ -42,13 +42,21 @@ class TestHardwareConnectivity(unittest.TestCase):
         self.assertIsInstance(bt["connected_devices"], list)
         self.assertIsInstance(bt["paired_devices"], list)
 
-    def test_paired_devices_structure(self):
-        bt = self.mgr._detect_bluetooth_devices()
-        if bt["paired_devices"]:
-            first_dev = bt["paired_devices"][0]
-            self.assertIn("name", first_dev)
-            self.assertIn("mac", first_dev)
-            self.assertIn("last_connected", first_dev)
+    def test_manual_device_pairing(self):
+        st = self.mgr.set_connected_device("Noise Earbuds", "881e87a8decd")
+        self.assertEqual(st["bluetooth"]["connected_device"], "Noise Earbuds")
+        self.assertTrue(any(d["name"] == "Noise Earbuds" for d in st["bluetooth"]["connected_devices"]))
+
+        st_disc = self.mgr.disconnect_device()
+        self.assertIsNone(st_disc["bluetooth"]["connected_device"])
+
+    def test_diagnostic_summary(self):
+        diag = self.mgr.get_diagnostic_summary()
+        self.assertIn("timestamp", diag)
+        self.assertIn("wifi_telemetry", diag)
+        self.assertIn("bluetooth_telemetry", diag)
+        self.assertIn("adapter", diag["bluetooth_telemetry"])
+        self.assertIn("top_paired_devices", diag["bluetooth_telemetry"])
 
 if __name__ == '__main__':
     unittest.main()

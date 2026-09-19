@@ -97,15 +97,15 @@ def train_and_export_model():
     X_train_scaled = scaler.fit_transform(X_train)
     X_test_scaled = scaler.transform(X_test)
 
-    # 3. Instantiate & Train Deep MLP Architecture (512, 512, 256, 64)
+    # 3. Instantiate & Train Deep MLP Architecture (512, 512, 384, 64)
     # Parameter calculation:
     # 64*512 + 512 = 33,280
     # 512*512 + 512 = 262,656
-    # 512*256 + 256 = 131,328
-    # 256*64 + 64 = 16,448
+    # 512*384 + 384 = 196,992
+    # 384*64 + 64 = 24,640
     # 64*4 + 4 = 260
-    # Total = 443,972 trainable parameters (> 300,000 required!)
-    hidden_layers = (512, 512, 256, 64)
+    # Total = 517,828 trainable parameters (> 500,000 required!)
+    hidden_layers = (512, 512, 384, 64)
     print(f"[3/5] Initializing Deep MLP Architecture: 64 -> {hidden_layers} -> 4 Classes...")
 
     mlp = MLPClassifier(
@@ -128,7 +128,7 @@ def train_and_export_model():
     # Calculate exact parameter count
     param_count = sum(w.size for w in mlp.coefs_) + sum(b.size for b in mlp.intercepts_)
     print(f"      Trainable Parameters Count: {param_count:,} parameters.")
-    assert param_count > 300000, f"Error: parameter count {param_count} is under 300,000!"
+    assert param_count >= 500000, f"Error: parameter count {param_count} is under 500,000!"
 
     # 4. In-Distribution & Out-of-Distribution Benchmarking
     print("[4/5] Evaluating performance benchmarks...")

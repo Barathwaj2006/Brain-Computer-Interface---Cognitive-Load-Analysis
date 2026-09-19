@@ -1864,15 +1864,174 @@ function updateHardwareConnectivityUI(wifiData, btData) {
                                 </div>
                                 <div class="bt-dev-mac">MAC: ${escapeHtml(dev.mac || 'Unknown')} • Last connected: ${escapeHtml(dev.last_connected || 'Unknown')}</div>
                             </div>
-                            <span class="tag-pill" style="${currentlyActive ? 'background: rgba(16,185,129,0.2); color: var(--emerald); border-color: rgba(16,185,129,0.4);' : 'background: rgba(14,165,233,0.1); color: var(--cyan); border-color: rgba(14,165,233,0.2);'} font-size: 10px;">
-                                ${currentlyActive ? 'ACTIVE' : 'PAIRED'}
-                            </span>
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <span class="tag-pill" style="${currentlyActive ? 'background: rgba(16,185,129,0.2); color: var(--emerald); border-color: rgba(16,185,129,0.4);' : 'background: rgba(14,165,233,0.1); color: var(--cyan); border-color: rgba(14,165,233,0.2);'} font-size: 10px;">
+                                    ${currentlyActive ? 'ACTIVE' : 'PAIRED'}
+                                </span>
+                                ${currentlyActive ? 
+                                    `<button type="button" class="btn btn-tool" onclick="disconnectBluetoothDevice()" style="font-size: 10px; padding: 2px 7px; color: var(--rose); border-color: rgba(239,68,68,0.35);">DISCONNECT</button>` :
+                                    `<button type="button" class="btn btn-tool" onclick="connectPairedDevice('${escapeHtml(dev.name)}', '${escapeHtml(dev.mac)}')" style="font-size: 10px; padding: 2px 8px; color: var(--emerald); border-color: rgba(16,185,129,0.35); font-weight: 600;" title="Connect and bind this Bluetooth device">CONNECT</button>`
+                                }
+                            </div>
                         </div>
                     `;
                 }).join('');
             }
         }
     }
+}
+
+async function connectPairedDevice(name, mac) {
+    showToast(`Connecting Bluetooth device: ${name}...`, "info", 2500);
+    try {
+        const res = await fetch('/api/hardware/bluetooth/connect', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ device_name: name, mac: mac })
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast(`Connected to ${name}!`, "success", 3500);
+            fetchRestStatus();
+        } else {
+            showToast("Failed to connect device: " + (data.error || "Unknown"), "error");
+        }
+    } catch (err) {
+        showToast("Error connecting Bluetooth device: " + err, "error");
+    }
+}
+
+async function disconnectBluetoothDevice() {
+    try {
+        const res = await fetch('/api/hardware/bluetooth/disconnect', { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+            showToast("Bluetooth device disconnected, in standby.", "info", 2500);
+            if (activeWebBluetoothDevice && activeWebBluetoothDevice.gatt) {
+                try { activeWebBluetoothDevice.gatt.disconnect(); } catch(e){}
+            }
+            activeWebBluetoothDevice = null;
+            fetchRestStatus();
+        }
+    } catch (err) {
+        showToast("Error disconnecting Bluetooth device", "error");
+    }
+}
+
+async function generateDiagnosticReport() {
+    showToast("Synthesizing Full Diagnostic Report via Deep AI Model (517,828 params)...", "info", 3000);
+    try {
+        const res = await fetch('/api/hardware/diagnostic-report');
+        if (res.ok) {
+            const diag = await res.json();
+            displayDiagnosticModal(diag);
+        } else {
+            showToast("Failed to retrieve diagnostic report.", "error");
+        }
+    } catch (err) {
+        showToast("Error fetching diagnostic report: " + err, "error");
+    }
+}
+
+function displayDiagnosticModal(diag) {
+    let modal = document.getElementById('modal-diagnostic-report');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'modal-diagnostic-report';
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `
+            <div class="modal-card" style="max-width: 680px; max-height: 88vh; display: flex; flex-direction: column;">
+                <div class="modal-header">
+                    <div>
+                        <h3 style="margin: 0; font-size: 16px; color: var(--cyan); display: flex; align-items: center; gap: 8px;">
+                            <span>🩺</span> NEUROSIM SYSTEM &amp; HARDWARE DIAGNOSTIC REPORT
+                        </h3>
+                        <div style="font-size: 11px; color: var(--text-muted); margin-top: 3px;" id="diag-modal-subtitle">
+                            Deep AI Engine • Auto-generated
+                        </div>
+                    </div>
+                    <button class="btn btn-tool" onclick="closeDiagnosticModal()" style="padding: 4px 8px;">✕</button>
+                </div>
+                <div class="modal-body" id="diag-modal-content" style="overflow-y: auto; padding: 16px; font-size: 12px; line-height: 1.6;">
+                </div>
+                <div class="modal-footer" style="padding: 12px 16px; display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid rgba(255,255,255,0.08);">
+                    <button class="btn btn-tool" onclick="closeDiagnosticModal()">CLOSE</button>
+                    <button class="btn btn-primary" onclick="downloadDiagnosticJson()">DOWNLOAD JSON REPORT</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+    window.__lastDiagnosticData = diag;
+    const sub = document.getElementById('diag-modal-subtitle');
+    if (sub && diag.model_telemetry) {
+        sub.innerText = `Deep AI Engine (${diag.model_telemetry.trainable_parameters.toLocaleString()} Parameters) • Generated ${new Date().toLocaleTimeString()}`;
+    }
+    const bodyEl = document.getElementById('diag-modal-content');
+    if (bodyEl) {
+        bodyEl.innerHTML = `
+            <div style="background: rgba(14,165,233,0.08); border: 1px solid rgba(14,165,233,0.25); border-radius: 6px; padding: 12px; margin-bottom: 14px;">
+                <strong style="color: var(--cyan);">1. DEEP NEURAL NETWORK REPORT MODEL TELEMETRY</strong>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px;">
+                    <div>Trainable Parameters: <strong style="color: var(--emerald);">${diag.model_telemetry.trainable_parameters.toLocaleString()}</strong></div>
+                    <div>Architecture: <strong>${diag.model_telemetry.architecture}</strong></div>
+                    <div>Compliance Standard: <span class="tag-pill" style="color: var(--emerald);">${diag.model_telemetry.compliance}</span></div>
+                    <div>Runtime Engine: <strong>Active Online</strong></div>
+                </div>
+            </div>
+
+            <div style="background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.25); border-radius: 6px; padding: 12px; margin-bottom: 14px;">
+                <strong style="color: var(--emerald);">2. WI-FI NETWORK TELEMETRY</strong>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px;">
+                    <div>Active Wi-Fi SSID: <strong style="color: var(--emerald);">${diag.network_telemetry.active_ssid}</strong></div>
+                    <div>Signal Quality: <strong>${diag.network_telemetry.signal} (${diag.network_telemetry.band})</strong></div>
+                    <div>Host IP Address: <code>${diag.network_telemetry.primary_ip}</code></div>
+                    <div>UDP Ingestion Port: <code>${diag.network_telemetry.udp_port}</code></div>
+                    <div>UDP Packets Received: <strong>${diag.network_telemetry.packets_received}</strong></div>
+                    <div>Packet Drop Rate: <strong>${diag.network_telemetry.packet_drop_rate}</strong></div>
+                </div>
+            </div>
+
+            <div style="background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.25); border-radius: 6px; padding: 12px; margin-bottom: 14px;">
+                <strong style="color: var(--amber);">3. BLUETOOTH SUBSYSTEM TELEMETRY</strong>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px;">
+                    <div>Bluetooth Radio Adapter: <strong>${diag.bluetooth_telemetry.adapter}</strong></div>
+                    <div>Adapter Status: <span class="tag-pill" style="color: var(--cyan);">${diag.bluetooth_telemetry.adapter_status}</span></div>
+                    <div>Connected Device: <strong style="color: var(--emerald);">${diag.bluetooth_telemetry.connected_device || 'None (Standby)'}</strong></div>
+                    <div>Paired Devices: <strong>${diag.bluetooth_telemetry.paired_devices_count} paired</strong></div>
+                </div>
+            </div>
+
+            <div>
+                <strong style="color: var(--text-bright);">Paired Bluetooth Devices on this Laptop (1-Click Connect):</strong>
+                <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 6px;">
+                    ${(diag.bluetooth_telemetry.top_paired_devices || []).map(d => `
+                        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.3); padding: 6px 10px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.05);">
+                            <span><strong>${escapeHtml(d.name)}</strong> <span style="font-size: 10px; color: #64748B;">(${d.mac} • ${d.last_connected})</span></span>
+                            <button type="button" class="btn btn-tool" onclick="connectPairedDevice('${escapeHtml(d.name)}', '${escapeHtml(d.mac)}'); closeDiagnosticModal();" style="font-size: 10px; padding: 2px 8px; color: var(--emerald); border-color: rgba(16,185,129,0.35);">CONNECT</button>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }
+    modal.style.display = 'flex';
+}
+
+function closeDiagnosticModal() {
+    const modal = document.getElementById('modal-diagnostic-report');
+    if (modal) modal.style.display = 'none';
+}
+
+function downloadDiagnosticJson() {
+    if (!window.__lastDiagnosticData) return;
+    const blob = new Blob([JSON.stringify(window.__lastDiagnosticData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `neurosim_diagnostic_report_${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
 }
 
 let lastHttpSampleSeq = -1;

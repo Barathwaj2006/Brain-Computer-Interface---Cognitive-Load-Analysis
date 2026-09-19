@@ -270,7 +270,8 @@ class TestMedicalGradeCompliance(unittest.TestCase):
     def test_xai_saliency_attribution_computation(self):
         """Validates pre-softmax gradient saliency computation across 64 electrophysiological features."""
         classifier = DeepNeuroReportModel.load_trained()
-        self.assertEqual(classifier.total_parameters, 443972)
+        self.assertGreaterEqual(classifier.total_parameters, 500000)
+        self.assertEqual(classifier.total_parameters, 517828)
 
         # 1. High Cognitive Workload input pattern
         high_workload_metrics = {

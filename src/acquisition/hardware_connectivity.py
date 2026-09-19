@@ -36,6 +36,7 @@ class HardwareConnectivityManager:
             "paired_devices": [],
             "bluetooth_ports": []
         }
+        self._manual_connected_device = None
         self._running = False
         self._thread = None
 
@@ -46,6 +47,39 @@ class HardwareConnectivityManager:
             self.refresh_all()
             self._thread = threading.Thread(target=self._poll_loop, daemon=True)
             self._thread.start()
+
+    def set_connected_device(self, name: str, mac: str = None) -> dict:
+        """Explicitly set or bind a connected Bluetooth device into the active session."""
+        with self.lock:
+            self._manual_connected_device = {
+                "name": name,
+                "mac": mac or "",
+                "status": "Connected (Active)",
+                "connected_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            }
+            self._bluetooth_info["connected_device"] = name
+            existing = [d for d in self._bluetooth_info["connected_devices"] if d["name"] != name]
+            existing.insert(0, {
+                "name": name,
+                "status": "Connected (Active)",
+                "id": mac or "PAIRED_REGISTRY_BT"
+            })
+            self._bluetooth_info["connected_devices"] = existing
+            return {
+                "wifi": dict(self._wifi_info),
+                "bluetooth": dict(self._bluetooth_info)
+            }
+
+    def disconnect_device(self) -> dict:
+        """Disconnect manual Bluetooth device binding and return to auto-scan."""
+        with self.lock:
+            self._manual_connected_device = None
+            self._bluetooth_info["connected_device"] = None
+            self._bluetooth_info["connected_devices"] = []
+            return {
+                "wifi": dict(self._wifi_info),
+                "bluetooth": dict(self._bluetooth_info)
+            }
 
     def _poll_loop(self):
         while self._running:
@@ -61,6 +95,14 @@ class HardwareConnectivityManager:
         with self.lock:
             self._wifi_info = wifi
             self._bluetooth_info = bt
+            if self._manual_connected_device:
+                self._bluetooth_info["connected_device"] = self._manual_connected_device["name"]
+                if not any(d["name"] == self._manual_connected_device["name"] for d in self._bluetooth_info["connected_devices"]):
+                    self._bluetooth_info["connected_devices"].insert(0, {
+                        "name": self._manual_connected_device["name"],
+                        "status": "Connected (Active)",
+                        "id": self._manual_connected_device.get("mac", "")
+                    })
 
     def get_status(self) -> dict:
         with self.lock:
@@ -68,6 +110,23 @@ class HardwareConnectivityManager:
                 "wifi": dict(self._wifi_info),
                 "bluetooth": dict(self._bluetooth_info)
             }
+
+    def get_diagnostic_summary(self) -> dict:
+        st = self.get_status()
+        return {
+            "timestamp": datetime.datetime.now().isoformat(),
+            "os_platform": sys.platform,
+            "wifi_telemetry": st["wifi"],
+            "bluetooth_telemetry": {
+                "adapter": st["bluetooth"]["adapter_name"],
+                "adapter_status": st["bluetooth"]["adapter_status"],
+                "adapter_present": st["bluetooth"]["adapter_present"],
+                "connected_device": st["bluetooth"]["connected_device"],
+                "connected_devices": st["bluetooth"]["connected_devices"],
+                "paired_devices_count": len(st["bluetooth"]["paired_devices"]),
+                "top_paired_devices": st["bluetooth"]["paired_devices"][:8]
+            }
+        }
 
     def _detect_wifi_network(self) -> dict:
         info = {
@@ -138,14 +197,15 @@ class HardwareConnectivityManager:
         if sys.platform != "win32":
             return bt
 
-        # 1. Check Bluetooth Controller Adapter & Currently Connected Devices via PowerShell (PnpDevice)
+        # 1. Check Bluetooth Controller Adapter & Currently Connected Devices via PowerShell (Base64 EncodedCommand)
         try:
-            ps_script = r"""
+            import base64
+            ps_script = """
             $adapter = Get-PnpDevice -PresentOnly | Where-Object { $_.Class -eq 'Bluetooth' -and $_.FriendlyName -match 'Adapter|Radio|Wireless' } | Select-Object -First 1 FriendlyName, Status
             $connected = Get-PnpDevice -PresentOnly | Where-Object {
-                ($_.InstanceId -like 'BTHENUM\DEV_*' -or $_.InstanceId -like 'BTHLE\DEV_*' -or ($_.Class -eq 'Bluetooth' -and $_.FriendlyName -notmatch 'Enumerator|Adapter|Service|Transport|Profile|Realtek|Intel|Protocol|Bridge'))
+                ($_.InstanceId -like 'BTHENUM\\DEV_*' -or $_.InstanceId -like 'BTHLE\\DEV_*' -or ($_.Class -eq 'Bluetooth' -and $_.FriendlyName -notmatch 'Enumerator|Adapter|Service|Transport|Profile|Realtek|Intel|Protocol|Bridge') -or (($_.Class -eq 'AudioEndpoint' -or $_.Class -eq 'MEDIA') -and ($_.FriendlyName -like '*Bluetooth*' -or $_.FriendlyName -like '*Hands-Free*')))
             } | Select-Object FriendlyName, Status, InstanceId
-            $ports = Get-PnpDevice -PresentOnly | Where-Object { $_.Class -eq 'Ports' -and ($_.FriendlyName -like '*Bluetooth*' -or $_.InstanceId -like 'BTHENUM\*') } | Select-Object FriendlyName, Status
+            $ports = Get-PnpDevice -PresentOnly | Where-Object { $_.Class -eq 'Ports' -and ($_.FriendlyName -like '*Bluetooth*' -or $_.InstanceId -like 'BTHENUM\\*') } | Select-Object FriendlyName, Status
             
             [PSCustomObject]@{
                 AdapterName = if ($adapter) { $adapter.FriendlyName } else { "Realtek Wireless Bluetooth Adapter" }
@@ -154,8 +214,9 @@ class HardwareConnectivityManager:
                 Ports = @($ports)
             } | ConvertTo-Json -Depth 3
             """
+            encoded = base64.b64encode(ps_script.encode("utf-16le")).decode("ascii")
             res = subprocess.run(
-                ["powershell", "-NoProfile", "-Command", ps_script],
+                ["powershell", "-NoProfile", "-EncodedCommand", encoded],
                 capture_output=True, text=True, timeout=3.5
             )
             if res.returncode == 0 and res.stdout.strip():
@@ -177,7 +238,14 @@ class HardwareConnectivityManager:
                             "id": c.get("InstanceId", "")
                         })
 
-                if bt["connected_devices"]:
+                # Prefer user-facing peripheral over driver or adapter
+                peripherals = [
+                    d for d in bt["connected_devices"]
+                    if not any(k in d["name"].lower() for k in ["driver", "adapter", "realtek", "intel", "enumerator"])
+                ]
+                if peripherals:
+                    bt["connected_device"] = peripherals[0]["name"]
+                elif bt["connected_devices"]:
                     bt["connected_device"] = bt["connected_devices"][0]["name"]
 
                 ports_list = data.get("Ports") or []
@@ -190,18 +258,20 @@ class HardwareConnectivityManager:
         except Exception as e:
             logger.debug(f"PnP Bluetooth check notice: {e}")
 
-        # 2. Fast Winreg lookup of paired Bluetooth devices
+        # 2. Fast Winreg lookup of paired Bluetooth devices (sorted by most recently connected)
         try:
             import winreg
             key_path = r"SYSTEM\CurrentControlSet\Services\BTHPORT\Parameters\Devices"
             with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, key_path) as key:
                 i = 0
+                paired_temp = []
                 while True:
                     try:
                         sub = winreg.EnumKey(key, i)
                         with winreg.OpenKey(key, sub) as skey:
                             dev_name = "Unknown Bluetooth Device"
                             last_conn_str = "Unknown"
+                            raw_ft = 0
                             try:
                                 val, _ = winreg.QueryValueEx(skey, "Name")
                                 if isinstance(val, bytes):
@@ -214,22 +284,40 @@ class HardwareConnectivityManager:
                             try:
                                 ft, _ = winreg.QueryValueEx(skey, "LastConnected")
                                 if isinstance(ft, int) and ft > 116444736000000000:
+                                    raw_ft = ft
                                     sec = (ft - 116444736000000000) / 10000000
                                     last_conn_str = datetime.datetime.fromtimestamp(sec).strftime("%Y-%m-%d %H:%M")
                             except Exception:
                                 pass
 
                             if dev_name and dev_name != "(no Name)":
-                                bt["paired_devices"].append({
+                                paired_temp.append({
                                     "name": dev_name,
                                     "mac": sub,
-                                    "last_connected": last_conn_str
+                                    "last_connected": last_conn_str,
+                                    "_raw_ts": raw_ft
                                 })
                         i += 1
                     except OSError:
                         break
+
+                paired_temp.sort(key=lambda x: x["_raw_ts"], reverse=True)
+                for item in paired_temp:
+                    del item["_raw_ts"]
+                bt["paired_devices"] = paired_temp
         except Exception as e:
             logger.debug(f"Winreg Bluetooth enumeration notice: {e}")
+
+        # If user explicitly bound or connected a device, ensure it is set as connected
+        if self._manual_connected_device:
+            bt["connected_device"] = self._manual_connected_device["name"]
+            existing = [d for d in bt["connected_devices"] if d["name"] != self._manual_connected_device["name"]]
+            existing.insert(0, {
+                "name": self._manual_connected_device["name"],
+                "status": "Connected (Active)",
+                "id": self._manual_connected_device.get("mac", "MANUAL_BT")
+            })
+            bt["connected_devices"] = existing
 
         return bt
 

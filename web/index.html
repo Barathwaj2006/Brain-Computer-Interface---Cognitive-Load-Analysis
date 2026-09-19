@@ -680,6 +680,10 @@
                                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
                                     TEST DIRECT WI-FI CONNECTION
                                 </button>
+                                <button type="button" class="btn btn-tool" onclick="generateDiagnosticReport()" style="font-size: 11px; padding: 8px 12px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; border-color: var(--cyan); color: var(--cyan);" title="Run Comprehensive System & Hardware Diagnostics">
+                                    <span>🩺</span>
+                                    DIAGNOSTIC REPORT
+                                </button>
                             </div>
                         </div>
 
@@ -928,6 +932,10 @@
                             <button class="btn" onclick="verifyAuditIntegrity()" style="display: inline-flex; align-items: center; gap: 6px;" title="Verify 21 CFR Part 11 SHA-256 Audit Trail Cryptographic Hash Chain">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
                                 VERIFY 21 CFR AUDIT
+                            </button>
+                            <button class="btn" onclick="generateDiagnosticReport()" style="display: inline-flex; align-items: center; gap: 6px; border-color: var(--cyan); color: var(--cyan);" title="Synthesize Full Diagnostic Report via Deep AI Model (517,828 params)">
+                                <span>🩺</span>
+                                AI DIAGNOSTIC REPORT
                             </button>
                         </div>
                     </div>

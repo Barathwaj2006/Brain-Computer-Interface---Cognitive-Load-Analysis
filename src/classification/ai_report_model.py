@@ -1,12 +1,12 @@
 """
 =================================================================================
 NEUROSIM : DEEP NEURAL NETWORK AI REPORT & DIAGNOSTIC MODEL
-High-Capacity 5-Layer Neural Network (>300,000 Parameters)
+High-Capacity 5-Layer Neural Network (>500,000 Parameters)
 =================================================================================
 Architecture:
 - Input Dimension: 64 engineered electrophysiological features
-- Hidden Layers: 512 -> 512 -> 256 -> 64
-- Total Trainable Parameters: 446,117 parameters
+- Hidden Layers: 512 -> 512 -> 384 -> 64
+- Total Trainable Parameters: 517,828 parameters
 - Tasks:
   1. Cognitive State Classification (Low, Moderate, High, Fatigue)
   2. Clinical Reliability & Signal Integrity Scoring (0.0 to 1.0)
@@ -25,10 +25,10 @@ WEB_WEIGHTS_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(
 
 class DeepNeuroReportModel:
     """
-    5-layer Deep Neural Network with 446,117 parameters for clinical EEG report generation.
+    5-layer Deep Neural Network with 517,828 parameters for clinical EEG report generation.
     """
     FEATURE_DIM = 64
-    HIDDEN_SIZES = (512, 512, 256, 64)
+    HIDDEN_SIZES = (512, 512, 384, 64)
     CLASSES = ['FATIGUE', 'HIGH', 'LOW', 'MODERATE']
 
     def __init__(self, weights=None, intercepts=None, scaler_mean=None, scaler_scale=None, classes=None):
@@ -177,7 +177,7 @@ class DeepNeuroReportModel:
 
     def forward(self, x: np.ndarray):
         """
-        Forward pass through the 443,972-parameter neural network.
+        Forward pass through the 517,828-parameter neural network.
         x: shape (64,) or (N, 64)
         """
         logits = self.forward_logits(x)
@@ -205,7 +205,7 @@ class DeepNeuroReportModel:
     def generate_full_clinical_report(self, session_data: dict) -> dict:
         """
         Synthesizes a deep, authoritative clinical & research narrative using the
-        443,972-parameter Deep Neural Network.
+        517,828-parameter Deep Neural Network.
         """
         feats = self.extract_features(session_data)
         res = self.forward(feats)
