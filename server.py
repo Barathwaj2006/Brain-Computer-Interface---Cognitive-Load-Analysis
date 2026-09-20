@@ -374,24 +374,31 @@ class DatabaseManager:
         if not hasattr(cls._local, "conn") or cls._local.conn is None:
             cloud_url = resolve_cloud_db_url()
             if cloud_url:
-                try:
-                    import psycopg2
-                    raw = psycopg2.connect(
-                        cloud_url,
-                        connect_timeout=10,
-                        keepalives=1,
-                        keepalives_idle=30,
-                        keepalives_interval=10,
-                        keepalives_count=5
-                    )
-                    raw.autocommit = False
-                    cls._local.conn = PostgresConnectionWrapper(raw)
-                    cls._using_postgres = True
-                    server_logger.info("Connected to Supabase/PostgreSQL Cloud Database")
-                    return cls._local.conn
-                except Exception as e:
-                    server_logger.warning(f"Could not connect to PostgreSQL ({e}). Falling back to SQLite.")
-                    cls._using_postgres = False
+                max_retries = 3
+                for attempt in range(1, max_retries + 1):
+                    try:
+                        import psycopg2
+                        raw = psycopg2.connect(
+                            cloud_url,
+                            connect_timeout=10,
+                            keepalives=1,
+                            keepalives_idle=30,
+                            keepalives_interval=10,
+                            keepalives_count=5
+                        )
+                        raw.autocommit = False
+                        cls._local.conn = PostgresConnectionWrapper(raw)
+                        cls._using_postgres = True
+                        server_logger.info("Connected to Supabase/PostgreSQL Cloud Database")
+                        return cls._local.conn
+                    except Exception as e:
+                        if attempt < max_retries:
+                            backoff = (0.25 * (2 ** (attempt - 1))) + (secrets.randbelow(100) / 1000.0)
+                            server_logger.warning(f"Supabase connection attempt {attempt}/{max_retries} failed ({e}). Retrying in {backoff:.2f}s...")
+                            time.sleep(backoff)
+                        else:
+                            server_logger.warning(f"Could not connect to PostgreSQL after {max_retries} attempts ({e}). Falling back to SQLite.")
+                            cls._using_postgres = False
 
             conn = sqlite3.connect(DB_PATH, timeout=10.0)
             conn.execute("PRAGMA journal_mode=WAL;")
@@ -1002,7 +1009,7 @@ class NeuroSimHTTPHandler(SimpleHTTPRequestHandler):
             self.send_header('Content-Encoding', 'gzip')
         self.send_header('Access-Control-Allow-Origin', '*')
         self.send_header('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS')
-        self.send_header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Idempotency-Key')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Idempotency-Key, X-Requested-With, Range')
 
         if extra_headers:
             for k, v in extra_headers.items():
@@ -1025,7 +1032,8 @@ class NeuroSimHTTPHandler(SimpleHTTPRequestHandler):
         self.send_response(204)
         self.send_header('Access-Control-Allow-Origin', '*')
         self.send_header('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS')
-        self.send_header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Idempotency-Key')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Idempotency-Key, X-Requested-With, Range')
+        self.send_header('Access-Control-Max-Age', '86400')
         self.end_headers()
 
     def do_GET(self):
@@ -1579,9 +1587,37 @@ class NeuroSimHTTPHandler(SimpleHTTPRequestHandler):
 
         # 0a. Direct Clinician Login (No OTP required)
         if parsed.path in ('/api/auth/login', '/api/auth/direct-login'):
-            name = str(body.get('name', 'Clinician')).strip() or "Dr. Neuro, MD"
-            email = str(body.get('email', f"{name.lower().replace(' ', '.')}@neurosim.local")).strip()
+            # Anti-Spam Bot Honeypot Protection
+            honeypot_token = str(body.get('hp_clinical_token', '')).strip()
+            if honeypot_token:
+                DatabaseManager.log_audit("BOT_TRAPPED", client_ip, "Automated spam bot submission blocked via honeypot field")
+                server_logger.warning(f"[SECURITY] Spam bot trapped via honeypot from {client_ip}")
+                self.send_json_response(400, {
+                    "success": False,
+                    "error": "Automated bot submission blocked."
+                })
+                return
+
+            name = str(body.get('name', '')).strip() or "Dr. Neuro, MD"
+            email = str(body.get('email', '')).strip() or f"{name.lower().replace(' ', '.')}@neurosim.local"
             role = str(body.get('role', 'Lead Clinician')).strip() or "Lead Clinician"
+
+            # Server-side validation
+            if len(name) < 2 or len(name) > 100:
+                self.send_json_response(400, {
+                    "success": False,
+                    "error": "Clinician name must be between 2 and 100 characters."
+                })
+                return
+
+            email_pattern = r"^[^@\s]+@[^@\s]+\.[^@\s]+$"
+            if not re.match(email_pattern, email):
+                self.send_json_response(400, {
+                    "success": False,
+                    "error": "Invalid clinical institutional email address format."
+                })
+                return
+
             user = DatabaseManager.direct_login(name, email, role)
             DatabaseManager.log_audit("LOGIN_DIRECT", client_ip, f"User {user['name']} ({role}) authenticated directly")
             self.send_json_response(200, {

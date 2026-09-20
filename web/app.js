@@ -3578,9 +3578,11 @@ function switchTab(tabKey) {
     // Close responsive drawer if open on mobile
     const sidebar = document.getElementById('sidebar');
     const backdrop = document.getElementById('mobile-sidebar-backdrop');
+    const menuBtn = document.getElementById('mobile-menu-btn');
     if (sidebar && sidebar.classList.contains('mobile-open')) {
         sidebar.classList.remove('mobile-open');
         if (backdrop) backdrop.style.display = 'none';
+        if (menuBtn) menuBtn.setAttribute('aria-expanded', 'false');
     }
 
     document.querySelectorAll('.view-screen').forEach(el => el.classList.remove('active'));
@@ -3614,10 +3616,12 @@ function switchTab(tabKey) {
 function toggleMobileSidebar() {
     const sidebar = document.getElementById('sidebar');
     const backdrop = document.getElementById('mobile-sidebar-backdrop');
+    const menuBtn = document.getElementById('mobile-menu-btn');
     if (sidebar) {
         sidebar.classList.toggle('mobile-open');
         const isOpen = sidebar.classList.contains('mobile-open');
         if (backdrop) backdrop.style.display = isOpen ? 'block' : 'none';
+        if (menuBtn) menuBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
     }
 }
 window.toggleMobileSidebar = toggleMobileSidebar;
@@ -3914,6 +3918,9 @@ function initKeyboardShortcuts() {
             closeBaselineCalibrationModal();
             closeSessionCompare();
             if (typeof closeAuthModal === 'function') closeAuthModal();
+            if (typeof closeCloudBackendModal === 'function') closeCloudBackendModal();
+            const diagModal = document.getElementById('diagnostic-modal');
+            if (diagModal) diagModal.style.display = 'none';
         } else if (e.code.startsWith('Digit')) {
             const digit = parseInt(e.code.replace('Digit', ''));
             const screenMap = {

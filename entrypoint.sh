@@ -23,7 +23,7 @@ python /app/server.py --no-browser &
 BACKEND_PID=$!
 
 # Trap signals for graceful container shutdown
-trap 'kill -TERM $BACKEND_PID; exit 0' SIGTERM SIGINT
+trap 'nginx -s quit; kill -TERM $BACKEND_PID 2>/dev/null || true; wait $BACKEND_PID 2>/dev/null || true; exit 0' SIGTERM SIGINT
 
 # Start Nginx in foreground
 nginx -g 'daemon off;'

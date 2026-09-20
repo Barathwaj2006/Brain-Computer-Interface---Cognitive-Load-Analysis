@@ -138,7 +138,7 @@
         <!-- Top Application Header -->
         <header id="top-header">
             <div class="header-left">
-                <button type="button" class="mobile-menu-btn" onclick="toggleMobileSidebar()" aria-label="Toggle Navigation Menu">☰</button>
+                <button type="button" class="mobile-menu-btn" id="mobile-menu-btn" onclick="toggleMobileSidebar()" aria-label="Toggle Navigation Menu" aria-expanded="false" aria-controls="sidebar">☰</button>
                 <div>
                     <h1 class="header-title" id="page-title">LIVE MONITORING WORKSTATION</h1>
                     <div class="header-subtitle">Radix-2 Cooley-Tukey FFT • Welch Periodogram • Dual Classification</div>
@@ -1290,11 +1290,11 @@
     </main>
 
     <!-- Clinical Authentication Modal (Direct Clinician Sign-In) -->
-    <div id="auth-modal" style="display: none;">
+    <div id="auth-modal" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title">
         <div class="auth-card">
             <div class="auth-header">
                 <div class="auth-badge">CLINICAL ACCESS GATEWAY</div>
-                <h2 class="auth-title">Clinician Authentication</h2>
+                <h2 class="auth-title" id="auth-modal-title">Clinician Authentication</h2>
                 <div class="auth-subtitle">Sign in directly to access the EEG cognitive analytics workstation.</div>
             </div>
 
@@ -1356,12 +1356,12 @@
     <div id="toast-container"></div>
 
     <!-- Pre-flight Quality Assurance & Electrode Impedance Modal (IEC 60601-2-26) -->
-    <div id="impedance-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.45); backdrop-filter: blur(8px); z-index: 9999; align-items: center; justify-content: center;">
+    <div id="impedance-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.45); backdrop-filter: blur(8px); z-index: 9999; align-items: center; justify-content: center;" role="dialog" aria-modal="true" aria-labelledby="impedance-modal-title">
         <div class="auth-card" style="max-width: 620px; width: 90%;">
             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
                 <div>
                     <div class="auth-badge">IEC 60601-2-26 PRE-FLIGHT QA</div>
-                    <h2 class="auth-title" style="font-size: 18px; margin: 4px 0 0 0; text-align: left;">Electrode Contact Impedance</h2>
+                    <h2 class="auth-title" id="impedance-modal-title" style="font-size: 18px; margin: 4px 0 0 0; text-align: left;">Electrode Contact Impedance</h2>
                     <div class="auth-subtitle" style="text-align: left; margin-bottom: 0;">Standard: &lt;5.0 kΩ Optimal (Green) • 5–10 kΩ Acceptable (Yellow) • &gt;10 kΩ Lead-Off (Red)</div>
                 </div>
                 <button type="button" onclick="closeImpedanceModal()" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 20px; padding: 4px 8px;">✕</button>
@@ -1386,12 +1386,12 @@
     </div>
 
     <!-- Interactive Shortcuts & Guided Tour Modal (? / F1) -->
-    <div id="help-modal" class="shortcuts-modal-overlay" style="display: none;" onclick="if(event.target===this) closeHelpModal();">
+    <div id="help-modal" class="shortcuts-modal-overlay" style="display: none;" onclick="if(event.target===this) closeHelpModal();" role="dialog" aria-modal="true" aria-labelledby="help-modal-title">
         <div class="shortcuts-modal-card">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
                 <div>
                     <span class="auth-badge">CLINICAL OPERATING AID</span>
-                    <h2 style="font-size: 18px; font-weight: 700; color: #0F172A; margin: 4px 0 0 0;">Keyboard Shortcuts &amp; Quick Tour</h2>
+                    <h2 id="help-modal-title" style="font-size: 18px; font-weight: 700; color: #0F172A; margin: 4px 0 0 0;">Keyboard Shortcuts &amp; Quick Tour</h2>
                 </div>
                 <button type="button" onclick="closeHelpModal()" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 22px; padding: 4px 8px;">✕</button>
             </div>
@@ -1448,12 +1448,12 @@
     </div>
 
     <!-- 15-Second Guided Baseline Calibration Modal (IAF & Cognitive Reference) -->
-    <div id="calibration-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.45); backdrop-filter: blur(8px); z-index: 9999; align-items: center; justify-content: center;">
+    <div id="calibration-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.45); backdrop-filter: blur(8px); z-index: 9999; align-items: center; justify-content: center;" role="dialog" aria-modal="true" aria-labelledby="cal-modal-title">
         <div class="modal-card" style="max-width: 520px; padding: 28px; text-align: center;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
                 <div style="display: flex; align-items: center; gap: 8px;">
                     <span style="font-size: 20px;">🎯</span>
-                    <strong style="font-size: 16px; font-weight: 800; color: var(--text-main);">15-SECOND BASELINE CALIBRATION</strong>
+                    <strong id="cal-modal-title" style="font-size: 16px; font-weight: 800; color: var(--text-main);">15-SECOND BASELINE CALIBRATION</strong>
                 </div>
                 <button type="button" onclick="closeBaselineCalibrationModal()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: var(--text-muted);">✕</button>
             </div>
@@ -1508,12 +1508,12 @@
     </div>
 
     <!-- Cloud Backend Settings Modal (Railway / Supabase / Vercel API Gateway) -->
-    <div id="cloud-backend-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.45); backdrop-filter: blur(8px); z-index: 9999; align-items: center; justify-content: center;">
+    <div id="cloud-backend-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.45); backdrop-filter: blur(8px); z-index: 9999; align-items: center; justify-content: center;" role="dialog" aria-modal="true" aria-labelledby="cloud-backend-modal-title">
         <div class="modal-card" style="max-width: 540px; padding: 26px; text-align: left;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
                 <div style="display: flex; align-items: center; gap: 8px;">
                     <span style="font-size: 20px;">☁️</span>
-                    <strong style="font-size: 15px; font-weight: 800; color: var(--text-main);">CLOUD BACKEND &amp; API SETTINGS</strong>
+                    <strong id="cloud-backend-modal-title" style="font-size: 15px; font-weight: 800; color: var(--text-main);">CLOUD BACKEND &amp; API SETTINGS</strong>
                 </div>
                 <button type="button" onclick="closeCloudBackendModal()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: var(--text-muted);">✕</button>
             </div>

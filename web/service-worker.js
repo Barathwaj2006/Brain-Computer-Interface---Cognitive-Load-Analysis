@@ -16,6 +16,10 @@ const STATIC_ASSETS = [
     '/pdf_export.js',
     '/manifest.json',
     '/favicon.svg',
+    '/og_preview.svg',
+    '/privacy.html',
+    '/terms.html',
+    '/404.html',
     '/ai_report_model_weights.json'
 ];
 
