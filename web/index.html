@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NEUROSIM : Scientific EEG Cognitive Analytics & DSP Platform</title>
+    <title>NEUROSIM : Scientific EEG Cognitive Analytics &amp; DSP Platform</title>
+    <link rel="canonical" href="https://neurosim.vercel.app/">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="apple-touch-icon" href="favicon.svg">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -11,17 +12,30 @@
     <link rel="stylesheet" href="styles.css?v=2.5.5">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#FFFFFF">
-    <meta name="description" content="NeuroSim: Production-Grade Scientific EEG Cognitive Analytics, Real-Time Wi-Fi Telemetry & DSP Platform">
-    <meta property="og:title" content="NeuroSim : Real-Time EEG Cognitive Analytics">
-    <meta property="og:description" content="Scientific EEG cognitive analysis with 250Hz Wi-Fi telemetry and Radix-2 FFT DSP">
+    <meta name="description" content="NeuroSim: Production-Grade Scientific EEG Cognitive Analytics, Real-Time Wi-Fi Telemetry &amp; DSP Platform">
+    <!-- OpenGraph Social Preview -->
+    <meta property="og:site_name" content="NeuroSim EEG Platform">
+    <meta property="og:title" content="NEUROSIM : Scientific EEG Cognitive Analytics &amp; DSP Platform">
+    <meta property="og:description" content="Scientific EEG cognitive load analysis with 250Hz Wi-Fi telemetry, Radix-2 FFT DSP, and clinical biofeedback.">
     <meta property="og:type" content="website">
-    <meta property="og:image" content="/favicon.svg">
-    <meta name="twitter:card" content="summary">
+    <meta property="og:url" content="https://neurosim.vercel.app/">
+    <meta property="og:image" content="https://neurosim.vercel.app/og_preview.svg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="NeuroSim Scientific EEG Workstation Interface Preview">
+    <!-- Twitter Cards -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="NEUROSIM : Scientific EEG Cognitive Analytics">
+    <meta name="twitter:description" content="Scientific EEG cognitive load analysis with 250Hz Wi-Fi telemetry and Radix-2 FFT DSP.">
+    <meta name="twitter:image" content="https://neurosim.vercel.app/og_preview.svg">
+    <meta name="twitter:image:alt" content="NeuroSim Scientific EEG Workstation Banner">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
+    <a href="#main-content" class="skip-link">Skip to Workstation Content</a>
+    <div id="mobile-sidebar-backdrop" class="mobile-sidebar-backdrop" style="display: none;" onclick="toggleMobileSidebar()" aria-hidden="true"></div>
 
     <!-- Left Navigation Sidebar -->
     <aside id="sidebar">
@@ -111,6 +125,11 @@
             <button class="btn btn-tool" onclick="openHelpModal()" style="width: 100%; margin-top: 8px; justify-content: center; font-size: 10px; padding: 5px 8px; background: rgba(14, 165, 233, 0.08); border-color: rgba(14, 165, 233, 0.25); color: var(--cyan);">
                 ⌨️ SHORTCUTS &amp; TOUR
             </button>
+            <div class="sidebar-footer-links" style="margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--border); font-size: 10.5px; display: flex; justify-content: space-between;">
+                <a href="privacy.html" title="NeuroSim HIPAA &amp; GDPR Privacy Policy">Privacy</a>
+                <a href="terms.html" title="Terms of Clinical &amp; Investigational Use">Terms</a>
+                <a href="/api/health" target="_blank" title="Real-Time System &amp; Database Health Status">Status</a>
+            </div>
         </div>
     </aside>
 
@@ -119,8 +138,11 @@
         <!-- Top Application Header -->
         <header id="top-header">
             <div class="header-left">
-                <h1 class="header-title" id="page-title">LIVE MONITORING WORKSTATION</h1>
-                <div class="header-subtitle">Radix-2 Cooley-Tukey FFT • Welch Periodogram • Dual Classification</div>
+                <button type="button" class="mobile-menu-btn" onclick="toggleMobileSidebar()" aria-label="Toggle Navigation Menu">☰</button>
+                <div>
+                    <h1 class="header-title" id="page-title">LIVE MONITORING WORKSTATION</h1>
+                    <div class="header-subtitle">Radix-2 Cooley-Tukey FFT • Welch Periodogram • Dual Classification</div>
+                </div>
             </div>
 
             <div class="header-right">
@@ -192,6 +214,12 @@
                 </button>
                 <button class="btn btn-tool" onclick="openHelpModal()" title="Keyboard Shortcuts &amp; Help Guide (? or F1)" style="padding: 6px 10px;">
                     ❓
+                </button>
+
+                <!-- Primary Call to Action (CTA) -->
+                <button class="btn-hero-cta" id="btn-hero-cta" onclick="toggleHeroStream()" title="Launch Calibrated 250Hz Biopotential Stream" aria-label="Start Live Signal Stream">
+                    <span class="pulse-dot"></span>
+                    <span id="lbl-hero-cta">START LIVE STREAM</span>
                 </button>
 
                 <!-- Session Record Quick Button -->
@@ -292,7 +320,7 @@
                         </div>
 
                         <div class="canvas-container">
-                            <canvas id="waveCanvas"></canvas>
+                            <canvas id="waveCanvas" role="img" aria-label="Real-Time Differential EEG Biopotential Waveforms Oscilloscope"></canvas>
                             <div id="freeze-watermark" class="freeze-watermark" style="display: none;">
                                 ⏸ DISPLAY PAUSED (SPACE TO RESUME)
                             </div>
@@ -411,7 +439,7 @@
                         </div>
                     </div>
                     <div class="canvas-container-half">
-                        <canvas id="psdCanvas"></canvas>
+                        <canvas id="psdCanvas" role="img" aria-label="Power Spectral Density (PSD) 0 to 40 Hz Spectrum Chart"></canvas>
                     </div>
                 </div>
             </section>
@@ -471,7 +499,7 @@
                             Incoming analog waveform stream from the ESP32 Wi-Fi hardware containing composite sinusoidal waves plus simulated electrode noise.
                         </div>
                         <div class="canvas-container-lab">
-                            <canvas id="labCanvas"></canvas>
+                            <canvas id="labCanvas" role="img" aria-label="DSP Research Pipeline Time-Frequency Waveform and Filter Analysis Chart"></canvas>
                         </div>
                         <div class="lab-parameters" id="lab-parameters-wrap">
                             <!-- Dynamic Parameter Metrics -->
@@ -500,7 +528,7 @@
                             </div>
                             <div style="font-size: 26px; font-weight: 800; font-family: 'JetBrains Mono', monospace; color: var(--cyan); margin: 6px 0;" id="lead-e1-val">0.00 μV</div>
                             <div style="background: rgba(0,0,0,0.3); border-radius: 4px; padding: 4px; margin-top: 8px;">
-                                <canvas id="spark-e1" width="240" height="42" style="width: 100%; height: 42px; display: block;"></canvas>
+                                <canvas id="spark-e1" role="img" aria-label="Electrode 1 Real-Time Sparkline Waveform" width="240" height="42" style="width: 100%; height: 42px; display: block;"></canvas>
                             </div>
                             <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-dim); margin-top: 6px;">
                                 <span>Gain: 1.0x</span>
@@ -519,7 +547,7 @@
                             </div>
                             <div style="font-size: 26px; font-weight: 800; font-family: 'JetBrains Mono', monospace; color: var(--amber); margin: 6px 0;" id="lead-e2-val">0.00 μV</div>
                             <div style="background: rgba(0,0,0,0.3); border-radius: 4px; padding: 4px; margin-top: 8px;">
-                                <canvas id="spark-e2" width="240" height="42" style="width: 100%; height: 42px; display: block;"></canvas>
+                                <canvas id="spark-e2" role="img" aria-label="Electrode 2 Reference Sparkline Waveform" width="240" height="42" style="width: 100%; height: 42px; display: block;"></canvas>
                             </div>
                             <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-dim); margin-top: 6px;">
                                 <span>Inverting Input</span>
@@ -558,7 +586,7 @@
                             </div>
                             <div style="font-size: 26px; font-weight: 800; font-family: 'JetBrains Mono', monospace; color: var(--rose); margin: 6px 0;" id="sensor-s1-val">0.0 counts</div>
                             <div style="background: rgba(0,0,0,0.3); border-radius: 4px; padding: 4px; margin-top: 8px;">
-                                <canvas id="spark-sensor" width="240" height="42" style="width: 100%; height: 42px; display: block;"></canvas>
+                                <canvas id="spark-sensor" role="img" aria-label="Auxiliary Sensor 1 Sparkline Waveform" width="240" height="42" style="width: 100%; height: 42px; display: block;"></canvas>
                             </div>
                             <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-dim); margin-top: 6px;">
                                 <span>Channel: Aux Transducer</span>
@@ -1271,6 +1299,9 @@
             </div>
 
             <form class="auth-form" id="auth-form" onsubmit="event.preventDefault(); submitDirectSignIn();">
+                <!-- Anti-spam bot honeypot trap field (hidden from clinicians, filled by automated spam bots) -->
+                <input type="text" name="hp_clinical_token" id="auth-hp" style="display:none!important; position:absolute; left:-9999px;" tabindex="-1" autocomplete="off" aria-hidden="true">
+
                 <div class="auth-field">
                     <label class="auth-label" for="auth-name">CLINICIAN NAME</label>
                     <input type="text" id="auth-name" class="auth-input" placeholder="Dr. Neuro, MD" required value="Dr. Neuro, MD">
@@ -1309,12 +1340,15 @@
 
     <!-- Cookie & Telemetry Storage Consent Banner -->
     <div id="cookie-banner" style="display: none;">
-        <div class="cookie-text">
-            <strong>Clinical Data & Telemetry Notice:</strong> NeuroSim stores session parameters, cryptographic tokens, and calibrated DSP filter coefficients in local storage for real-time telemetry processing. No patient metrics are shared with external third-party advertisers. Review our <a href="/privacy.html" target="_blank">Privacy Policy</a> and <a href="/terms.html" target="_blank">Terms of Service</a>.
+        <div class="cookie-content">
+            <span style="font-size: 20px;" aria-hidden="true">🍪</span>
+            <div class="cookie-text">
+                <strong>Clinical Data &amp; Telemetry Notice:</strong> NeuroSim stores session parameters, cryptographic tokens, and calibrated DSP filter coefficients in local storage for real-time telemetry processing. No patient metrics are shared with third-party advertisers. Review our <a href="privacy.html" target="_blank" style="color: var(--cyan); text-decoration: underline;">Privacy Policy</a> and <a href="terms.html" target="_blank" style="color: var(--cyan); text-decoration: underline;">Terms of Service</a>.
+            </div>
         </div>
         <div class="cookie-actions">
-            <button class="btn btn-primary" onclick="acceptCookies('all')">Accept All</button>
-            <button class="btn" onclick="acceptCookies('essential')">Essential Only</button>
+            <button type="button" class="btn btn-primary" onclick="acceptCookies('all')" style="padding: 7px 16px; font-weight: 700;">Accept All</button>
+            <button type="button" class="btn" onclick="acceptCookies('essential')" style="padding: 7px 14px;">Essential Only</button>
         </div>
     </div>
 

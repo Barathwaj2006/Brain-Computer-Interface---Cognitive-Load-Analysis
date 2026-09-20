@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+    <defs>
+        <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#F8FAFC"/>
+            <stop offset="100%" stop-color="#EDF2F7"/>
+        </linearGradient>
+        <linearGradient id="card-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#FFFFFF"/>
+            <stop offset="100%" stop-color="#F8FAFC"/>
+        </linearGradient>
+        <linearGradient id="accent-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#0EA5E9"/>
+            <stop offset="100%" stop-color="#0284C7"/>
+        </linearGradient>
+        <filter id="shadow" x="-5%" y="-5%" width="110%" height="115%" filterUnits="userSpaceOnUse">
+            <feDropShadow dx="0" dy="8" stdDeviation="16" flood-color="#0F172A" flood-opacity="0.08"/>
+        </filter>
+    </defs>
+
+    <!-- Background -->
+    <rect width="1200" height="630" fill="url(#bg-grad)"/>
+
+    <!-- Subtle Technical Grid Pattern -->
+    <g stroke="#E2E8F0" stroke-width="1" opacity="0.6">
+        <line x1="100" y1="0" x2="100" y2="630"/>
+        <line x1="300" y1="0" x2="300" y2="630"/>
+        <line x1="500" y1="0" x2="500" y2="630"/>
+        <line x1="700" y1="0" x2="700" y2="630"/>
+        <line x1="900" y1="0" x2="900" y2="630"/>
+        <line x1="1100" y1="0" x2="1100" y2="630"/>
+        <line x1="0" y1="100" x2="1200" y2="100"/>
+        <line x1="0" y1="250" x2="1200" y2="250"/>
+        <line x1="0" y1="400" x2="1200" y2="400"/>
+        <line x1="0" y1="550" x2="1200" y2="550"/>
+    </g>
+
+    <!-- Main Content Card -->
+    <rect x="80" y="60" width="1040" height="510" rx="16" fill="url(#card-grad)" stroke="#CBD5E1" stroke-width="1.5" filter="url(#shadow)"/>
+
+    <!-- Brand Header -->
+    <g transform="translate(140, 130)">
+        <rect x="0" y="0" width="48" height="48" rx="10" fill="#F0F9FF" stroke="#BAE6FD" stroke-width="1.5"/>
+        <text x="24" y="32" font-family="'JetBrains Mono', monospace" font-size="20" font-weight="900" fill="#0EA5E9" text-anchor="middle">◉</text>
+        <text x="64" y="32" font-family="'Inter', -apple-system, sans-serif" font-size="26" font-weight="900" fill="#0F172A" letter-spacing="2">NEUROSIM</text>
+        <rect x="230" y="10" width="160" height="28" rx="6" fill="#F0FDF4" stroke="#BBF7D0" stroke-width="1"/>
+        <text x="310" y="29" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="800" fill="#15803D" text-anchor="middle">CLINICAL DSP v2.5.5</text>
+    </g>
+
+    <!-- Main Title & Tagline -->
+    <g transform="translate(140, 230)">
+        <text x="0" y="0" font-family="'Inter', -apple-system, sans-serif" font-size="44" font-weight="900" fill="#0F172A" letter-spacing="-1">
+            Real-Time EEG Cognitive Analytics
+        </text>
+        <text x="0" y="44" font-family="'Inter', -apple-system, sans-serif" font-size="22" font-weight="500" fill="#64748B">
+            High-Performance 250 Hz Wi-Fi Telemetry &amp; Deep DSP Engine
+        </text>
+    </g>
+
+    <!-- Simulated Biopotential Oscilloscope Trace -->
+    <g transform="translate(140, 320)">
+        <rect x="0" y="0" width="920" height="110" rx="10" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+        <!-- Zero baseline -->
+        <line x1="0" y1="55" x2="920" y2="55" stroke="#E2E8F0" stroke-width="1" stroke-dasharray="4,4"/>
+        <!-- Alpha rhythm biopotential waveform -->
+        <path d="M 10 55 Q 30 20, 50 55 T 90 55 T 130 55 T 170 15 T 210 95 T 250 55 T 290 55 T 330 30 T 370 70 T 410 55 T 450 10 T 490 90 T 530 55 T 570 40 T 610 65 T 650 55 T 690 15 T 730 85 T 770 55 T 810 45 T 850 65 T 890 55 T 910 55" fill="none" stroke="#0EA5E9" stroke-width="2.5" stroke-linecap="round"/>
+        <!-- Secondary sensor waveform -->
+        <path d="M 10 55 Q 40 45, 80 55 T 160 55 T 240 40 T 320 65 T 400 55 T 480 35 T 560 70 T 640 55 T 720 45 T 800 60 T 880 55 T 910 55" fill="none" stroke="#10B981" stroke-width="2" stroke-linecap="round" opacity="0.8"/>
+        <!-- Lead Labels -->
+        <text x="20" y="25" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="800" fill="#0284C7">DIFF EEG : ±50 μV (250 Hz)</text>
+        <text x="220" y="25" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="800" fill="#059669">AUX SENSOR : ±30 μV</text>
+        <text x="890" y="25" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="800" fill="#64748B" text-anchor="end">0.02ms LATENCY</text>
+    </g>
+
+    <!-- Technical Feature Badges -->
+    <g transform="translate(140, 480)">
+        <g transform="translate(0, 0)">
+            <rect width="160" height="36" rx="6" fill="#F1F5F9" stroke="#E2E8F0"/>
+            <text x="80" y="23" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="700" fill="#334155" text-anchor="middle">⚡ RADIX-2 FFT (512)</text>
+        </g>
+        <g transform="translate(175, 0)">
+            <rect width="180" height="36" rx="6" fill="#F1F5F9" stroke="#E2E8F0"/>
+            <text x="90" y="23" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="700" fill="#334155" text-anchor="middle">🧠 DUAL ML CLASSIFIER</text>
+        </g>
+        <g transform="translate(370, 0)">
+            <rect width="180" height="36" rx="6" fill="#F1F5F9" stroke="#E2E8F0"/>
+            <text x="90" y="23" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="700" fill="#334155" text-anchor="middle">🗺️ 3D SHEPARD TOPO</text>
+        </g>
+        <g transform="translate(565, 0)">
+            <rect width="165" height="36" rx="6" fill="#F1F5F9" stroke="#E2E8F0"/>
+            <text x="82" y="23" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="700" fill="#334155" text-anchor="middle">🔒 21 CFR PART 11</text>
+        </g>
+        <g transform="translate(745, 0)">
+            <rect width="175" height="36" rx="6" fill="#F1F5F9" stroke="#E2E8F0"/>
+            <text x="87" y="23" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="700" fill="#334155" text-anchor="middle">☁️ SUPABASE POSTGRES</text>
+        </g>
+    </g>
+</svg>

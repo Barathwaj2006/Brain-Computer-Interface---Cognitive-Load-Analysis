@@ -868,6 +868,8 @@ function toggleTestBiopotentialStream() {
     const btn = document.getElementById('btn-stream-test');
     const lbl = document.getElementById('lbl-stream-test');
     const icon = document.getElementById('icon-stream-test');
+    const heroBtn = document.getElementById('btn-hero-cta');
+    const heroLbl = document.getElementById('lbl-hero-cta');
 
     if (isLiveTestStreaming) {
         if (btn) {
@@ -878,6 +880,11 @@ function toggleTestBiopotentialStream() {
         }
         if (lbl) lbl.innerText = "STREAMING (CLICK TO PAUSE)";
         if (icon) icon.innerText = "🟢";
+        if (heroBtn) {
+            heroBtn.style.background = 'linear-gradient(135deg, #10B981, #059669)';
+            heroBtn.style.borderColor = '#059669';
+        }
+        if (heroLbl) heroLbl.innerText = "PAUSE LIVE STREAM";
 
         // Feed calibrated 250 Hz biopotential packets (10 samples every 40 ms)
         if (testStreamInterval) clearInterval(testStreamInterval);
@@ -933,9 +940,22 @@ function toggleTestBiopotentialStream() {
         }
         if (lbl) lbl.innerText = "STREAM TEST SIGNALS";
         if (icon) icon.innerText = "⚡";
+        if (heroBtn) {
+            heroBtn.style.background = '';
+            heroBtn.style.borderColor = '';
+        }
+        if (heroLbl) heroLbl.innerText = "START LIVE STREAM";
         showToast("Paused biopotential test stream", "info", 1500);
     }
 }
+
+function toggleHeroStream() {
+    if (!isLiveTestStreaming && currentTab !== 'monitor') {
+        switchTab('monitor');
+    }
+    toggleTestBiopotentialStream();
+}
+window.toggleHeroStream = toggleHeroStream;
 
 function initOscilloscopeButtons() {
     // 1. Sensitivity scale buttons
@@ -3555,6 +3575,14 @@ function clearAllSessions() {
 // 15. Screen Switching & Lifecycle Initialization
 // ------------------------------------------------------------------------------
 function switchTab(tabKey) {
+    // Close responsive drawer if open on mobile
+    const sidebar = document.getElementById('sidebar');
+    const backdrop = document.getElementById('mobile-sidebar-backdrop');
+    if (sidebar && sidebar.classList.contains('mobile-open')) {
+        sidebar.classList.remove('mobile-open');
+        if (backdrop) backdrop.style.display = 'none';
+    }
+
     document.querySelectorAll('.view-screen').forEach(el => el.classList.remove('active'));
     document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
 
@@ -3582,6 +3610,17 @@ function switchTab(tabKey) {
     if (tabKey === 'report' && typeof updateReportScreenPreview === 'function') updateReportScreenPreview();
     setTimeout(resizeCanvases, 50);
 }
+
+function toggleMobileSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const backdrop = document.getElementById('mobile-sidebar-backdrop');
+    if (sidebar) {
+        sidebar.classList.toggle('mobile-open');
+        const isOpen = sidebar.classList.contains('mobile-open');
+        if (backdrop) backdrop.style.display = isOpen ? 'block' : 'none';
+    }
+}
+window.toggleMobileSidebar = toggleMobileSidebar;
 
 // ------------------------------------------------------------------------------
 // 16. Clinical Toast Notification System
@@ -3657,6 +3696,14 @@ function closeAuthModal() {
 }
 
 async function submitDirectSignIn() {
+    // 1. Anti-Spam Honeypot Check (Silently drop automated spam bots)
+    const hpInput = document.getElementById('auth-hp');
+    if (hpInput && hpInput.value) {
+        console.warn("[SECURITY] Automated bot submission blocked via honeypot trap.");
+        closeAuthModal();
+        return;
+    }
+
     const nameInput = document.getElementById('auth-name');
     const emailInput = document.getElementById('auth-email');
     const roleInput = document.getElementById('auth-role');
@@ -3666,6 +3713,19 @@ async function submitDirectSignIn() {
     const email = (emailInput ? emailInput.value.trim() : "") || "dr.neuro@neurosim.local";
     const role = (roleInput ? roleInput.value : "") || "Lead Clinical Neurologist";
     const patientId = (patientInput ? patientInput.value.trim() : "") || "PT-2026-001";
+
+    // 2. Client-side Form Validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        showToast("Please enter a valid clinical institutional email address.", "error");
+        if (emailInput) emailInput.focus();
+        return;
+    }
+    if (name.length < 2) {
+        showToast("Please enter your full clinician or researcher name.", "error");
+        if (nameInput) nameInput.focus();
+        return;
+    }
 
     const btn = document.getElementById('btn-direct-signin') || document.getElementById('btn-verify-otp');
     if (btn) {
@@ -4006,8 +4066,66 @@ function updateExportLinks() {
     if (jsonBtn) jsonBtn.href = BACKEND_CONFIG.apiEndpoint('/api/export/json');
 }
 
+// ------------------------------------------------------------------------------
+// 21. Privacy-Preserving Web Vitals & Performance Analytics (Zero Cookies)
+// ------------------------------------------------------------------------------
+function initPerformanceAnalytics() {
+    if (typeof window === 'undefined' || !window.performance) return;
+
+    window.addEventListener('load', () => {
+        setTimeout(() => {
+            const navEntries = performance.getEntriesByType('navigation');
+            if (navEntries && navEntries.length > 0) {
+                const nav = navEntries[0];
+                const ttfb = Math.round(nav.responseStart - nav.requestStart);
+                const domReady = Math.round(nav.domContentLoadedEventEnd - nav.startTime);
+                const pageLoad = Math.round(nav.loadEventEnd - nav.startTime);
+                console.log(`[NeuroSim Analytics] Navigation Timings: TTFB=${ttfb}ms | DOMContentLoaded=${domReady}ms | FullLoad=${pageLoad}ms`);
+            }
+        }, 50);
+    });
+
+    if ('PerformanceObserver' in window) {
+        try {
+            const paintObserver = new PerformanceObserver((entryList) => {
+                for (const entry of entryList.getEntries()) {
+                    if (entry.name === 'first-contentful-paint') {
+                        console.log(`[NeuroSim Analytics] First Contentful Paint (FCP): ${Math.round(entry.startTime)}ms`);
+                    }
+                }
+            });
+            paintObserver.observe({ type: 'paint', buffered: true });
+        } catch (e) {}
+
+        try {
+            const lcpObserver = new PerformanceObserver((entryList) => {
+                const entries = entryList.getEntries();
+                if (entries.length > 0) {
+                    const lastEntry = entries[entries.length - 1];
+                    console.log(`[NeuroSim Analytics] Largest Contentful Paint (LCP): ${Math.round(lastEntry.startTime)}ms`);
+                }
+            });
+            lcpObserver.observe({ type: 'largest-contentful-paint', buffered: true });
+        } catch (e) {}
+
+        try {
+            let clsScore = 0;
+            const clsObserver = new PerformanceObserver((entryList) => {
+                for (const entry of entryList.getEntries()) {
+                    if (!entry.hadRecentInput) {
+                        clsScore += entry.value;
+                    }
+                }
+                console.log(`[NeuroSim Analytics] Cumulative Layout Shift (CLS): ${clsScore.toFixed(4)}`);
+            });
+            clsObserver.observe({ type: 'layout-shift', buffered: true });
+        } catch (e) {}
+    }
+}
+
 // Initialize Application
 window.addEventListener('DOMContentLoaded', () => {
+    initPerformanceAnalytics();
     checkCookieConsent();
     checkAuthStatus();
     initOscilloscopeButtons();

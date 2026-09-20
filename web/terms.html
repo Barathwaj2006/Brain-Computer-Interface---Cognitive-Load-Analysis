@@ -3,18 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Terms of Service | NEUROSIM Clinical Workstation</title>
+    <title>Terms of Service | NEUROSIM Clinical EEG Workstation</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
-    <link rel="stylesheet" href="styles.css">
+    <link rel="apple-touch-icon" href="favicon.svg">
+    <link rel="stylesheet" href="styles.css?v=2.5.5">
+    <meta name="theme-color" content="#FFFFFF">
+    <meta name="description" content="NeuroSim Terms of Service: Research and Clinical Biopotential Software Licensing, Hardware Isolation Guidelines & Academic Attribution.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
+        body {
+            background-color: #F8FAFC;
+            color: #0F172A;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
         .legal-page {
             min-height: 100vh;
-            background-color: #070B14;
-            color: #F8FAFC;
-            padding: 40px 24px;
+            background-color: #F8FAFC;
+            padding: 48px 24px;
             display: flex;
             justify-content: center;
-            overflow-y: auto;
         }
         .legal-container {
             max-width: 860px;
@@ -26,133 +37,152 @@
             justify-content: space-between;
             margin-bottom: 32px;
             padding-bottom: 16px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            border-bottom: 1px solid #E2E8F0;
         }
         .legal-nav-brand {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
             font-size: 16px;
-            font-weight: 800;
-            color: #0EA5E9;
+            font-weight: 900;
+            color: #0F172A;
             letter-spacing: 1.5px;
             text-decoration: none;
+        }
+        .legal-nav-brand span {
+            color: #0EA5E9;
         }
         .legal-nav-back {
             display: inline-flex;
             align-items: center;
             gap: 6px;
             font-size: 12px;
-            font-weight: 600;
-            color: #94A3B8;
+            font-weight: 700;
+            color: #0EA5E9;
             text-decoration: none;
-            padding: 6px 12px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 4px;
+            padding: 8px 16px;
+            background: #FFFFFF;
+            border: 1px solid #E2E8F0;
+            border-radius: 6px;
             transition: all 0.2s ease;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
         }
         .legal-nav-back:hover {
-            color: #F8FAFC;
-            background: rgba(255, 255, 255, 0.05);
+            background: #F1F5F9;
+            border-color: #CBD5E1;
+            color: #0284C7;
         }
         .legal-card {
-            background-color: #0F172A;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 6px;
-            padding: 40px;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+            background-color: #FFFFFF;
+            border: 1px solid #E2E8F0;
+            border-radius: 8px;
+            padding: 44px;
+            box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.05), 0 2px 4px -2px rgba(15, 23, 42, 0.05);
         }
         .legal-tag {
             font-family: 'JetBrains Mono', monospace;
             font-size: 11px;
-            font-weight: 700;
+            font-weight: 800;
             color: #0EA5E9;
             letter-spacing: 1.5px;
             margin-bottom: 8px;
         }
         h1 {
-            font-size: 26px;
-            font-weight: 800;
+            font-size: 28px;
+            font-weight: 900;
+            color: #0F172A;
+            margin-top: 0;
             margin-bottom: 8px;
             letter-spacing: -0.5px;
         }
         .effective-date {
             font-size: 12px;
             color: #64748B;
-            margin-bottom: 32px;
+            margin-bottom: 28px;
             padding-bottom: 16px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            border-bottom: 1px solid #F1F5F9;
+            font-family: 'JetBrains Mono', monospace;
         }
         h2 {
-            font-size: 16px;
-            font-weight: 700;
-            color: #38BDF8;
-            margin-top: 28px;
+            font-size: 17px;
+            font-weight: 800;
+            color: #0F172A;
+            margin-top: 32px;
             margin-bottom: 12px;
-            letter-spacing: 0.5px;
+            border-left: 3px solid #0EA5E9;
+            padding-left: 10px;
         }
         p, li {
-            font-size: 13px;
-            line-height: 1.7;
-            color: #94A3B8;
+            font-size: 13.5px;
+            line-height: 1.75;
+            color: #334155;
             margin-bottom: 12px;
         }
         ul {
-            padding-left: 20px;
-            margin-bottom: 16px;
+            padding-left: 24px;
+            margin-bottom: 20px;
+        }
+        li {
+            margin-bottom: 8px;
         }
         .disclaimer-box {
-            background: rgba(239, 68, 68, 0.08);
-            border-left: 3px solid #EF4444;
-            padding: 16px;
-            border-radius: 4px;
-            margin: 20px 0;
-            font-size: 12px;
-            color: #FCA5A5;
-            line-height: 1.6;
+            background: #FEF2F2;
+            border: 1px solid #FECACA;
+            border-left: 4px solid #EF4444;
+            padding: 18px 20px;
+            border-radius: 6px;
+            margin: 24px 0;
+            font-size: 13px;
+            color: #991B1B;
+            line-height: 1.65;
         }
     </style>
 </head>
 <body>
     <div class="legal-page">
         <div class="legal-container">
-            <div class="legal-nav">
-                <a href="/" class="legal-nav-brand">NEUROSIM WORKSTATION</a>
-                <a href="/" class="legal-nav-back">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <header class="legal-nav" role="banner">
+                <a href="/" class="legal-nav-brand">
+                    <span>◉/╲◉</span> NEUROSIM WORKSTATION
+                </a>
+                <a href="/" class="legal-nav-back" aria-label="Return to Live Workstation">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <line x1="19" y1="12" x2="5" y2="12"></line>
                         <polyline points="12 19 5 12 12 5"></polyline>
                     </svg>
                     Back to Workstation
                 </a>
-            </div>
+            </header>
 
-            <div class="legal-card">
-                <div class="legal-tag">TERMS OF USE & RESEARCH COMPLIANCE</div>
+            <main class="legal-card" role="main">
+                <div class="legal-tag">TERMS OF SERVICE &amp; RESEARCH GOVERNANCE</div>
                 <h1>Terms of Service</h1>
-                <div class="effective-date">Effective Date: September 18, 2026 | Revision: 2.4-PRODUCTION</div>
+                <div class="effective-date">Effective Date: September 20, 2026 | Version: 2.5.5-PRODUCTION</div>
 
                 <div class="disclaimer-box">
-                    <strong>CRITICAL MEDICAL DISCLAIMER:</strong> NeuroSim is intended strictly for scientific research, academic prototyping, biofeedback experimentation, and educational purposes. It is NOT certified as a medical diagnostic device under FDA 510(k), CE mark Class IIa/IIb, or equivalent medical device regulations. It must NOT be used as the primary basis for clinical diagnosis, critical patient monitoring, surgical intervention, or medication prescribing.
+                    <strong>CRITICAL MEDICAL &amp; RESEARCH DISCLAIMER:</strong> NeuroSim is engineered for scientific biopotential research, cognitive workload analytics, algorithm benchmarking, and educational prototyping. It is not approved as a sole diagnostic medical device under FDA 510(k), CE Class II, or equivalent regional medical device standards. It must not be deployed for emergency life-support, primary diagnosis of pathological conditions, or clinical medication prescribing.
                 </div>
 
                 <h2>1. Acceptance of Terms</h2>
-                <p>By accessing or utilizing the NeuroSim web application, local telemetry gateway, or WebSocket endpoints, you certify that you have read, understood, and agreed to be bound by these Terms of Service.</p>
+                <p>By accessing or deploying the NeuroSim workstation, utilizing its real-time WebSocket telemetry hub, or running its digital signal processing pipeline, you agree to comply with and be bound by these Terms of Service.</p>
 
-                <h2>2. Hardware & Electrical Safety</h2>
-                <p>When connecting custom EEG acquisition hardware (such as ESP32, ADS1299, OpenBCI, or custom differential analog front-ends) to your laptop Wi-Fi network:</p>
+                <h2>2. Electrical Safety &amp; Galvanic Isolation</h2>
+                <p>When connecting physical EEG acquisition hardware (ESP32, ADS1299, OpenBCI, or custom analog front-ends) to your workstation environment:</p>
                 <ul>
-                    <li>You are solely responsible for ensuring appropriate galvanic isolation conforming to IEC 60601-1 standards to prevent hazardous electrical currents.</li>
-                    <li>Only battery-powered or medically isolated power supplies should be used for scalp contact electrodes.</li>
-                    <li>The authors and contributors of NeuroSim assume no liability for hardware malfunction or electrical hazards arising from user-constructed electronics.</li>
+                    <li>You are strictly responsible for maintaining proper galvanic isolation conforming to <strong>IEC 60601-1</strong> medical electrical safety standards to eliminate hazardous leakage currents.</li>
+                    <li>Scalp electrodes must only be connected to battery-powered or medically isolated power sources. Never connect non-isolated mains-powered equipment directly to subjects.</li>
+                    <li>The authors and maintainers of NeuroSim assume zero liability for hardware malfunctions, improper grounding, or electrical hazards arising from user-constructed electronics.</li>
                 </ul>
 
-                <h2>3. Permitted Use & Fair Consumption</h2>
-                <p>NeuroSim includes automated rate limiting and local spending/computation caps. Users agree not to attempt to bypass sliding window throttles or initiate automated high-volume denial of service tests without prior system reconfiguration.</p>
+                <h2>3. Acceptable Use &amp; API Rate Limits</h2>
+                <p>NeuroSim enforces sliding-window token bucket rate limiting on public and local REST API endpoints. You agree not to circumvent rate limit controls, inject maliciously corrupted binary payloads, or conduct denial-of-service testing against production instances.</p>
 
-                <h2>4. Intellectual Property & Academic Attribution</h2>
-                <p>The signal processing algorithms (including Radix-2 Cooley-Tukey FFT implementations and Shepard's Inverse Distance Weighting interpolation routines) are provided under open academic licensing. Publications deriving experimental metrics from this platform should cite NeuroSim accordingly.</p>
+                <h2>4. Intellectual Property &amp; Academic Citation</h2>
+                <p>The digital signal processing algorithms (Radix-2 Cooley-Tukey FFT, Welch Periodogram, 2D Shepard Inverse Distance Weighting, and ML Classifier Ensembles) are provided under permissive open-source licensing. Academic research and clinical papers deriving findings from this platform should cite NeuroSim accordingly.</p>
 
                 <h2>5. Limitation of Liability</h2>
-                <p>To the maximum extent permitted by applicable law, NeuroSim and its developers disclaim all warranties, express or implied, including merchantability and fitness for a particular clinical purpose. Under no circumstances shall the developers be held liable for direct or indirect damages resulting from software use or signal interpretation.</p>
-            </div>
+                <p>To the maximum extent permitted by applicable law, NeuroSim is provided "as is" without warranty of any kind. Under no legal theory shall the contributors or developers be liable for direct, indirect, incidental, or consequential damages resulting from the use or inability to use this platform.</p>
+            </main>
         </div>
     </div>
 </body>
