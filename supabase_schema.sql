@@ -80,8 +80,17 @@ ALTER TABLE idempotency_keys ENABLE ROW LEVEL SECURITY;
 ALTER TABLE event_markers ENABLE ROW LEVEL SECURITY;
 
 -- Allow public read/write access via API Service Role / Authenticated Client
+DROP POLICY IF EXISTS "Allow public backend access to users" ON users;
 CREATE POLICY "Allow public backend access to users" ON users FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow public backend access to sessions" ON sessions;
 CREATE POLICY "Allow public backend access to sessions" ON sessions FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow public backend access to audit_logs" ON audit_logs;
 CREATE POLICY "Allow public backend access to audit_logs" ON audit_logs FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow public backend access to idempotency_keys" ON idempotency_keys;
 CREATE POLICY "Allow public backend access to idempotency_keys" ON idempotency_keys FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow public backend access to event_markers" ON event_markers;
 CREATE POLICY "Allow public backend access to event_markers" ON event_markers FOR ALL USING (true) WITH CHECK (true);
