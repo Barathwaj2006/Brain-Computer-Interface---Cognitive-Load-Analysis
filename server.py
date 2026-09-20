@@ -1160,6 +1160,39 @@ class NeuroSimHTTPHandler(SimpleHTTPRequestHandler):
                         "Maintain standard ergonomic workspace conditions and routine hydration."
                     ]
 
+                # Google AI Studio (Gemini 1.5 Flash) Real-Time Synthesis
+                gemini_key = os.environ.get('GEMINI_API_KEY')
+                if gemini_key:
+                    try:
+                        import urllib.request
+                        gemini_prompt = (
+                            f"You are a clinical neuroscientist analyzing 250Hz EEG biopotentials. "
+                            f"Patient metrics: Delta: {delta}%, Theta: {theta}%, Alpha: {alpha}%, Beta: {beta}%, "
+                            f"Theta/Beta Ratio (TBR): {tbr}, Alpha/Beta Ratio (ABR): {abr}, Stress Index: {stress_idx}, "
+                            f"Workload Level: {cognitive_load}. "
+                            f"Provide a 2-3 sentence clinical diagnosis of the patient's neurological condition "
+                            f"and 3 concrete clinical action recommendations. Return JSON with keys 'condition' and 'actions'."
+                        )
+                        req_data = json.dumps({
+                            "contents": [{"parts": [{"text": gemini_prompt}]}],
+                            "generationConfig": {"response_mime_type": "application/json"}
+                        }).encode('utf-8')
+                        g_req = urllib.request.Request(
+                            f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_key}",
+                            data=req_data,
+                            headers={"Content-Type": "application/json"}
+                        )
+                        with urllib.request.urlopen(g_req, timeout=4.0) as g_resp:
+                            g_data = json.loads(g_resp.read().decode('utf-8'))
+                            gemini_text = g_data['candidates'][0]['content']['parts'][0]['text']
+                            parsed_gemini = json.loads(gemini_text)
+                            if parsed_gemini.get('condition'):
+                                patient_condition = parsed_gemini['condition']
+                            if parsed_gemini.get('actions') and isinstance(parsed_gemini['actions'], list):
+                                patient_actions = parsed_gemini['actions']
+                    except Exception as g_err:
+                        server_logger.warning(f"Google AI Studio Gemini fallback to local DSP model: {g_err}")
+
                 dominant_rhythm = "Alpha (8-13 Hz)" if alpha >= max(delta, theta, beta) else ("Beta (13-30 Hz)" if beta >= max(delta, theta) else "Theta (4-8 Hz)")
 
                 wave_diagnosis = {
