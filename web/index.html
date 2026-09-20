@@ -5,9 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NEUROSIM : Scientific EEG Cognitive Analytics & DSP Platform</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
-    <link rel="stylesheet" href="styles.css">
+    <link rel="apple-touch-icon" href="favicon.svg">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <link rel="stylesheet" href="styles.css?v=2.5.5">
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#070B14">
+    <meta name="theme-color" content="#FFFFFF">
     <meta name="description" content="NeuroSim: Production-Grade Scientific EEG Cognitive Analytics, Real-Time Wi-Fi Telemetry & DSP Platform">
     <meta property="og:title" content="NeuroSim : Real-Time EEG Cognitive Analytics">
     <meta property="og:description" content="Scientific EEG cognitive analysis with 250Hz Wi-Fi telemetry and Radix-2 FFT DSP">
@@ -47,10 +50,13 @@
             </li>
             <li class="nav-item" data-tab="topo-map" onclick="switchTab('topo-map')">
                 <svg class="nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
-                    <line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line>
+                    <circle cx="12" cy="12" r="9"></circle>
+                    <circle cx="12" cy="8" r="1.5" fill="currentColor"></circle>
+                    <circle cx="8" cy="15" r="1.5" fill="currentColor"></circle>
+                    <circle cx="16" cy="15" r="1.5" fill="currentColor"></circle>
+                    <path d="M12 9.5v3m-2.5 1.5l1.5-1.5m3.5 1.5l-1.5-1.5"></path>
                 </svg>
-                <span class="nav-label">10-20 Topo Map</span>
+                <span class="nav-label">3-Lead &amp; Sensor</span>
             </li>
             <li class="nav-item" data-tab="classification" onclick="switchTab('classification')">
                 <svg class="nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -133,16 +139,19 @@
                     <button class="btn btn-tool" id="btn-toggle-notch" onclick="cycleNotchFilter()" title="AC Powerline Interference Notch Filter (Key: N)">
                         Notch: <strong id="lbl-notch-state">50Hz</strong>
                     </button>
-                    <button class="btn btn-tool active" id="btn-toggle-artifacts" onclick="toggleArtifactFilter()" title="Online Ocular Blink & Temporal EMG Clamping (Key: A)">
+                    <button class="btn btn-tool active" id="btn-toggle-artifacts" onclick="toggleArtifactFilter()" title="Adaptive Ocular Blink (EOG) & Muscle (EMG) Suppressor (Key: A)">
                         Artifacts: <strong id="lbl-artifact-state">ON</strong>
                     </button>
+                    <button class="btn btn-tool" id="btn-calibrate" onclick="openBaselineCalibrationModal()" title="15-Second Guided Baseline Calibration Wizard (Key: C)">
+                        🎯 CALIBRATE IAF
+                    </button>
+                    <div class="sqi-badge" id="badge-sqi" title="Electrode Contact Signal Quality Index (SQI 0-100%)">
+                        <span class="sqi-dot" id="sqi-dot"></span>SQI: <strong id="val-sqi">100%</strong>
+                    </div>
                     <button class="btn btn-tool" id="btn-show-impedance" onclick="openImpedanceModal()" title="IEC 60601-2-26 Electrode Contact Impedance Map (Key: I)">
                         Impedance: <strong id="lbl-impedance-summary" style="color:var(--emerald);">PASS (&lt;5kΩ)</strong>
                     </button>
-                    <button class="btn btn-tool" id="btn-cal-test" onclick="runCalibrationSelfTest()" title="Run Internal Calibration & Signal Integrity Self-Test">
-                        Self-Test
-                    </button>
-                    <button class="btn btn-tool" id="btn-toggle-audio" onclick="toggleAudioBiofeedback()" title="Web Audio Neurofeedback Tone">
+                    <button class="btn btn-tool" id="btn-toggle-audio" onclick="toggleAudioBiofeedback()" title="Web Audio 432 Hz Alpha Harmonic Drone">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 4px;">
                             <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
                             <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
@@ -161,6 +170,11 @@
                     <span>BT: <strong id="header-bt-device">Adapter Active</strong></span>
                 </div>
 
+                <!-- Hardware WebSerial USB Direct Fallback Button -->
+                <button class="btn btn-tool" id="btn-webserial" onclick="toggleWebSerial()" title="Direct USB WebSerial Telemetry Fallback (115200 baud, Key: U)" style="display: inline-flex; align-items: center; gap: 5px;">
+                    🔌 <span id="lbl-webserial">USB SERIAL</span>
+                </button>
+
                 <!-- Hardware Wi-Fi Status Badge -->
                 <div class="connection-status-badge badge-disconnected" id="header-status-badge">
                     <span class="status-dot"></span>
@@ -172,6 +186,9 @@
                         <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
                     </svg>
                     <span>RECONNECT</span>
+                </button>
+                <button class="btn btn-tool" id="btn-cloud-backend" onclick="openCloudBackendModal()" title="Configure Cloud Backend (Railway / Supabase / Vercel)" style="display: inline-flex; align-items: center; gap: 5px; padding: 6px 10px;">
+                    ☁️ <span id="lbl-cloud-backend">CLOUD</span>
                 </button>
                 <button class="btn btn-tool" onclick="openHelpModal()" title="Keyboard Shortcuts &amp; Help Guide (? or F1)" style="padding: 6px 10px;">
                     ❓
@@ -222,7 +239,7 @@
 
                     <div class="metric-card">
                         <div class="metric-label">DOMINANT RHYTHM</div>
-                        <div class="metric-value" id="m-dom" style="color: var(--purple);">ALPHA (10.0 Hz)</div>
+                        <div class="metric-value" id="m-dom" style="color: var(--cyan);">ALPHA (10.0 Hz)</div>
                         <div class="metric-sub" id="m-dom-sub">Welch PSD Peak Power</div>
                     </div>
 
@@ -240,27 +257,37 @@
                         <div class="card-header" style="flex-wrap: wrap; gap: 8px;">
                             <div class="card-title">Live Oscilloscope Trace (μV)</div>
                             <div class="card-controls" style="flex-wrap: wrap; gap: 6px;">
-                                <button class="btn-freeze" id="btn-freeze-stream" onclick="toggleFreezeStream()" title="Freeze / Pause Trace (Spacebar)">
+                                <button type="button" class="btn btn-tool" id="btn-stream-test" onclick="toggleTestBiopotentialStream()" style="font-size: 11px; padding: 4px 10px; border-color: var(--cyan); color: var(--cyan); display: inline-flex; align-items: center; gap: 6px;" title="Stream realistic 250 Hz 3-electrode biopotential signals (Alpha, Beta, Delta rhythms and sensor)">
+                                    <span id="icon-stream-test">⚡</span>
+                                    <span id="lbl-stream-test">STREAM TEST SIGNALS</span>
+                                </button>
+                                <button type="button" class="btn-freeze" id="btn-freeze-stream" onclick="toggleFreezeStream()" title="Freeze / Pause Trace (Spacebar)">
                                     <span id="lbl-freeze-text">⏸ FREEZE</span>
                                 </button>
-                                <button class="btn-icon" onclick="resetWaveformView()" title="Reset Buffer">⟳</button>
+                                <button type="button" class="btn-icon" onclick="resetWaveformView()" title="Reset Buffer">⟳</button>
                             </div>
                         </div>
 
                         <!-- Interactive Oscilloscope Toolbar -->
-                        <div class="oscilloscope-toolbar">
+                        <div class="oscilloscope-toolbar" style="flex-wrap: wrap; gap: 8px;">
                             <div class="control-group">
                                 <label>Sensitivity:</label>
-                                <button class="btn-scope-opt" id="btn-scale-25" onclick="setVoltageScale(25)">±25 μV</button>
-                                <button class="btn-scope-opt active" id="btn-scale-50" onclick="setVoltageScale(50)">±50 μV</button>
-                                <button class="btn-scope-opt" id="btn-scale-100" onclick="setVoltageScale(100)">±100 μV</button>
-                                <button class="btn-scope-opt" id="btn-scale-200" onclick="setVoltageScale(200)">±200 μV</button>
+                                <button type="button" class="btn-scope-opt" id="btn-scale-25" data-scale="25" onclick="setVoltageScale(25)">±25 μV</button>
+                                <button type="button" class="btn-scope-opt active" id="btn-scale-50" data-scale="50" onclick="setVoltageScale(50)">±50 μV</button>
+                                <button type="button" class="btn-scope-opt" id="btn-scale-100" data-scale="100" onclick="setVoltageScale(100)">±100 μV</button>
+                                <button type="button" class="btn-scope-opt" id="btn-scale-200" data-scale="200" onclick="setVoltageScale(200)">±200 μV</button>
+                            </div>
+                            <div class="control-group">
+                                <label>Channel Display:</label>
+                                <button type="button" class="btn-scope-opt active" id="btn-chan-eeg" data-channel="eeg" onclick="setOscilloscopeChannel('eeg')">Ch 1 (EEG)</button>
+                                <button type="button" class="btn-scope-opt" id="btn-chan-sensor" data-channel="sensor" onclick="setOscilloscopeChannel('sensor')">Ch 2 (Sensor)</button>
+                                <button type="button" class="btn-scope-opt" id="btn-chan-dual" data-channel="dual" onclick="setOscilloscopeChannel('dual')">Dual (EEG + Sensor)</button>
                             </div>
                             <div class="control-group" style="margin-left: auto;">
                                 <label>Timebase:</label>
-                                <button class="btn-scope-opt" id="btn-time-1" onclick="setTimebaseWindow(250, '1.0s')">1.0s</button>
-                                <button class="btn-scope-opt active" id="btn-time-2" onclick="setTimebaseWindow(500, '2.0s')">2.0s</button>
-                                <button class="btn-scope-opt" id="btn-time-5" onclick="setTimebaseWindow(1250, '5.0s')">5.0s</button>
+                                <button type="button" class="btn-scope-opt" id="btn-time-1" data-timebase="250" onclick="setTimebaseWindow(250, '1.0s')">1.0s</button>
+                                <button type="button" class="btn-scope-opt active" id="btn-time-2" data-timebase="500" onclick="setTimebaseWindow(500, '2.0s')">2.0s</button>
+                                <button type="button" class="btn-scope-opt" id="btn-time-5" data-timebase="1250" onclick="setTimebaseWindow(1250, '5.0s')">5.0s</button>
                             </div>
                         </div>
 
@@ -271,8 +298,24 @@
                             </div>
                         </div>
                         <div class="trace-legend">
-                            <span class="legend-item"><span class="legend-color" style="background: var(--cyan);"></span> Filtered Waveform</span>
-                            <span class="legend-item"><span class="legend-color" style="background: rgba(255,255,255,0.25);"></span> Raw Unfiltered Waveform</span>
+                            <span class="legend-item"><span class="legend-color" style="background: var(--cyan);"></span> Ch 1: Differential EEG (E1 - E2)</span>
+                            <span class="legend-item"><span class="legend-color" style="background: rgba(255,255,255,0.25);"></span> Raw Lead Unfiltered</span>
+                            <span class="legend-item"><span class="legend-color" style="background: #F59E0B;"></span> Ch 2: Auxiliary Sensor 1</span>
+                        </div>
+
+                        <!-- Interactive Session Timeline Markers Bar -->
+                        <div class="marker-timeline-bar" id="marker-timeline-bar">
+                            <div class="marker-timeline-header">
+                                <span class="marker-lbl">📌 SESSION EVENT MARKERS:</span>
+                                <button type="button" class="btn-marker-quick" onclick="addSessionMarker('Eyes Closed')">🙈 Eyes Closed</button>
+                                <button type="button" class="btn-marker-quick" onclick="addSessionMarker('Eyes Open')">👀 Eyes Open</button>
+                                <button type="button" class="btn-marker-quick" onclick="addSessionMarker('Cognitive Task')">🧮 Math Task</button>
+                                <button type="button" class="btn-marker-quick" onclick="addSessionMarker('Deep Breath')">🫁 Deep Breath</button>
+                                <button type="button" class="btn-marker-quick" onclick="promptCustomMarker()">➕ Custom Flag (Key: M)</button>
+                            </div>
+                            <div class="marker-timeline-track" id="marker-timeline-track">
+                                <span class="marker-empty-hint">No session event markers placed. Click tags above to flag stimuli.</span>
+                            </div>
                         </div>
 
                         <!-- Quick Physiological Simulation Presets -->
@@ -348,6 +391,10 @@
                             <div class="ratio-box">
                                 <div class="ratio-label">Engagement</div>
                                 <div class="ratio-value" id="val-eng">0.50</div>
+                            </div>
+                            <div class="ratio-box" title="Multi-Modal Fused Neuro-Autonomic Stress Index (EEG + Aux Sensor)">
+                                <div class="ratio-label">NASI (Autonomic)</div>
+                                <div class="ratio-value" id="val-nasi" style="color: var(--cyan);">0.45</div>
                             </div>
                         </div>
                     </div>
@@ -434,59 +481,220 @@
             </section>
 
             <!-- ============================================================= -->
-            <!-- 3. 10-20 SPATIAL TOPOGRAPHIC BRAIN HEATMAP SCREEN             -->
+            <!-- 3. 3-ELECTRODE & 1-SENSOR LEAD INSPECTION MONITOR             -->
             <!-- ============================================================= -->
             <section id="screen-topo-map" class="view-screen">
-                <div class="topo-layout">
-                    <!-- Topo Heatmap Canvas -->
-                    <div class="glass-card topo-card">
-                        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-                            <div>
-                                <div class="card-title">Continuous 2D Spatial Brain Potential (Shepard's IDW)</div>
-                                <span class="tag-pill">Inverse Distance Weighting</span>
+                <div style="display: flex; flex-direction: column; gap: 20px;">
+                    
+                    <!-- Top Status Cards: 3 Electrodes + 1 Sensor -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px;">
+                        
+                        <!-- Electrode 1: Active Lead -->
+                        <div class="glass-card" style="border-top: 3px solid var(--cyan);">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                                <div>
+                                    <span style="font-size: 11px; font-weight: 800; color: var(--cyan); letter-spacing: 0.5px;">ELECTRODE 1 (ACTIVE)</span>
+                                    <div style="font-size: 12px; color: var(--text-muted);">Scalp / Forehead (Signal Lead)</div>
+                                </div>
+                                <span class="badge-pass" id="lead-e1-qual">NOMINAL</span>
                             </div>
-                            <div style="display: flex; align-items: center; gap: 6px;">
-                                <label for="sel-topo-colormap" style="font-size: 11px; color: var(--text-muted); font-weight: 600;">Colormap:</label>
-                                <select id="sel-topo-colormap" class="topo-colormap-select" onchange="setTopoColormap(this.value)">
-                                    <option value="coolwarm">Cool-Warm (Clinical)</option>
-                                    <option value="viridis">Viridis (Perceptual)</option>
-                                    <option value="plasma">Plasma (High-Contrast)</option>
-                                    <option value="jet">Jet / Rainbow</option>
-                                </select>
+                            <div style="font-size: 26px; font-weight: 800; font-family: 'JetBrains Mono', monospace; color: var(--cyan); margin: 6px 0;" id="lead-e1-val">0.00 μV</div>
+                            <div style="background: rgba(0,0,0,0.3); border-radius: 4px; padding: 4px; margin-top: 8px;">
+                                <canvas id="spark-e1" width="240" height="42" style="width: 100%; height: 42px; display: block;"></canvas>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-dim); margin-top: 6px;">
+                                <span>Gain: 1.0x</span>
+                                <span>Target: Active EEG</span>
                             </div>
                         </div>
-                        <div class="topo-canvas-wrap" id="topo-canvas-container" style="position: relative;">
-                            <canvas id="topoCanvas" width="480" height="480"></canvas>
-                            <div id="topo-tooltip" class="topo-tooltip"></div>
+
+                        <!-- Electrode 2: Reference Lead -->
+                        <div class="glass-card" style="border-top: 3px solid var(--amber);">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                                <div>
+                                    <span style="font-size: 11px; font-weight: 800; color: var(--amber); letter-spacing: 0.5px;">ELECTRODE 2 (REFERENCE)</span>
+                                    <div style="font-size: 12px; color: var(--text-muted);">Earlobe / Mastoid (Ref Lead)</div>
+                                </div>
+                                <span class="badge-pass" id="lead-e2-qual">NOMINAL</span>
+                            </div>
+                            <div style="font-size: 26px; font-weight: 800; font-family: 'JetBrains Mono', monospace; color: var(--amber); margin: 6px 0;" id="lead-e2-val">0.00 μV</div>
+                            <div style="background: rgba(0,0,0,0.3); border-radius: 4px; padding: 4px; margin-top: 8px;">
+                                <canvas id="spark-e2" width="240" height="42" style="width: 100%; height: 42px; display: block;"></canvas>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-dim); margin-top: 6px;">
+                                <span>Inverting Input</span>
+                                <span>Baseline: Reference</span>
+                            </div>
                         </div>
-                        <div class="topo-colormap-legend">
-                            <span id="topo-legend-min">-30 μV (Low)</span>
-                            <div class="colormap-gradient-bar" id="topo-gradient-bar"></div>
-                            <span id="topo-legend-max">+30 μV (High)</span>
+
+                        <!-- Electrode 3: Ground / DRL Lead -->
+                        <div class="glass-card" style="border-top: 3px solid var(--emerald);">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                                <div>
+                                    <span style="font-size: 11px; font-weight: 800; color: var(--emerald); letter-spacing: 0.5px;">ELECTRODE 3 (GROUND)</span>
+                                    <div style="font-size: 12px; color: var(--text-muted);">Driven Right Leg (DRL / GND)</div>
+                                </div>
+                                <span class="badge-pass" id="lead-e3-qual">GROUNDED</span>
+                            </div>
+                            <div style="font-size: 26px; font-weight: 800; font-family: 'JetBrains Mono', monospace; color: var(--emerald); margin: 6px 0;" id="lead-e3-val">0.00 μV</div>
+                            <div style="padding: 10px; background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.2); border-radius: 4px; margin-top: 8px; font-size: 11px; color: var(--text-muted); line-height: 1.5;">
+                                Common Mode Rejection Ratio (CMRR): <strong>&gt; 96 dB</strong><br>
+                                Ground Loop Immunity: <strong>Active ISO Guard</strong>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-dim); margin-top: 6px;">
+                                <span>Impedance: &lt; 1.5 kΩ</span>
+                                <span>Status: Zero Reference</span>
+                            </div>
                         </div>
+
+                        <!-- Sensor 1: Auxiliary Sensor -->
+                        <div class="glass-card" style="border-top: 3px solid var(--rose);">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                                <div>
+                                    <span style="font-size: 11px; font-weight: 800; color: var(--rose); letter-spacing: 0.5px;">AUXILIARY SENSOR 1</span>
+                                    <div style="font-size: 12px; color: var(--text-muted);">Analog / Pulse / Motion Transducer</div>
+                                </div>
+                                <span class="badge-pass" id="sensor-s1-qual">STREAMING</span>
+                            </div>
+                            <div style="font-size: 26px; font-weight: 800; font-family: 'JetBrains Mono', monospace; color: var(--rose); margin: 6px 0;" id="sensor-s1-val">0.0 counts</div>
+                            <div style="background: rgba(0,0,0,0.3); border-radius: 4px; padding: 4px; margin-top: 8px;">
+                                <canvas id="spark-sensor" width="240" height="42" style="width: 100%; height: 42px; display: block;"></canvas>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-dim); margin-top: 6px;">
+                                <span>Channel: Aux Transducer</span>
+                                <span>Sample Rate: 250 Hz</span>
+                            </div>
+                        </div>
+
                     </div>
 
-                    <!-- Electrode Montage Table -->
-                    <div class="glass-card topo-table-card">
-                        <div class="card-header">
-                            <div class="card-title">10-20 Electrode Montage & Contact Impedance</div>
-                            <span class="tag-pill">&lt; 5 kΩ Clinical Threshold</span>
+                    <!-- Bottom Details: Differential Calculation & Physical Lead Diagram -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                        
+                        <!-- Differential Calculation & Real-Time Bio-Potential -->
+                        <div class="glass-card">
+                            <div class="card-header">
+                                <div>
+                                    <div class="card-title">Differential Bio-Potential Analysis</div>
+                                    <span class="tag-pill">V_EEG = Electrode 1 - Electrode 2</span>
+                                </div>
+                            </div>
+                            
+                            <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); border-radius: 6px; padding: 14px; margin-bottom: 14px;">
+                                <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Net Differential EEG (Forehead vs Earlobe)</div>
+                                <div style="display: flex; align-items: baseline; gap: 12px;">
+                                    <span style="font-size: 32px; font-weight: 900; font-family: 'JetBrains Mono', monospace; color: var(--cyan);" id="lead-diff-val">0.00 μV</span>
+                                    <span style="font-size: 12px; color: #10B981; font-weight: 600;">Differential Normal</span>
+                                </div>
+                            </div>
+
+                            <table class="medical-table">
+                                <thead>
+                                    <tr>
+                                        <th>Telemetry Metric</th>
+                                        <th>Active Value</th>
+                                        <th>Clinical Threshold</th>
+                                        <th>Integrity</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><strong>Common-Mode Noise (V_CM)</strong></td>
+                                        <td id="lead-cm-val" style="font-family: 'JetBrains Mono', monospace; color: var(--text-main);">0.00 μV</td>
+                                        <td>&lt; 5.0 μV</td>
+                                        <td><span class="badge-pass">OPTIMAL</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Signal-to-Noise Ratio (SNR)</strong></td>
+                                        <td id="lead-snr-val" style="font-family: 'JetBrains Mono', monospace; color: var(--cyan);">36.4 dB</td>
+                                        <td>&gt; 20 dB</td>
+                                        <td><span class="badge-pass">HIGH SNR</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Electrode 1 Contact</strong></td>
+                                        <td>Active Lead</td>
+                                        <td>&lt; 5.0 kΩ</td>
+                                        <td><span class="badge-pass">PASS</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Electrode 2 Contact</strong></td>
+                                        <td>Reference Lead</td>
+                                        <td>&lt; 5.0 kΩ</td>
+                                        <td><span class="badge-pass">PASS</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Electrode 3 Contact</strong></td>
+                                        <td>DRL Ground</td>
+                                        <td>&lt; 2.0 kΩ</td>
+                                        <td><span class="badge-pass">PASS</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
-                        <table class="medical-table">
-                            <thead>
-                                <tr>
-                                    <th>Electrode</th>
-                                    <th>Anatomical Region</th>
-                                    <th>Contact Impedance</th>
-                                    <th>Localized Voltage</th>
-                                    <th>Contact State</th>
-                                </tr>
-                            </thead>
-                            <tbody id="electrode-table-body">
-                                <!-- Injected dynamically by JS -->
-                            </tbody>
-                        </table>
+
+                        <!-- Physical 3-Lead Hardware Placement Diagram -->
+                        <div class="glass-card">
+                            <div class="card-header">
+                                <div>
+                                    <div class="card-title">Physical Hardware Connection Guide</div>
+                                    <span class="tag-pill">3 Electrodes + 1 Sensor Configuration</span>
+                                </div>
+                            </div>
+
+                            <div style="display: flex; gap: 16px; align-items: center; justify-content: center; padding: 10px 0;">
+                                <svg width="200" height="200" viewBox="0 0 220 220" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <!-- Head Outline -->
+                                    <circle cx="110" cy="110" r="75" stroke="#CBD5E1" stroke-width="2" fill="#F8FAFC" />
+                                    <!-- Nose indicator -->
+                                    <path d="M104 35 L110 22 L116 35" stroke="#94A3B8" stroke-width="2" fill="none" stroke-linejoin="round" />
+                                    <!-- Left Ear (Reference) -->
+                                    <path d="M35 95 C25 100, 25 120, 35 125" stroke="#94A3B8" stroke-width="2" fill="none" />
+                                    <!-- Right Ear (Ground) -->
+                                    <path d="M185 95 C195 100, 195 120, 185 125" stroke="#94A3B8" stroke-width="2" fill="none" />
+                                    
+                                    <!-- Electrode 1: Forehead / Active (Cyan) -->
+                                    <circle cx="110" cy="62" r="12" fill="#0EA5E9" stroke="#fff" stroke-width="2" />
+                                    <text x="110" y="66" fill="#fff" font-size="9" font-family="'JetBrains Mono', monospace" font-weight="bold" text-anchor="middle">E1</text>
+                                    
+                                    <!-- Electrode 2: Left Ear / Reference (Amber) -->
+                                    <circle cx="35" cy="110" r="12" fill="#F59E0B" stroke="#fff" stroke-width="2" />
+                                    <text x="35" y="114" fill="#fff" font-size="9" font-family="'JetBrains Mono', monospace" font-weight="bold" text-anchor="middle">E2</text>
+                                    
+                                    <!-- Electrode 3: Right Ear / Ground (Emerald) -->
+                                    <circle cx="185" cy="110" r="12" fill="#10B981" stroke="#fff" stroke-width="2" />
+                                    <text x="185" y="114" fill="#fff" font-size="9" font-family="'JetBrains Mono', monospace" font-weight="bold" text-anchor="middle">E3</text>
+                                    
+                                    <!-- Sensor 1: Auxiliary Sensor Icon (Rose) -->
+                                    <rect x="90" y="172" width="40" height="24" rx="6" fill="#F43F5E" stroke="#fff" stroke-width="2" />
+                                    <text x="110" y="188" fill="#fff" font-size="9" font-family="'JetBrains Mono', monospace" font-weight="bold" text-anchor="middle">S1</text>
+                                </svg>
+
+                                <div style="flex: 1; display: flex; flex-direction: column; gap: 8px; font-size: 11.5px;">
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <span style="width: 12px; height: 12px; border-radius: 50%; background: #0EA5E9; display: inline-block;"></span>
+                                        <div><strong>Electrode 1 (E1):</strong> Scalp/Forehead Active</div>
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <span style="width: 12px; height: 12px; border-radius: 50%; background: #F59E0B; display: inline-block;"></span>
+                                        <div><strong>Electrode 2 (E2):</strong> Mastoid/Earlobe Reference</div>
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <span style="width: 12px; height: 12px; border-radius: 50%; background: #10B981; display: inline-block;"></span>
+                                        <div><strong>Electrode 3 (E3):</strong> Ground / Driven Right Leg</div>
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <span style="width: 12px; height: 12px; border-radius: 3px; background: #F43F5E; display: inline-block;"></span>
+                                        <div><strong>Sensor 1 (S1):</strong> Auxiliary Transducer</div>
+                                    </div>
+                                    <div style="margin-top: 6px; padding: 8px; background: rgba(255,255,255,0.03); border-radius: 4px; font-size: 10.5px; color: var(--text-muted); line-height: 1.4;">
+                                        ESP32 Wi-Fi streams all 4 channels to UDP <code>192.168.29.155:5005</code> as <code>SAMPLE,e1,e2,e3,sensor</code>.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
+
                 </div>
             </section>
 
@@ -671,14 +879,22 @@
                             <div class="wifi-ip-sub" style="margin-top: 6px;">
                                 <strong>Connection Rule:</strong> Connect your ESP32 or wireless hardware to Wi-Fi network <code id="hw-wifi-ssid-code" style="color: var(--emerald); background: rgba(16,185,129,0.15); padding: 1px 5px; border-radius: 3px;">Netvennuma</code> and stream UDP datagrams to IP <code style="color: var(--cyan);">192.168.29.155</code> on port <code style="color: var(--amber);">5005</code>.
                             </div>
+                            <div class="wifi-ip-sub" style="margin-top: 6px; font-size: 11px; color: #94A3B8; background: rgba(255,255,255,0.02); padding: 6px 8px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.06);">
+                                <strong>3-Lead Payload Format:</strong> <code>SAMPLE,e1,e2,e3,sensor</code> or CSV <code>e1,e2,e3,sensor</code> (e.g. <code>16.5,2.1,0.0,512.0</code>).
+                                <br><span style="color: #F59E0B;">Windows Tip:</span> If streaming but packet count is 0, ensure your Wi-Fi network is set to <strong>Private</strong> in Windows Settings or run <code>scripts\setup_firewall.bat</code> as Administrator.
+                            </div>
                             <div class="wifi-ip-sub" id="hw-wifi-adapter-display" style="font-size: 10.5px; color: #64748B; margin-top: 4px;">
                                 Adapter: Realtek 8852BE-VT Wireless LAN WiFi 6 PCI-E NIC
                             </div>
 
-                            <div style="margin-top: 12px; display: flex; gap: 8px;">
-                                <button type="button" class="btn btn-primary" id="btn-test-udp" onclick="triggerTestUdp()" style="flex: 1; font-size: 11px; padding: 8px 12px; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+                            <div style="margin-top: 12px; display: flex; flex-wrap: wrap; gap: 8px;">
+                                <button type="button" class="btn btn-primary" id="btn-test-udp" onclick="triggerTestUdp()" style="flex: 1; min-width: 160px; font-size: 11px; padding: 8px 12px; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
                                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
-                                    TEST DIRECT WI-FI CONNECTION
+                                    TEST WI-FI SOCKET
+                                </button>
+                                <button type="button" class="btn btn-tool" id="btn-inject-3lead" onclick="injectThreeLeadTestPacket()" style="flex: 1; min-width: 170px; font-size: 11px; padding: 8px 12px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; border-color: var(--amber); color: var(--amber);" title="Inject a live 3-electrode and 1-sensor packet to test the real-time oscilloscope sweep">
+                                    <span>⚡</span>
+                                    INJECT 3-LEAD TEST SIGNAL
                                 </button>
                                 <button type="button" class="btn btn-tool" onclick="generateDiagnosticReport()" style="font-size: 11px; padding: 8px 12px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; border-color: var(--cyan); color: var(--cyan);" title="Run Comprehensive System & Hardware Diagnostics">
                                     <span>🩺</span>
@@ -715,13 +931,30 @@
                         </div>
 
                         <!-- Live Raw UDP Packet Monitor -->
-                        <div style="margin-top: 16px; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 4px; padding: 12px;">
+                        <div style="margin-top: 16px; background: #F8FAFC; border: 1px solid var(--border); border-radius: 4px; padding: 12px;">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                                 <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; color: var(--cyan); letter-spacing: 1px;">LIVE WI-FI PACKET MONITOR (PORT 5005)</span>
                                 <span style="font-size: 10px; color: #64748B;">Auto-refresh</span>
                             </div>
                             <div id="hw-packet-log" style="min-height: 70px; max-height: 120px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px;">
                                 <div style="color: #64748B; font-size: 11px; font-family: 'JetBrains Mono', monospace; padding: 8px; text-align: center;">Waiting for incoming UDP datagrams...</div>
+                            </div>
+                        </div>
+
+                        <!-- Direct USB WebSerial Telemetry Fallback -->
+                        <div style="margin-top: 16px; background: #FFFFFF; border: 1px solid var(--border); border-left: 3px solid var(--emerald); border-radius: 4px; padding: 14px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <div>
+                                    <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; color: var(--emerald); letter-spacing: 0.5px;">PLUG-AND-PLAY USB SERIAL STREAMING</span>
+                                    <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Direct USB connection via WebSerial API (Chrome / Edge) at 115200 baud</div>
+                                </div>
+                                <span class="badge-status-pill" id="hw-webserial-status">DISCONNECTED</span>
+                            </div>
+                            <div style="display: flex; gap: 10px; align-items: center; margin-top: 10px; flex-wrap: wrap;">
+                                <button type="button" class="btn btn-primary" id="btn-webserial-connect" onclick="toggleWebSerial()" style="font-size: 11px; padding: 8px 16px; display: inline-flex; align-items: center; gap: 6px;">
+                                    🔌 CONNECT ESP32 VIA USB
+                                </button>
+                                <span style="font-size: 11px; color: var(--text-muted);">Baud: <strong style="color: var(--cyan);">115200</strong> • Auto-parsing 3-Lead &amp; Sensor</span>
                             </div>
                         </div>
                     </div>
@@ -843,11 +1076,11 @@
                     <div class="card-header">
                         <div class="card-title">Session Telemetry Archive & Clinical Data Export</div>
                         <div class="card-controls">
-                            <a href="/api/export/csv" class="btn" download style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+                            <a href="/api/export/csv" id="btn-export-csv" class="btn" download style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
                                 Export Live CSV
                             </a>
-                            <a href="/api/export/json" class="btn" download style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+                            <a href="/api/export/json" id="btn-export-json" class="btn" download style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
                                 Export Live JSON
                             </a>
@@ -997,26 +1230,26 @@
                         </div>
 
                         <!-- Explainable AI (XAI) Saliency & Electrophysiological Feature Attribution -->
-                        <div class="report-narrative-box" id="xai-saliency-box" style="margin-top: 12px; border-left: 3px solid var(--purple); background: rgba(168, 85, 247, 0.04);">
-                            <div class="narrative-title" style="color: var(--purple); font-weight: 700; margin-bottom: 4px;">Explainable AI (XAI) Saliency & Feature Attribution (FDA GMLP):</div>
+                        <div class="report-narrative-box" id="xai-saliency-box" style="margin-top: 12px; border-left: 3px solid var(--cyan); background: rgba(14, 165, 233, 0.04);">
+                            <div class="narrative-title" style="color: var(--cyan); font-weight: 700; margin-bottom: 4px;">Explainable AI (XAI) Saliency & Feature Attribution (FDA GMLP):</div>
                             <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 8px;">
                                 Pre-softmax target-logit gradient sensitivity (&part;Logit / &part;Feature) identifying key electrophysiological markers driving the 443,972-parameter DNN prediction:
                             </div>
                             <div id="xai-saliency-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; font-size: 11px;">
-                                <div style="background: rgba(168, 85, 247, 0.08); border: 1px solid rgba(168, 85, 247, 0.25); border-radius: 4px; padding: 6px 10px;">
-                                    <strong style="color: var(--purple);">Rank 1:</strong> Stress Index (SSI)<br>
+                                <div style="background: rgba(14, 165, 233, 0.08); border: 1px solid rgba(14, 165, 233, 0.25); border-radius: 4px; padding: 6px 10px;">
+                                    <strong style="color: var(--cyan);">Rank 1:</strong> Stress Index (SSI)<br>
                                     <span style="color: var(--text-muted);">Attribution: <strong>38.4%</strong> (Magnitude: 0.842)</span>
                                 </div>
-                                <div style="background: rgba(168, 85, 247, 0.08); border: 1px solid rgba(168, 85, 247, 0.25); border-radius: 4px; padding: 6px 10px;">
-                                    <strong style="color: var(--purple);">Rank 2:</strong> Theta/Beta Ratio (TBR)<br>
+                                <div style="background: rgba(14, 165, 233, 0.08); border: 1px solid rgba(14, 165, 233, 0.25); border-radius: 4px; padding: 6px 10px;">
+                                    <strong style="color: var(--cyan);">Rank 2:</strong> Theta/Beta Ratio (TBR)<br>
                                     <span style="color: var(--text-muted);">Attribution: <strong>27.1%</strong> (Magnitude: 0.594)</span>
                                 </div>
-                                <div style="background: rgba(168, 85, 247, 0.08); border: 1px solid rgba(168, 85, 247, 0.25); border-radius: 4px; padding: 6px 10px;">
-                                    <strong style="color: var(--purple);">Rank 3:</strong> Beta Band Power<br>
+                                <div style="background: rgba(14, 165, 233, 0.08); border: 1px solid rgba(14, 165, 233, 0.25); border-radius: 4px; padding: 6px 10px;">
+                                    <strong style="color: var(--cyan);">Rank 3:</strong> Beta Band Power<br>
                                     <span style="color: var(--text-muted);">Attribution: <strong>19.8%</strong> (Magnitude: 0.435)</span>
                                 </div>
-                                <div style="background: rgba(168, 85, 247, 0.08); border: 1px solid rgba(168, 85, 247, 0.25); border-radius: 4px; padding: 6px 10px;">
-                                    <strong style="color: var(--purple);">Rank 4:</strong> Alpha Band Power<br>
+                                <div style="background: rgba(14, 165, 233, 0.08); border: 1px solid rgba(14, 165, 233, 0.25); border-radius: 4px; padding: 6px 10px;">
+                                    <strong style="color: var(--cyan);">Rank 4:</strong> Alpha Band Power<br>
                                     <span style="color: var(--text-muted);">Attribution: <strong>14.7%</strong> (Magnitude: 0.322)</span>
                                 </div>
                             </div>
@@ -1028,50 +1261,48 @@
         </div>
     </main>
 
-    <!-- Clinical Authentication Modal (Name, Email, Mobile, OTP) -->
+    <!-- Clinical Authentication Modal (Direct Clinician Sign-In) -->
     <div id="auth-modal" style="display: none;">
         <div class="auth-card">
             <div class="auth-header">
                 <div class="auth-badge">CLINICAL ACCESS GATEWAY</div>
-                <h2 class="auth-title">Researcher Authentication</h2>
-                <div class="auth-subtitle">Verify your clinical credentials via One-Time Password (OTP) to establish direct laptop Wi-Fi telemetry.</div>
+                <h2 class="auth-title">Clinician Authentication</h2>
+                <div class="auth-subtitle">Sign in directly to access the EEG cognitive analytics workstation.</div>
             </div>
 
-            <form class="auth-form" id="auth-form" onsubmit="event.preventDefault(); submitVerifyOTP();">
+            <form class="auth-form" id="auth-form" onsubmit="event.preventDefault(); submitDirectSignIn();">
                 <div class="auth-field">
-                    <label class="auth-label" for="auth-name">FULL NAME</label>
-                    <input type="text" id="auth-name" class="auth-input" placeholder="Dr. Jane Doe" required value="Dr. Jane Doe">
+                    <label class="auth-label" for="auth-name">CLINICIAN NAME</label>
+                    <input type="text" id="auth-name" class="auth-input" placeholder="Dr. Neuro, MD" required value="Dr. Neuro, MD">
+                </div>
+
+                <div class="auth-field">
+                    <label class="auth-label" for="auth-role">PROFESSIONAL ROLE</label>
+                    <select id="auth-role" class="auth-input" style="background: #FFFFFF; color: #0F172A; border: 1px solid #CBD5E1;">
+                        <option value="Lead Clinical Neurologist" selected>Lead Clinical Neurologist</option>
+                        <option value="Cognitive Neuroscientist">Cognitive Neuroscientist</option>
+                        <option value="Biomedical Researcher">Biomedical Researcher</option>
+                        <option value="Clinical Neurophysiology Technologist">Clinical Neurophysiology Technologist</option>
+                    </select>
                 </div>
 
                 <div class="auth-field">
                     <label class="auth-label" for="auth-email">INSTITUTIONAL EMAIL</label>
-                    <input type="email" id="auth-email" class="auth-input" placeholder="jane.doe@hospital.org" required value="jane.doe@hospital.org">
+                    <input type="email" id="auth-email" class="auth-input" placeholder="dr.neuro@neurosim.local" required value="dr.neuro@neurosim.local">
                 </div>
 
                 <div class="auth-field">
-                    <label class="auth-label" for="auth-mobile">MOBILE NUMBER</label>
-                    <div class="auth-otp-row">
-                        <input type="tel" id="auth-mobile" class="auth-input" style="flex: 1;" placeholder="+1 555-0199" required value="+15551234567">
-                        <button type="button" class="btn btn-primary btn-auth-send" id="btn-send-otp" onclick="requestOTP()">
-                            Send OTP
-                        </button>
-                    </div>
-                    <div class="auth-timer" id="auth-timer-text" style="display: none;">Resend OTP in <span id="auth-countdown">30</span>s</div>
+                    <label class="auth-label" for="auth-patient-id">PATIENT IDENTIFIER</label>
+                    <input type="text" id="auth-patient-id" class="auth-input" placeholder="PT-2026-001" value="PT-2026-001">
                 </div>
 
-                <div class="auth-field" id="field-otp-wrap" style="display: none;">
-                    <label class="auth-label" for="auth-otp">6-DIGIT OTP VERIFICATION CODE</label>
-                    <input type="text" id="auth-otp" class="auth-input auth-otp-input" maxlength="6" placeholder="------" autocomplete="one-time-code">
-                    <div style="font-size: 11px; color: var(--cyan); margin-top: 4px;" id="auth-dev-otp-hint"></div>
-                </div>
-
-                <button type="submit" class="btn btn-primary btn-auth-submit" id="btn-verify-otp" style="display: none;">
-                    Verify & Connect to Laptop Wi-Fi
+                <button type="submit" class="btn btn-primary btn-auth-submit" id="btn-direct-signin" style="width: 100%; margin-top: 8px;">
+                    ENTER WORKSTATION
                 </button>
             </form>
 
             <div class="auth-footer">
-                Compliant with Clinical Research Protocols. View our <a href="/privacy.html" target="_blank">Privacy Policy</a> & <a href="/terms.html" target="_blank">Terms of Service</a>.
+                Compliant with Clinical Research Protocols. Direct local session access authenticated for biopotential telemetry.
             </div>
         </div>
     </div>
@@ -1091,7 +1322,7 @@
     <div id="toast-container"></div>
 
     <!-- Pre-flight Quality Assurance & Electrode Impedance Modal (IEC 60601-2-26) -->
-    <div id="impedance-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(7, 11, 20, 0.88); backdrop-filter: blur(8px); z-index: 9999; align-items: center; justify-content: center;">
+    <div id="impedance-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.45); backdrop-filter: blur(8px); z-index: 9999; align-items: center; justify-content: center;">
         <div class="auth-card" style="max-width: 620px; width: 90%;">
             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
                 <div>
@@ -1110,7 +1341,7 @@
                 <!-- Filled dynamically by JavaScript with 8 channels (Fp1, Fp2, C3, C4, P3, P4, O1, O2) -->
             </div>
 
-            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 14px;">
                 <button type="button" class="btn" onclick="refreshImpedance()" style="font-size: 12px;">Re-check Leads</button>
                 <div style="display: flex; gap: 8px;">
                     <button type="button" class="btn" id="btn-override-impedance" onclick="promptClinicalOverride()" style="font-size: 12px; border-color: var(--amber); color: var(--amber);">Physician Override</button>
@@ -1126,12 +1357,12 @@
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
                 <div>
                     <span class="auth-badge">CLINICAL OPERATING AID</span>
-                    <h2 style="font-size: 18px; font-weight: 700; color: #fff; margin: 4px 0 0 0;">Keyboard Shortcuts &amp; Quick Tour</h2>
+                    <h2 style="font-size: 18px; font-weight: 700; color: #0F172A; margin: 4px 0 0 0;">Keyboard Shortcuts &amp; Quick Tour</h2>
                 </div>
                 <button type="button" onclick="closeHelpModal()" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 22px; padding: 4px 8px;">✕</button>
             </div>
 
-            <div class="shortcuts-tabs" style="display: flex; gap: 8px; margin-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 8px;">
+            <div class="shortcuts-tabs" style="display: flex; gap: 8px; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
                 <button class="btn btn-primary" id="btn-tab-shortcuts" onclick="switchHelpTab('shortcuts')" style="font-size: 11px; padding: 6px 14px;">Shortcuts Reference</button>
                 <button class="btn" id="btn-tab-tour" onclick="switchHelpTab('tour')" style="font-size: 11px; padding: 6px 14px;">Workstation Quick Tour</button>
             </div>
@@ -1141,47 +1372,168 @@
                 <div class="shortcuts-grid">
                     <div class="shortcut-item"><kbd class="kbd-cap">Space</kbd><span>Freeze / Resume Live Signal Stream</span></div>
                     <div class="shortcut-item"><kbd class="kbd-cap">R</kbd><span>Start / Stop Clinical Session Recording</span></div>
+                    <div class="shortcut-item"><kbd class="kbd-cap">U</kbd><span>Connect / Disconnect USB Serial (115200 Baud)</span></div>
+                    <div class="shortcut-item"><kbd class="kbd-cap">C</kbd><span>Open 15-Second Guided Baseline Calibration</span></div>
+                    <div class="shortcut-item"><kbd class="kbd-cap">M</kbd><span>Place Custom Session Timeline Marker Flag</span></div>
                     <div class="shortcut-item"><kbd class="kbd-cap">1 - 8</kbd><span>Direct Switch Screen Tabs (1=Live ... 8=Report)</span></div>
-                    <div class="shortcut-item"><kbd class="kbd-cap">B</kbd><span>Toggle Biofeedback Audio Synthesizer</span></div>
-                    <div class="shortcut-item"><kbd class="kbd-cap">N</kbd><span>Toggle 50Hz Notch Filter ON / OFF</span></div>
-                    <div class="shortcut-item"><kbd class="kbd-cap">A</kbd><span>Auto-Scale Oscilloscope Sensitivity</span></div>
+                    <div class="shortcut-item"><kbd class="kbd-cap">B</kbd><span>Toggle 432 Hz Biofeedback Harmonic Drone</span></div>
+                    <div class="shortcut-item"><kbd class="kbd-cap">N</kbd><span>Cycle 50Hz / 60Hz Powerline Notch Filter</span></div>
+                    <div class="shortcut-item"><kbd class="kbd-cap">A</kbd><span>Toggle Adaptive Ocular & Muscle Artifacts</span></div>
                     <div class="shortcut-item"><kbd class="kbd-cap">I</kbd><span>Open IEC 60601-2-26 Lead Impedance QA</span></div>
-                    <div class="shortcut-item"><kbd class="kbd-cap">P</kbd><span>Print / Export Current Session PDF</span></div>
+                    <div class="shortcut-item"><kbd class="kbd-cap">P</kbd><span>Print / Export Certified Session PDF Report</span></div>
                     <div class="shortcut-item"><kbd class="kbd-cap">Esc</kbd><span>Close Any Open Modal / Overlay</span></div>
-                    <div class="shortcut-item"><kbd class="kbd-cap">?</kbd><span>Toggle This Shortcuts Reference</span></div>
                 </div>
             </div>
 
             <!-- Panel 2: 4-Step Quick Tour -->
             <div id="help-panel-tour" style="display: none;">
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                    <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; padding: 12px;">
+                    <div style="background: #F8FAFC; border: 1px solid var(--border); border-radius: 6px; padding: 12px;">
                         <strong style="color: var(--cyan); display: block; margin-bottom: 4px; font-size: 12px;">1. Connect Hardware / Simulator</strong>
-                        <p style="font-size: 11px; color: var(--text-muted); line-height: 1.5; margin: 0;">Navigate to <strong>Wi-Fi Hardware</strong> to view your laptop IP address for ESP32 streaming on UDP 5005, or click <strong>Activate Demo Simulator</strong> for instant physiological synthesis.</p>
+                        <p style="font-size: 11px; color: var(--text-muted); line-height: 1.5; margin: 0;">Navigate to <strong>Wi-Fi Hardware</strong> to view your laptop IP address for ESP32 streaming on UDP 5005, or plug in via USB and click <strong>USB SERIAL</strong> (Key: U).</p>
                     </div>
-                    <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; padding: 12px;">
-                        <strong style="color: var(--emerald); display: block; margin-bottom: 4px; font-size: 12px;">2. Lead Impedance Check</strong>
-                        <p style="font-size: 11px; color: var(--text-muted); line-height: 1.5; margin: 0;">Press <kbd class="kbd-cap" style="padding: 1px 4px; font-size: 9px;">I</kbd> or click <strong>START SESSION</strong> to verify IEC 60601-2-26 lead impedance (&lt;5 kΩ) before recording baseline or trial telemetry.</p>
+                    <div style="background: #F8FAFC; border: 1px solid var(--border); border-radius: 6px; padding: 12px;">
+                        <strong style="color: var(--emerald); display: block; margin-bottom: 4px; font-size: 12px;">2. Lead Impedance &amp; Calibration</strong>
+                        <p style="font-size: 11px; color: var(--text-muted); line-height: 1.5; margin: 0;">Press <kbd class="kbd-cap" style="padding: 1px 4px; font-size: 9px;">I</kbd> to inspect contact impedances and run the 15-second guided wizard (<kbd class="kbd-cap" style="padding: 1px 4px; font-size: 9px;">C</kbd>) to calibrate your Individual Alpha Frequency (IAF).</p>
                     </div>
-                    <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; padding: 12px;">
-                        <strong style="color: var(--amber); display: block; margin-bottom: 4px; font-size: 12px;">3. Monitor Real-Time DSP</strong>
-                        <p style="font-size: 11px; color: var(--text-muted); line-height: 1.5; margin: 0;">Use the <strong>Live Oscilloscope</strong> to freeze (<kbd class="kbd-cap" style="padding: 1px 4px; font-size: 9px;">Space</kbd>), adjust &plusmn;25–200 μV sensitivity, inspect the 10-20 Brain Map with colormap toggles, and track live cognitive classification.</p>
+                    <div style="background: #F8FAFC; border: 1px solid var(--border); border-radius: 6px; padding: 12px;">
+                        <strong style="color: var(--amber); display: block; margin-bottom: 4px; font-size: 12px;">3. Monitor Real-Time DSP &amp; Markers</strong>
+                        <p style="font-size: 11px; color: var(--text-muted); line-height: 1.5; margin: 0;">Use the <strong>Live Oscilloscope</strong> to freeze (<kbd class="kbd-cap" style="padding: 1px 4px; font-size: 9px;">Space</kbd>), flag cognitive events (<kbd class="kbd-cap" style="padding: 1px 4px; font-size: 9px;">M</kbd>), and listen to the 432 Hz alpha harmonic drone (<kbd class="kbd-cap" style="padding: 1px 4px; font-size: 9px;">B</kbd>).</p>
                     </div>
-                    <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; padding: 12px;">
+                    <div style="background: #F8FAFC; border: 1px solid var(--border); border-radius: 6px; padding: 12px;">
                         <strong style="color: var(--rose); display: block; margin-bottom: 4px; font-size: 12px;">4. Export Certified Medical Data</strong>
-                        <p style="font-size: 11px; color: var(--text-muted); line-height: 1.5; margin: 0;">Export sessions to <strong>Clinical PDF</strong>, binary <strong>EDF+</strong> (EEG format), or <strong>HL7/FHIR R4 DiagnosticReport</strong> bundle with 21 CFR Part 11 SHA-256 audit trails.</p>
+                        <p style="font-size: 11px; color: var(--text-muted); line-height: 1.5; margin: 0;">Export sessions to <strong>Clinical PDF</strong> with chronological markers, binary <strong>EDF+</strong>, or <strong>HL7/FHIR R4 DiagnosticReport</strong> bundle with 21 CFR Part 11 audit trails.</p>
                     </div>
                 </div>
             </div>
 
-            <div style="display: flex; justify-content: flex-end; margin-top: 18px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 12px;">
+            <div style="display: flex; justify-content: flex-end; margin-top: 18px; border-top: 1px solid var(--border); padding-top: 12px;">
                 <button type="button" class="btn btn-primary" onclick="closeHelpModal()" style="font-size: 12px; padding: 6px 16px;">Got It</button>
             </div>
         </div>
     </div>
 
+    <!-- 15-Second Guided Baseline Calibration Modal (IAF & Cognitive Reference) -->
+    <div id="calibration-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.45); backdrop-filter: blur(8px); z-index: 9999; align-items: center; justify-content: center;">
+        <div class="modal-card" style="max-width: 520px; padding: 28px; text-align: center;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 20px;">🎯</span>
+                    <strong style="font-size: 16px; font-weight: 800; color: var(--text-main);">15-SECOND BASELINE CALIBRATION</strong>
+                </div>
+                <button type="button" onclick="closeBaselineCalibrationModal()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: var(--text-muted);">✕</button>
+            </div>
+
+            <!-- Animated Countdown Ring -->
+            <div style="position: relative; width: 130px; height: 130px; margin: 16px auto;">
+                <svg width="130" height="130" viewBox="0 0 130 130">
+                    <circle cx="65" cy="65" r="60" stroke="#E2E8F0" stroke-width="8" fill="none" />
+                    <circle id="cal-progress-ring" cx="65" cy="65" r="60" stroke="var(--cyan)" stroke-width="8" fill="none" stroke-dasharray="377" stroke-dashoffset="0" stroke-linecap="round" style="transform: rotate(-90deg); transform-origin: 50% 50%; transition: stroke-dashoffset 1s linear;" />
+                </svg>
+                <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center;">
+                    <div id="cal-countdown" style="font-size: 34px; font-weight: 900; color: var(--cyan); font-family: 'JetBrains Mono', monospace;">15</div>
+                    <div style="font-size: 9.5px; font-weight: 700; color: var(--text-muted);">SECONDS</div>
+                </div>
+            </div>
+
+            <div id="cal-phase-title" style="font-size: 15px; font-weight: 800; color: var(--text-main); margin-top: 8px;">Ready to Begin</div>
+            <div id="cal-phase-desc" style="font-size: 12px; color: var(--text-muted); line-height: 1.5; margin-top: 6px; padding: 0 16px;">
+                Click "Start Calibration" below. You will be guided through 7 seconds of eyes-closed rest followed by 8 seconds of calm fixation.
+            </div>
+
+            <!-- Results Card (Hidden until complete) -->
+            <div id="cal-results-card" style="display: none; margin-top: 16px; background: #F8FAFC; border: 1px solid var(--border); border-radius: 6px; padding: 14px; text-align: left;">
+                <div style="font-size: 11px; font-weight: 700; color: var(--emerald); margin-bottom: 6px;">CALIBRATION METRICS COMPUTED</div>
+                <div style="display: flex; justify-content: space-between; font-size: 12px; padding: 3px 0;">
+                    <span>Individual Alpha Frequency (IAF):</span>
+                    <strong id="cal-iaf-val" style="color: var(--cyan);">10.0 Hz</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 12px; padding: 3px 0;">
+                    <span>Personalized Theta Range:</span>
+                    <strong id="cal-theta-bounds">4.0 - 8.0 Hz</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 12px; padding: 3px 0;">
+                    <span>Personalized Alpha Range:</span>
+                    <strong id="cal-alpha-bounds">8.0 - 12.0 Hz</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 12px; padding: 3px 0;">
+                    <span>Personalized Beta Range:</span>
+                    <strong id="cal-beta-bounds">12.0 - 30.0 Hz</strong>
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: center; gap: 10px; margin-top: 20px;">
+                <button type="button" class="btn btn-primary" id="btn-start-cal" onclick="startBaselineCalibration()" style="font-size: 12px; padding: 8px 20px;">
+                    ▶ START CALIBRATION
+                </button>
+                <button type="button" class="btn" id="btn-cancel-cal" onclick="closeBaselineCalibrationModal()" style="font-size: 12px; padding: 8px 18px;">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cloud Backend Settings Modal (Railway / Supabase / Vercel API Gateway) -->
+    <div id="cloud-backend-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.45); backdrop-filter: blur(8px); z-index: 9999; align-items: center; justify-content: center;">
+        <div class="modal-card" style="max-width: 540px; padding: 26px; text-align: left;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 20px;">☁️</span>
+                    <strong style="font-size: 15px; font-weight: 800; color: var(--text-main);">CLOUD BACKEND &amp; API SETTINGS</strong>
+                </div>
+                <button type="button" onclick="closeCloudBackendModal()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: var(--text-muted);">✕</button>
+            </div>
+
+            <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5; margin-bottom: 14px;">
+                Configure the backend server URL (e.g. Railway or self-hosted container). When hosted on Vercel, requests route to this endpoint with automated WebSocket telemetry and PostgreSQL sync.
+            </p>
+
+            <div style="margin-bottom: 14px;">
+                <label style="display: block; font-size: 11px; font-weight: 700; color: var(--text-main); margin-bottom: 6px;">BACKEND API &amp; WEBSOCKET URL</label>
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" id="inp-cloud-backend-url" placeholder="https://neurosim-production.up.railway.app" style="flex: 1; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-size: 12px; background: #FFFFFF; color: var(--text-main);">
+                    <button type="button" class="btn btn-primary" onclick="testCloudBackendConnection()" id="btn-test-cloud-backend" style="padding: 8px 14px; font-size: 11px; font-weight: 700;">
+                        TEST PING
+                    </button>
+                </div>
+                <div style="font-size: 10.5px; color: #64748B; margin-top: 4px;">
+                    Leave blank to use current origin (default for local runs or Vercel rewrites).
+                </div>
+            </div>
+
+            <div id="cloud-backend-status-card" style="display: none; margin-bottom: 16px; background: #F8FAFC; border: 1px solid var(--border); border-radius: 6px; padding: 12px; font-size: 12px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                    <span style="font-weight: 700; color: var(--text-main);">Connection Status:</span>
+                    <span id="cloud-backend-ping-badge" style="font-weight: 700; color: var(--emerald);">CONNECTED</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted); padding: 2px 0;">
+                    <span>Latency:</span>
+                    <strong id="cloud-backend-latency" style="font-family: 'JetBrains Mono', monospace; color: var(--text-main);">42 ms</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted); padding: 2px 0;">
+                    <span>Server Version:</span>
+                    <strong id="cloud-backend-version" style="font-family: 'JetBrains Mono', monospace; color: var(--text-main);">2.5.5</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted); padding: 2px 0;">
+                    <span>Database Engine:</span>
+                    <strong id="cloud-backend-db" style="font-family: 'JetBrains Mono', monospace; color: var(--text-main);">PostgreSQL (Supabase)</strong>
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 18px; border-top: 1px solid var(--border); padding-top: 12px;">
+                <button type="button" class="btn btn-secondary" onclick="resetCloudBackendUrl()" style="font-size: 11px; padding: 6px 12px;">
+                    Reset to Default
+                </button>
+                <div style="display: flex; gap: 8px;">
+                    <button type="button" class="btn" onclick="closeCloudBackendModal()" style="font-size: 11px; padding: 6px 14px;">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="saveCloudBackendUrl()" style="font-size: 11px; padding: 6px 16px;">Save &amp; Connect</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts -->
-    <script src="pdf_export.js"></script>
-    <script src="app.js"></script>
+    <script src="pdf_export.js?v=2.5.5"></script>
+    <script src="app.js?v=2.5.5"></script>
 </body>
 </html>

@@ -1,0 +1,9 @@
+# NeuroSim : Production Cloud Server Dependencies
+# Excludes heavy desktop GUI libraries (PySide6, pyqtgraph) for fast container builds and minimal RAM usage.
+websockets>=12.0
+numpy>=1.24.0
+scipy>=1.10.0
+scikit-learn>=1.2.0
+joblib>=1.2.0
+pyserial>=3.5
+psycopg2-binary>=2.9.9

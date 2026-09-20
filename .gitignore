@@ -31,13 +31,17 @@ htmlcov/
 *.db-wal
 db/
 logs/
+reports/*.pdf
 
 # OS Generated Files
 .DS_Store
 Thumbs.db
 ehthumbs.db
 
-# User Specific Settings
+# User Specific Settings & Secrets
+.env
+.env.local
+.env.*.local
 .vscode/
 .idea/
 *.swp

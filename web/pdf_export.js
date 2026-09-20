@@ -20,7 +20,10 @@ async function fetchAIClinicalReport(metrics) {
             stress_index: metrics.stressIndex || 0.45
         });
 
-        const res = await fetch(`/api/ai-report?${params.toString()}`);
+        const endpoint = (typeof BACKEND_CONFIG !== 'undefined' && BACKEND_CONFIG.apiEndpoint)
+            ? BACKEND_CONFIG.apiEndpoint(`/api/ai-report?${params.toString()}`)
+            : `/api/ai-report?${params.toString()}`;
+        const res = await fetch(endpoint);
         if (res.ok) {
             const data = await res.json();
             if (data.success && data.report) {
@@ -96,6 +99,9 @@ async function exportCurrentSessionPDF() {
         theta: (typeof currentBands !== 'undefined') ? currentBands.theta.toFixed(1) : "25.0",
         alpha: (typeof currentBands !== 'undefined') ? currentBands.alpha.toFixed(1) : "25.0",
         beta: (typeof currentBands !== 'undefined') ? currentBands.beta.toFixed(1) : "25.0",
+        nasi: (typeof currentMetrics !== 'undefined' && currentMetrics.nasi !== undefined) ? Number(currentMetrics.nasi).toFixed(2) : "0.45",
+        iaf: (typeof userIAF !== 'undefined') ? Number(userIAF).toFixed(1) : "10.0",
+        markers: (typeof sessionMarkers !== 'undefined' && Array.isArray(sessionMarkers)) ? [...sessionMarkers] : [],
         source: (typeof isHardwareActive !== 'undefined' && isHardwareActive) ? "ESP32 Wi-Fi Hardware (Direct UDP Port 5005)" : "Synthetic Electrophysiological Stream"
     };
 
@@ -165,8 +171,8 @@ async function updateReportScreenPreview() {
             { rank: 4, feature: "Alpha Band Power", attribution_pct: 14.7, sensitivity_magnitude: 0.322 }
         ];
         xaiList.innerHTML = topFeatures.map(item => `
-            <div style="background: rgba(168, 85, 247, 0.08); border: 1px solid rgba(168, 85, 247, 0.25); border-radius: 4px; padding: 6px 10px;">
-                <strong style="color: var(--purple);">Rank ${item.rank}:</strong> ${item.feature}<br>
+            <div style="background: rgba(14, 165, 233, 0.08); border: 1px solid rgba(14, 165, 233, 0.25); border-radius: 4px; padding: 6px 10px;">
+                <strong style="color: var(--cyan);">Rank ${item.rank}:</strong> ${item.feature}<br>
                 <span style="color: var(--text-muted);">Attribution: <strong>${item.attribution_pct}%</strong> (Sensitivity: ${Number(item.sensitivity_magnitude).toFixed(3)})</span>
             </div>
         `).join('');
@@ -386,12 +392,38 @@ function generatePrintableReport(data) {
                     { rank: 4, feature: "Alpha Band Power", attribution_pct: 14.7, sensitivity_magnitude: 0.322 }
                 ]).map(f => `
                     <tr>
-                        <td style="text-align: center; font-weight: bold; color: #7C3AED;">#${f.rank}</td>
+                        <td style="text-align: center; font-weight: bold; color: #0284C7;">#${f.rank}</td>
                         <td><strong>${f.feature}</strong></td>
                         <td style="font-family: monospace; text-align: center;">${Number(f.sensitivity_magnitude).toFixed(4)}</td>
                         <td style="text-align: right; font-weight: bold; color: #0284C7;">${f.attribution_pct}%</td>
                     </tr>
                 `).join('')}
+            </tbody>
+        </table>
+
+        <div class="section-title">5. Chronological Session Timeline & Event Markers</div>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th style="width: 15%;">Time Offset</th>
+                    <th style="width: 30%;">Marker Label</th>
+                    <th style="width: 25%;">Sample Index</th>
+                    <th style="width: 30%;">Cognitive Load State</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${(data.markers && data.markers.length > 0) ? data.markers.map(m => `
+                    <tr>
+                        <td><strong>+${m.timeSec || 0}s</strong></td>
+                        <td><span style="display:inline-flex;align-items:center;gap:4px;color:#0284C7;font-weight:700;">📌 ${m.label}</span></td>
+                        <td style="font-family: monospace; color: #64748B;">Sample #${m.sampleIndex || 0}</td>
+                        <td><strong style="color: ${m.loadState === 'HIGH' ? '#DC2626' : (m.loadState === 'LOW' ? '#059669' : '#0284C7')};">${m.loadState || 'MODERATE'}</strong></td>
+                    </tr>
+                `).join('') : `
+                    <tr>
+                        <td colspan="4" style="text-align: center; color: #64748B; padding: 12px;">No manual event markers flagged during this acquisition interval.</td>
+                    </tr>
+                `}
             </tbody>
         </table>
 

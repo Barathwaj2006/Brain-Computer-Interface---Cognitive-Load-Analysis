@@ -1,15 +1,19 @@
 {
-  "name": "NEUROSIM : Scientific EEG Cognitive Analytics Platform",
+  "name": "NEUROSIM : Clinical EEG Cognitive Workstation",
   "short_name": "NeuroSim",
+  "description": "Real-time 3-Lead EEG Telemetry, Cognitive Load Analytics & Diagnostic Biofeedback",
   "start_url": "index.html",
   "display": "standalone",
-  "background_color": "#070B14",
-  "theme_color": "#070B14",
+  "orientation": "any",
+  "background_color": "#F8FAFC",
+  "theme_color": "#FFFFFF",
   "icons": [
     {
       "src": "favicon.svg",
       "sizes": "any",
-      "type": "image/svg+xml"
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
     }
-  ]
+  ],
+  "categories": ["medical", "health", "utilities"]
 }
