@@ -346,55 +346,119 @@
                             </div>
                         </div>
 
-                        <!-- Patient Biopotential Telemetry Controls (Discreet Medical Workstation Power Interface) -->
-                        <div class="patient-telemetry-control-bar" id="patient-telemetry-bar">
-                            <div class="telemetry-power-cluster">
-                                <span class="telemetry-label">PATIENT TELEMETRY:</span>
-                                <button type="button" class="btn-telemetry-power" id="btn-telemetry-power" onclick="togglePatientTelemetryFeed()" aria-label="Toggle Patient Telemetry Feed" title="Toggle Patient Telemetry Feed (OFF / ON)">
-                                    <span class="power-indicator-led" id="led-telemetry-power"></span>
-                                    <span class="power-status-text" id="lbl-telemetry-power">OFF</span>
-                                </button>
+                        <!-- Neural Simulation Mode & Clinical Brain Disorder Synthesizer Panel -->
+                        <div class="neural-simulation-panel" id="neural-simulation-panel">
+                            <!-- Header Row: Title, Mode Toggle Button, Status Signal Badge -->
+                            <div class="sim-panel-header">
+                                <div class="sim-panel-title-cluster">
+                                    <div class="sim-panel-title">
+                                        <span class="sim-icon">⚡</span>
+                                        <strong>NEURAL SIMULATION MODE</strong>
+                                        <span class="sim-subtitle">35 Synthetic Clinical Brain Disorders &amp; Electrophysiological Conditions</span>
+                                    </div>
+                                    <div class="badge-sim-status idle" id="badge-sim-status" title="Current simulation biopotential generation state">
+                                        <span class="sim-idle-dot"></span> ⚪ SIMULATION STANDBY • PHYSICAL HARDWARE LISTENING MODE
+                                    </div>
+                                </div>
+
+                                <div class="sim-power-action-group">
+                                    <button type="button" class="btn-simulation-toggle" id="btn-telemetry-power" onclick="togglePatientTelemetryFeed()" aria-label="Toggle Neural Simulation Mode" title="Engage / Disengage Neural Simulation Mode (Generate artificial EEG for selected brain disorder)">
+                                        <span class="sim-toggle-led" id="led-telemetry-power"></span>
+                                        <span class="sim-toggle-text" id="lbl-telemetry-power">SIMULATION MODE: OFF</span>
+                                    </button>
+                                </div>
                             </div>
 
-                            <!-- Patient Clinical Profile Selector (Discreetly revealed when Telemetry is ON) -->
-                            <div class="patient-case-select-wrap" id="patient-case-select-wrap" style="display: none;">
-                                <div class="case-select-divider"></div>
-                                <label class="case-label" for="sel-patient-condition">CLINICAL PROFILE:</label>
-                                <select id="sel-patient-condition" class="clinical-case-dropdown" onchange="loadPatientCondition(this.value)" aria-label="Select Patient Clinical Profile">
-                                    <optgroup label="Normal &amp; Sleep Electrophysiology">
-                                        <option value="case_01_resting_baseline" selected>PT-2026-001 • Normal Wakeful Baseline (10.2 Hz Alpha)</option>
-                                        <option value="case_02_deep_nrem_sleep">PT-2026-002 • Deep NREM Stage 3 / SWS (Delta &gt; 70%)</option>
-                                        <option value="case_08_meditative_flow">PT-2026-008 • Deep Meditative Flow State (Frontal Theta + Alpha)</option>
-                                        <option value="case_15_elite_athlete_zone">PT-2026-015 • Sensorimotor Rhythm Zone (SMR 12-15 Hz)</option>
-                                        <option value="case_18_drowsiness_microsleep">PT-2026-018 • Driver Somnolence &amp; Microsleep (Alpha Dropouts)</option>
-                                    </optgroup>
-                                    <optgroup label="Cognitive &amp; Mental States">
-                                        <option value="case_03_cognitive_overload">PT-2026-003 • Acute Cognitive Overload &amp; Exhaustion (Beta &gt; 60%)</option>
-                                        <option value="case_04_adhd_inattention">PT-2026-004 • ADHD / Inattention (Frontal TBR = 5.17)</option>
-                                        <option value="case_07_anxiety_panic">PT-2026-007 • Severe Anxiety &amp; Acute Panic (Beta Buzz 26 Hz)</option>
-                                        <option value="case_09_chronic_burnout">PT-2026-009 • Chronic Occupational Burnout (Disorganized Alpha)</option>
-                                        <option value="case_14_depression_frontal_asymmetry">PT-2026-014 • Major Depressive Disorder (Frontal Alpha Asymmetry)</option>
-                                    </optgroup>
-                                    <optgroup label="Neurological &amp; Clinical Pathologies">
-                                        <option value="case_05_focal_epileptiform">PT-2026-005 • Focal Temporal Spike-and-Wave (IEDs 150 μV)</option>
-                                        <option value="case_06_absence_3hz">PT-2026-006 • Childhood Absence Seizure (Classic 3 Hz Paroxysm)</option>
-                                        <option value="case_10_mild_cognitive_impairment">PT-2026-010 • Mild Cognitive Impairment (Slowed PDR 7.8 Hz)</option>
-                                        <option value="case_11_metabolic_encephalopathy">PT-2026-011 • Toxic-Metabolic Encephalopathy (FIRDA &amp; Triphasic)</option>
-                                        <option value="case_12_post_concussion">PT-2026-012 • Post-Concussion Syndrome / mTBI (Polymorphic Slowing)</option>
-                                        <option value="case_13_narcolepsy_hypnagogic">PT-2026-013 • Narcolepsy Type 1 (Sleep-Onset SOREMP &amp; Vertex Waves)</option>
-                                        <option value="case_20_cerebral_hypoxia">PT-2026-020 • Acute Cerebral Hypoxia (Severe Voltage Suppression &lt;15μV)</option>
-                                    </optgroup>
-                                    <optgroup label="Artifacts &amp; Pharmacological Effects">
-                                        <option value="case_16_myogenic_bruxism">PT-2026-016 • Myogenic Bruxism &amp; Masseter Clench (30-80 Hz EMG)</option>
-                                        <option value="case_17_ocular_blink_artifacts">PT-2026-017 • Ocular Saccades &amp; Bell's Blinks (Frontal Dipoles)</option>
-                                        <option value="case_19_pharmacological_benzo">PT-2026-019 • Pharmacological Benzodiazepine (18-26 Hz Beta Buzz)</option>
-                                    </optgroup>
-                                </select>
-                                <div class="case-nav-btn-group">
-                                    <button type="button" class="btn-case-nav" onclick="cycleNextPatientCondition(-1)" title="Previous Clinical Case" aria-label="Previous Case">◀ Prev</button>
-                                    <button type="button" class="btn-case-nav" onclick="cycleNextPatientCondition(1)" title="Next Clinical Case" aria-label="Next Case">Next ▶</button>
+                            <!-- Category Filter Pills (6 Clinical Disciplines + All) -->
+                            <div class="sim-category-filter-bar">
+                                <span class="sim-filter-label">CLINICAL CATEGORY:</span>
+                                <div class="sim-filter-pills">
+                                    <button type="button" class="sim-category-pill active" data-category="all" onclick="filterPatientDisorderCategory('all')">All Disorders (35)</button>
+                                    <button type="button" class="sim-category-pill" data-category="neurological" onclick="filterPatientDisorderCategory('neurological')">Neurological (7)</button>
+                                    <button type="button" class="sim-category-pill" data-category="critical_care" onclick="filterPatientDisorderCategory('critical_care')">Critical Care (6)</button>
+                                    <button type="button" class="sim-category-pill" data-category="psychiatric" onclick="filterPatientDisorderCategory('psychiatric')">Psychiatric (6)</button>
+                                    <button type="button" class="sim-category-pill" data-category="sleep" onclick="filterPatientDisorderCategory('sleep')">Sleep &amp; Circadian (6)</button>
+                                    <button type="button" class="sim-category-pill" data-category="stimulation" onclick="filterPatientDisorderCategory('stimulation')">Brain Stimulation (5)</button>
+                                    <button type="button" class="sim-category-pill" data-category="pharma" onclick="filterPatientDisorderCategory('pharma')">Pharma &amp; Artifacts (5)</button>
                                 </div>
+                            </div>
+
+                            <!-- Interactive Disorder Selection & Wave Control Row -->
+                            <div class="sim-disorder-select-row" id="patient-case-select-wrap">
+                                <div class="sim-dropdown-cluster">
+                                    <label class="case-label" for="sel-patient-condition">SELECT CONDITION / DISORDER:</label>
+                                    <select id="sel-patient-condition" class="clinical-case-dropdown" onchange="loadPatientCondition(this.value)" aria-label="Select Patient Brain Disorder Simulation">
+                                        <optgroup label="Neurological &amp; Neurodegenerative Disorders" data-category="neurological">
+                                            <option value="case_01_resting_baseline" selected>PT-2026-001 • Normal Wakeful Baseline (Eyes Closed 10.2 Hz Alpha)</option>
+                                            <option value="case_05_focal_epileptiform">PT-2026-005 • Focal Temporal Spike-and-Wave (IEDs 150 μV)</option>
+                                            <option value="case_06_absence_3hz">PT-2026-006 • Childhood Absence Seizure (Classic 3 Hz Paroxysm)</option>
+                                            <option value="case_10_mild_cognitive_impairment">PT-2026-010 • Mild Cognitive Impairment (Slowed PDR 7.8 Hz)</option>
+                                            <option value="case_21_alzheimers_dementia">PT-2026-021 • Alzheimer's Disease (Diffuse Slowing &amp; Alpha Loss)</option>
+                                            <option value="case_22_parkinsons_resting_tremor">PT-2026-022 • Parkinson's Disease (4-6 Hz Basal Tremor Coupling)</option>
+                                            <option value="case_23_creutzfeldt_jakob">PT-2026-023 • Prion Disease / CJD (Periodic Sharp Waves 1.0 Hz PSWC)</option>
+                                        </optgroup>
+                                        <optgroup label="Acute Critical Care Pathologies" data-category="critical_care">
+                                            <option value="case_11_metabolic_encephalopathy">PT-2026-011 • Toxic-Metabolic Encephalopathy (FIRDA &amp; Triphasic)</option>
+                                            <option value="case_12_post_concussion">PT-2026-012 • Post-Concussion Syndrome / mTBI (Polymorphic Slowing)</option>
+                                            <option value="case_20_cerebral_hypoxia">PT-2026-020 • Acute Cerebral Hypoxia (Severe Voltage Suppression &lt;15μV)</option>
+                                            <option value="case_24_status_epilepticus">PT-2026-024 • Status Epilepticus (Continuous 2.5 Hz Spike-Wave NCSE)</option>
+                                            <option value="case_25_severe_tbi_burst_suppression">PT-2026-025 • Severe TBI Coma (Burst-Suppression Pattern)</option>
+                                            <option value="case_26_intracranial_hypertension">PT-2026-026 • Acute Intracranial Hypertension (Monomorphic Delta)</option>
+                                        </optgroup>
+                                        <optgroup label="Psychiatric &amp; Behavioral Disorders" data-category="psychiatric">
+                                            <option value="case_03_cognitive_overload">PT-2026-003 • Acute Cognitive Overload &amp; Exhaustion (Beta &gt; 60%)</option>
+                                            <option value="case_04_adhd_inattention">PT-2026-004 • Attention Deficit Disorder (Frontal TBR = 5.17)</option>
+                                            <option value="case_07_anxiety_panic">PT-2026-007 • Severe Anxiety &amp; Acute Panic (Beta Buzz 26 Hz)</option>
+                                            <option value="case_14_depression_frontal_asymmetry">PT-2026-014 • Major Depressive Disorder (Frontal Alpha Asymmetry)</option>
+                                            <option value="case_27_bipolar_mania">PT-2026-027 • Bipolar I Acute Mania (Hyper-Synchronous Beta-Gamma 32 Hz)</option>
+                                            <option value="case_28_schizophrenia_gamma_deficit">PT-2026-028 • Schizophrenia (Attenuated 40 Hz Gamma Evoked Synchrony)</option>
+                                        </optgroup>
+                                        <optgroup label="Sleep &amp; Circadian Disorders" data-category="sleep">
+                                            <option value="case_02_deep_nrem_sleep">PT-2026-002 • Deep NREM Stage 3 / SWS (Delta &gt; 70%)</option>
+                                            <option value="case_13_narcolepsy_hypnagogic">PT-2026-013 • Narcolepsy Type 1 (Sleep-Onset SOREMP &amp; Vertex Waves)</option>
+                                            <option value="case_18_drowsiness_microsleep">PT-2026-018 • Driver Somnolence &amp; 3s Microsleep (Alpha Dropouts)</option>
+                                            <option value="case_29_rem_sleep_behavior_disorder">PT-2026-029 • REM Sleep Behavior Disorder (REM Without Atonia EMG)</option>
+                                            <option value="case_30_severe_obstructive_sleep_apnea">PT-2026-030 • Severe Sleep Apnea (Cyclic Delta &amp; Cortical Arousals)</option>
+                                            <option value="case_31_fatal_insomnia_thalamectomy">PT-2026-031 • Severe Chronic Insomnia (Delta Loss &amp; Spindle Depletion)</option>
+                                        </optgroup>
+                                        <optgroup label="Neuromodulation &amp; Brain Stimulation" data-category="stimulation">
+                                            <option value="case_08_meditative_flow">PT-2026-008 • Deep Meditative Flow State (Frontal Theta + Alpha)</option>
+                                            <option value="case_15_elite_athlete_zone">PT-2026-015 • Olympic Marksman Peak Performance Zone (SMR 12-15 Hz)</option>
+                                            <option value="case_32_tms_entrainment_10hz">PT-2026-032 • Transcranial Magnetic Stimulation (10.0 Hz rTMS Entrainment)</option>
+                                            <option value="case_33_tdcs_anodal_prefrontal">PT-2026-033 • Anodal tDCS Prefrontal Stimulation (Excitatory Beta Power)</option>
+                                            <option value="case_34_psychedelic_psilocybin_entropy">PT-2026-034 • Serotonergic Psychedelic State (Alpha Collapse &amp; Neural Entropy)</option>
+                                        </optgroup>
+                                        <optgroup label="Artifacts &amp; Pharmacological Effects" data-category="pharma">
+                                            <option value="case_09_chronic_burnout">PT-2026-009 • Chronic Occupational Burnout (Disorganized Alpha)</option>
+                                            <option value="case_16_myogenic_bruxism">PT-2026-016 • Severe Myogenic Bruxism &amp; Masseter Clench (30-80 Hz EMG)</option>
+                                            <option value="case_17_ocular_blink_artifacts">PT-2026-017 • High-Frequency Ocular Saccades &amp; Bell's Blinks (Frontal Dipoles)</option>
+                                            <option value="case_19_pharmacological_benzo">PT-2026-019 • Pharmacological Benzodiazepine Effect (18-26 Hz Beta Buzz)</option>
+                                            <option value="case_35_acute_cannabinoid_intoxication">PT-2026-035 • Acute Cannabinoid CB1 Modulation (Frontal Theta Shift)</option>
+                                        </optgroup>
+                                    </select>
+                                </div>
+
+                                <div class="case-nav-btn-group">
+                                    <button type="button" class="btn-case-nav" onclick="cycleNextPatientCondition(-1)" title="Previous Clinical Disorder" aria-label="Previous Disorder">◀ Prev</button>
+                                    <button type="button" class="btn-case-nav" onclick="cycleNextPatientCondition(1)" title="Next Clinical Disorder" aria-label="Next Disorder">Next ▶</button>
+                                </div>
+
                                 <span class="case-badge-active" id="badge-patient-id" title="Active Patient Medical Record Number">PT-2026-001</span>
+
+                                <!-- Quick Disorder Action Buttons: 1-Click Record & 1-Click Diagnostic Report -->
+                                <div class="sim-quick-actions">
+                                    <button type="button" class="btn-sim-action btn-sim-record" onclick="recordCurrentDisorderSession()" title="Record current simulated EEG condition into session history">
+                                        <span>⏺</span> RECORD WAVE
+                                    </button>
+                                    <button type="button" class="btn-sim-action btn-sim-diag" onclick="generateDisorderDiagnosticReport()" title="Analyze current simulated biopotential condition and generate diagnostic report">
+                                        <span>🩺</span> DIAGNOSTIC REPORT
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Quick Disorder Electrophysiology Summary Info Strip -->
+                            <div class="sim-disorder-info-strip" id="lbl-sim-disorder-info">
+                                <strong>Elena Vance (Age 32, F)</strong> • <span style="color: var(--cyan);">Neurological &amp; Neurodegenerative Disorders</span> • PDR/Peak: <em>10.2 Hz</em> • Stress: <em>0.28</em> • TBR: <em>0.88</em>
                             </div>
                         </div>
                     </div>

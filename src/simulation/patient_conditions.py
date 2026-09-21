@@ -1,6 +1,6 @@
 """
 Clinical Patient Condition Simulations Module
-Defines 20 high-fidelity clinical and electrophysiological patient scenarios with
+Defines 35 high-fidelity clinical and electrophysiological patient scenarios with
 distinct biopotential frequency characteristics, diagnostic interpretations, and tailored action plans.
 """
 
@@ -11,7 +11,7 @@ PATIENT_CONDITIONS: Dict[str, Dict[str, Any]] = {
         "id": "case_01_resting_baseline",
         "patient_id": "PT-2026-001",
         "patient_name": "Elena Vance (Age 32, F)",
-        "category": "Normal & Sleep Electrophysiology",
+        "category": "Neurological & Neurodegenerative Disorders",
         "name": "Normal Wakeful Baseline (Eyes Closed 10.2 Hz Alpha)",
         "dominant_freq": 10.2,
         "bands": {"delta": 12.0, "theta": 14.0, "alpha": 58.0, "beta": 16.0},
@@ -36,7 +36,7 @@ PATIENT_CONDITIONS: Dict[str, Dict[str, Any]] = {
         "id": "case_02_deep_nrem_sleep",
         "patient_id": "PT-2026-002",
         "patient_name": "Marcus Chen (Age 45, M)",
-        "category": "Normal & Sleep Electrophysiology",
+        "category": "Sleep & Circadian Disorders",
         "name": "Deep NREM Stage 3 / SWS Restorative Slow-Wave Sleep (Delta > 70%)",
         "dominant_freq": 1.2,
         "bands": {"delta": 74.0, "theta": 16.0, "alpha": 6.0, "beta": 4.0},
@@ -61,7 +61,7 @@ PATIENT_CONDITIONS: Dict[str, Dict[str, Any]] = {
         "id": "case_03_cognitive_overload",
         "patient_id": "PT-2026-003",
         "patient_name": "Sarah Jenkins (Age 29, F)",
-        "category": "Cognitive & Mental States",
+        "category": "Psychiatric & Behavioral Disorders",
         "name": "Acute Cognitive Overload & Executive Exhaustion (Beta > 60%)",
         "dominant_freq": 24.5,
         "bands": {"delta": 6.0, "theta": 12.0, "alpha": 18.0, "beta": 64.0},
@@ -87,7 +87,7 @@ PATIENT_CONDITIONS: Dict[str, Dict[str, Any]] = {
         "id": "case_04_adhd_inattention",
         "patient_id": "PT-2026-004",
         "patient_name": "Lucas Rodriguez (Age 14, M)",
-        "category": "Cognitive & Mental States",
+        "category": "Psychiatric & Behavioral Disorders",
         "name": "Attention Deficit Hyperactivity Disorder (Elevated Frontal TBR = 5.17)",
         "dominant_freq": 5.8,
         "bands": {"delta": 10.0, "theta": 62.0, "alpha": 16.0, "beta": 12.0},
@@ -113,7 +113,7 @@ PATIENT_CONDITIONS: Dict[str, Dict[str, Any]] = {
         "id": "case_05_focal_epileptiform",
         "patient_id": "PT-2026-005",
         "patient_name": "David Thorne (Age 38, M)",
-        "category": "Neurological & Clinical Pathologies",
+        "category": "Neurological & Neurodegenerative Disorders",
         "name": "Focal Temporal Interictal Epileptiform Discharges (IEDs 150 μV)",
         "dominant_freq": 9.5,
         "bands": {"delta": 32.0, "theta": 28.0, "alpha": 22.0, "beta": 18.0},
@@ -139,7 +139,7 @@ PATIENT_CONDITIONS: Dict[str, Dict[str, Any]] = {
         "id": "case_06_absence_3hz",
         "patient_id": "PT-2026-006",
         "patient_name": "Chloe Dupont (Age 9, F)",
-        "category": "Neurological & Clinical Pathologies",
+        "category": "Neurological & Neurodegenerative Disorders",
         "name": "Childhood Absence Seizure (Classic 3 Hz Spike-and-Wave Paroxysms)",
         "dominant_freq": 3.0,
         "bands": {"delta": 52.0, "theta": 24.0, "alpha": 14.0, "beta": 10.0},
@@ -165,7 +165,7 @@ PATIENT_CONDITIONS: Dict[str, Dict[str, Any]] = {
         "id": "case_07_anxiety_panic",
         "patient_id": "PT-2026-007",
         "patient_name": "Amina Patel (Age 26, F)",
-        "category": "Cognitive & Mental States",
+        "category": "Psychiatric & Behavioral Disorders",
         "name": "Severe Generalized Anxiety & Acute Panic Agitation (Beta Buzz 26 Hz)",
         "dominant_freq": 26.2,
         "bands": {"delta": 4.0, "theta": 10.0, "alpha": 14.0, "beta": 72.0},
@@ -191,7 +191,7 @@ PATIENT_CONDITIONS: Dict[str, Dict[str, Any]] = {
         "id": "case_08_meditative_flow",
         "patient_id": "PT-2026-008",
         "patient_name": "Tenzin Gyatso (Age 52, M)",
-        "category": "Normal & Sleep Electrophysiology",
+        "category": "Neuromodulation & Brain Stimulation",
         "name": "Deep Meditative Flow State (Zen / Frontal Midline Theta + Alpha)",
         "dominant_freq": 6.2,
         "bands": {"delta": 10.0, "theta": 42.0, "alpha": 38.0, "beta": 10.0},
@@ -216,7 +216,7 @@ PATIENT_CONDITIONS: Dict[str, Dict[str, Any]] = {
         "id": "case_09_chronic_burnout",
         "patient_id": "PT-2026-009",
         "patient_name": "Robert Sterling (Age 42, M)",
-        "category": "Cognitive & Mental States",
+        "category": "Artifacts & Pharmacological Effects",
         "name": "Chronic Occupational Burnout & Cognitive Fatigue (Disorganized Alpha)",
         "dominant_freq": 8.4,
         "bands": {"delta": 18.0, "theta": 40.0, "alpha": 24.0, "beta": 18.0},
@@ -242,7 +242,7 @@ PATIENT_CONDITIONS: Dict[str, Dict[str, Any]] = {
         "id": "case_10_mild_cognitive_impairment",
         "patient_id": "PT-2026-010",
         "patient_name": "Eleanor Wright (Age 71, F)",
-        "category": "Neurological & Clinical Pathologies",
+        "category": "Neurological & Neurodegenerative Disorders",
         "name": "Mild Cognitive Impairment (Slowed Posterior Dominant Rhythm 7.8 Hz)",
         "dominant_freq": 7.8,
         "bands": {"delta": 24.0, "theta": 44.0, "alpha": 22.0, "beta": 10.0},
@@ -268,7 +268,7 @@ PATIENT_CONDITIONS: Dict[str, Dict[str, Any]] = {
         "id": "case_11_metabolic_encephalopathy",
         "patient_id": "PT-2026-011",
         "patient_name": "Arthur Pendelton (Age 64, M)",
-        "category": "Neurological & Clinical Pathologies",
+        "category": "Acute Critical Care Pathologies",
         "name": "Toxic-Metabolic Encephalopathy (FIRDA & Bilateral Triphasic Waves)",
         "dominant_freq": 1.8,
         "bands": {"delta": 58.0, "theta": 28.0, "alpha": 10.0, "beta": 4.0},
@@ -294,7 +294,7 @@ PATIENT_CONDITIONS: Dict[str, Dict[str, Any]] = {
         "id": "case_12_post_concussion",
         "patient_id": "PT-2026-012",
         "patient_name": "Tyler Brooks (Age 22, M)",
-        "category": "Neurological & Clinical Pathologies",
+        "category": "Acute Critical Care Pathologies",
         "name": "Post-Concussion Syndrome / Mild TBI (Focal Delta-Theta Slowing)",
         "dominant_freq": 6.8,
         "bands": {"delta": 34.0, "theta": 36.0, "alpha": 18.0, "beta": 12.0},
@@ -320,7 +320,7 @@ PATIENT_CONDITIONS: Dict[str, Dict[str, Any]] = {
         "id": "case_13_narcolepsy_hypnagogic",
         "patient_id": "PT-2026-013",
         "patient_name": "Chloe Kim (Age 24, F)",
-        "category": "Neurological & Clinical Pathologies",
+        "category": "Sleep & Circadian Disorders",
         "name": "Narcolepsy Type 1 (Sleep-Onset SOREMP & Vertex Sharp Waves)",
         "dominant_freq": 5.2,
         "bands": {"delta": 26.0, "theta": 46.0, "alpha": 18.0, "beta": 10.0},
@@ -346,7 +346,7 @@ PATIENT_CONDITIONS: Dict[str, Dict[str, Any]] = {
         "id": "case_14_depression_frontal_asymmetry",
         "patient_id": "PT-2026-014",
         "patient_name": "Claire Montgomery (Age 36, F)",
-        "category": "Cognitive & Mental States",
+        "category": "Psychiatric & Behavioral Disorders",
         "name": "Major Depressive Disorder (Frontal Alpha Asymmetry FAA)",
         "dominant_freq": 9.8,
         "bands": {"delta": 16.0, "theta": 24.0, "alpha": 48.0, "beta": 12.0},
@@ -372,7 +372,7 @@ PATIENT_CONDITIONS: Dict[str, Dict[str, Any]] = {
         "id": "case_15_elite_athlete_zone",
         "patient_id": "PT-2026-015",
         "patient_name": "Jonas Lindqvist (Age 28, M)",
-        "category": "Normal & Sleep Electrophysiology",
+        "category": "Neuromodulation & Brain Stimulation",
         "name": "Olympic Marksman Peak Performance Zone (SMR 12-15 Hz)",
         "dominant_freq": 13.5,
         "bands": {"delta": 8.0, "theta": 16.0, "alpha": 46.0, "beta": 30.0},
@@ -450,7 +450,7 @@ PATIENT_CONDITIONS: Dict[str, Dict[str, Any]] = {
         "id": "case_18_drowsiness_microsleep",
         "patient_id": "PT-2026-018",
         "patient_name": "Dmitri Volkov (Age 49, M)",
-        "category": "Normal & Sleep Electrophysiology",
+        "category": "Sleep & Circadian Disorders",
         "name": "Commercial Driver Somnolence & 3-Second Microsleep Lapses",
         "dominant_freq": 4.5,
         "bands": {"delta": 36.0, "theta": 48.0, "alpha": 10.0, "beta": 6.0},
@@ -502,7 +502,7 @@ PATIENT_CONDITIONS: Dict[str, Dict[str, Any]] = {
         "id": "case_20_cerebral_hypoxia",
         "patient_id": "PT-2026-020",
         "patient_name": "Harold Simmons (Age 68, M)",
-        "category": "Neurological & Clinical Pathologies",
+        "category": "Acute Critical Care Pathologies",
         "name": "Acute Cerebral Hypoxia / Ischemia (Severe Voltage Suppression < 15 μV)",
         "dominant_freq": 1.5,
         "bands": {"delta": 78.0, "theta": 14.0, "alpha": 6.0, "beta": 2.0},
@@ -523,13 +523,401 @@ PATIENT_CONDITIONS: Dict[str, Dict[str, Any]] = {
         "wave_params": {
             "base_freq": 1.5, "alpha_amp": 2.0, "beta_amp": 1.0, "theta_amp": 4.0, "delta_amp": 8.0, "noise": 1.0, "hypoxia": True
         }
+    },
+    "case_21_alzheimers_dementia": {
+        "id": "case_21_alzheimers_dementia",
+        "patient_id": "PT-2026-021",
+        "patient_name": "Arthur Pendelton (Age 76, M)",
+        "category": "Neurological & Neurodegenerative Disorders",
+        "name": "Alzheimer's Disease / Dementia (Severe Diffuse Slowing & Alpha Disappearance)",
+        "dominant_freq": 5.2,
+        "bands": {"delta": 42.0, "theta": 40.0, "alpha": 12.0, "beta": 6.0},
+        "stress_index": 0.14,
+        "tbr": 6.67,
+        "abr": 2.00,
+        "cognitive_load": "HIGH",
+        "patient_condition": (
+            "Severe generalized slowing with progressive loss of posterior alpha rhythm replaced by diffuse 4-6 Hz theta and polymorphic delta waves. "
+            "Prominent anteriorization of background activity reflecting cortical degeneration, synaptic loss, and severe executive-memory impairment."
+        ),
+        "patient_action_plan": [
+            "Initiate cholinesterase inhibitor optimization (donepezil or rivastigmine) and consider NMDA receptor antagonist (memantine).",
+            "Schedule high-resolution volumetric 3T MRI to quantify hippocampal and entorhinal cortex atrophy.",
+            "Implement structured neuro-supportive cognitive stimulation routines and fall-prevention environmental modifications.",
+            "Enroll caregiver in respite assistance and conduct periodic quantitative EEG tracking of theta/alpha slowing ratios."
+        ],
+        "wave_params": {
+            "base_freq": 5.2, "alpha_amp": 5.0, "beta_amp": 3.0, "theta_amp": 28.0, "delta_amp": 32.0, "noise": 3.5
+        }
+    },
+    "case_22_parkinsons_resting_tremor": {
+        "id": "case_22_parkinsons_resting_tremor",
+        "patient_id": "PT-2026-022",
+        "patient_name": "Evelyn Wright (Age 64, F)",
+        "category": "Neurological & Neurodegenerative Disorders",
+        "name": "Parkinson's Disease (4-6 Hz Basal Ganglia-Cortical Tremor Coupling & Beta Deficit)",
+        "dominant_freq": 4.8,
+        "bands": {"delta": 18.0, "theta": 48.0, "alpha": 22.0, "beta": 12.0},
+        "stress_index": 0.25,
+        "tbr": 4.00,
+        "abr": 2.18,
+        "cognitive_load": "MODERATE",
+        "patient_condition": (
+            "Rhythmic 4-6 Hz central theta-delta slow waves with intermittent harmonic myogenic tremor artifact phase-locked to contralateral pill-rolling resting tremor. "
+            "Suppression of sensorimotor rhythm (SMR) and excessive pathological beta synchrony bursts indicating dopaminergic basal ganglia dysfunction."
+        ),
+        "patient_action_plan": [
+            "Review dopaminergic titration (Levodopa/Carbidopa or dopamine agonists) targeting motor 'off' time reduction.",
+            "Conduct dual EMG-EEG coherence mapping to assess subthalamic nucleus oscillatory entrainment.",
+            "Screen for Deep Brain Stimulation (DBS) candidacy targeting STN or GPi if motor fluctuations become medically refractory.",
+            "Prescribe specialized physical and occupational therapy focusing on gait cadence, balance, and cueing strategies."
+        ],
+        "wave_params": {
+            "base_freq": 4.8, "alpha_amp": 12.0, "beta_amp": 8.0, "theta_amp": 32.0, "delta_amp": 14.0, "noise": 4.0, "tremor_hz": 5.0
+        }
+    },
+    "case_23_creutzfeldt_jakob": {
+        "id": "case_23_creutzfeldt_jakob",
+        "patient_id": "PT-2026-023",
+        "patient_name": "Heinrich Hoffman (Age 62, M)",
+        "category": "Neurological & Neurodegenerative Disorders",
+        "name": "Prion Encephalopathy / Creutzfeldt-Jakob Disease (Periodic Sharp Wave Complexes 1.0 Hz)",
+        "dominant_freq": 1.0,
+        "bands": {"delta": 62.0, "theta": 24.0, "alpha": 10.0, "beta": 4.0},
+        "stress_index": 0.06,
+        "tbr": 6.00,
+        "abr": 2.40,
+        "cognitive_load": "HIGH",
+        "patient_condition": (
+            "Bilateral, synchronous, bisynchronous periodic sharp wave complexes (PSWC) recurring rhythmically every 0.8-1.2 seconds (approx 1.0 Hz) over a slow and suppressed background rhythm. "
+            "Pathognomonic biopotential hallmark of rapid cortical neurodegeneration and prion pathology."
+        ),
+        "patient_action_plan": [
+            "URGENT NEUROLOGICAL ADMISSION: Initiate isolation barrier precautions and expedited diagnostic workup for rapidly progressive dementia.",
+            "Perform lumbar puncture for CSF RT-QuIC (real-time quaking-induced conversion) assay and 14-3-3 protein analysis.",
+            "Order emergency diffusion-weighted MRI (DWI) to detect cortical ribboning and basal ganglia hyperintensities (hockey-stick sign).",
+            "Engage palliative care team and family counseling for comprehensive supportive management and comfort measures."
+        ],
+        "wave_params": {
+            "base_freq": 1.0, "alpha_amp": 4.0, "beta_amp": 2.0, "theta_amp": 14.0, "delta_amp": 45.0, "noise": 3.0, "pswc_period": 1.0, "pswc_amp": 90.0
+        }
+    },
+    "case_24_status_epilepticus": {
+        "id": "case_24_status_epilepticus",
+        "patient_id": "PT-2026-024",
+        "patient_name": "Amara Diallo (Age 38, F)",
+        "category": "Acute Critical Care Pathologies",
+        "name": "Non-Convulsive Status Epilepticus (NCSE Continuous 2.5 Hz Spike-Wave Discharge)",
+        "dominant_freq": 2.5,
+        "bands": {"delta": 54.0, "theta": 30.0, "alpha": 10.0, "beta": 6.0},
+        "stress_index": 0.20,
+        "tbr": 5.00,
+        "abr": 3.00,
+        "cognitive_load": "HIGH",
+        "patient_condition": (
+            "Continuous, generalized, rhythmic 2.5-3.0 Hz spike-and-slow-wave discharges exceeding 100 μV lasting without interictal recovery in a patient with altered mental status. "
+            "Confirms non-convulsive status epilepticus requiring immediate emergent pharmacological termination."
+        ),
+        "patient_action_plan": [
+            "CRITICAL MEDICAL EMERGENCY: Administer first-line IV benzodiazepine (IV Lorazepam 4 mg or Midazolam 10 mg IM STAT).",
+            "Immediately load second-line non-sedating antiepileptic therapy (IV Levetiracetam 60 mg/kg or Fosphenytoin 20 mg PE/kg).",
+            "Prepare for ICU endotracheal intubation and continuous anesthetic infusion (Propofol or Midazolam) if electrographic discharges persist beyond 30 min.",
+            "Establish continuous qEEG telemetry to titrate pharmacotherapy toward electrographic burst-suppression."
+        ],
+        "wave_params": {
+            "base_freq": 2.5, "alpha_amp": 6.0, "beta_amp": 8.0, "theta_amp": 24.0, "delta_amp": 50.0, "noise": 3.0, "ncse_spike": True
+        }
+    },
+    "case_25_severe_tbi_burst_suppression": {
+        "id": "case_25_severe_tbi_burst_suppression",
+        "patient_id": "PT-2026-025",
+        "patient_name": "Jack Sterling (Age 23, M)",
+        "category": "Acute Critical Care Pathologies",
+        "name": "Severe Traumatic Brain Injury & Coma (Burst-Suppression Pattern)",
+        "dominant_freq": 0.8,
+        "bands": {"delta": 82.0, "theta": 12.0, "alpha": 4.0, "beta": 2.0},
+        "stress_index": 0.02,
+        "tbr": 6.00,
+        "abr": 3.00,
+        "cognitive_load": "HIGH",
+        "patient_condition": (
+            "Alternating sequence of high-voltage (75-150 μV) mixed delta-theta polyspike bursts lasting 1-3 seconds followed by generalized isoelectric flatline suppression (<5 μV) lasting 4-10 seconds. "
+            "Reflects critical cerebral metabolic depression, severe structural brain injury, or deep therapeutic anesthesia."
+        ),
+        "patient_action_plan": [
+            "NEURO-ICU CRITICAL MANAGEMENT: Maintain continuous multimodality neuromonitoring (ICP bolt, cerebral perfusion pressure CPP > 60 mmHg, PbtO2).",
+            "Calculate real-time Burst Suppression Ratio (BSR %) to titrate neuroprotective barbiturate or propofol coma.",
+            "Monitor serial pupillometry and repeat emergent non-contrast head CT for herniation, midline shift, or expanding contusion.",
+            "Optimize arterial normocapnia (PaCO2 35-40 mmHg) and strict normothermia (36.0-37.0 °C)."
+        ],
+        "wave_params": {
+            "base_freq": 0.8, "alpha_amp": 1.0, "beta_amp": 1.0, "theta_amp": 4.0, "delta_amp": 12.0, "noise": 1.0, "burst_suppression": True
+        }
+    },
+    "case_26_intracranial_hypertension": {
+        "id": "case_26_intracranial_hypertension",
+        "patient_id": "PT-2026-026",
+        "patient_name": "Victoria Zhao (Age 51, F)",
+        "category": "Acute Critical Care Pathologies",
+        "name": "Acute Intracranial Hypertension (Generalized Monomorphic Delta Slowing)",
+        "dominant_freq": 1.6,
+        "bands": {"delta": 68.0, "theta": 22.0, "alpha": 7.0, "beta": 3.0},
+        "stress_index": 0.04,
+        "tbr": 7.33,
+        "abr": 3.14,
+        "cognitive_load": "HIGH",
+        "patient_condition": (
+            "Generalized, continuous, monomorphic delta slowing (1.2-2.0 Hz) without normal sleep architecture or alpha reactivity, accompanied by blunted cortical responsiveness to external auditory stimuli. "
+            "Suggests acute intracranial mass effect, severe edema, or elevated ICP > 25 mmHg."
+        ),
+        "patient_action_plan": [
+            "URGENT NEUROSURGICAL PROTOCOL: Elevate head of bed to 30 degrees and maintain neutral neck alignment to optimize jugular venous drainage.",
+            "Administer hyperosmolar therapy STAT (Hypertonic Saline 3% 250 mL IV or Mannitol 1 g/kg IV).",
+            "Prepare emergency CT head and neurosurgical operating room for possible emergent decompressive craniectomy or EVD ventriculostomy.",
+            "Institute continuous arterial line blood pressure monitoring and avoid hypotonic intravenous fluids."
+        ],
+        "wave_params": {
+            "base_freq": 1.6, "alpha_amp": 3.0, "beta_amp": 2.0, "theta_amp": 16.0, "delta_amp": 60.0, "noise": 3.0
+        }
+    },
+    "case_27_bipolar_mania": {
+        "id": "case_27_bipolar_mania",
+        "patient_id": "PT-2026-027",
+        "patient_name": "Liam Gallagher (Age 27, M)",
+        "category": "Psychiatric & Behavioral Disorders",
+        "name": "Bipolar I Disorder / Acute Mania (Hyper-Synchronous Beta-Gamma Activation 32 Hz)",
+        "dominant_freq": 31.5,
+        "bands": {"delta": 5.0, "theta": 10.0, "alpha": 15.0, "beta": 70.0},
+        "stress_index": 2.80,
+        "tbr": 0.14,
+        "abr": 0.21,
+        "cognitive_load": "HIGH",
+        "patient_condition": (
+            "Extreme cortical hyper-excitability characterized by persistent, diffuse high-frequency beta and low gamma synchronization (28-36 Hz) with complete loss of eyes-closed posterior alpha rhythm. "
+            "Reflects severe psychomotor agitation, racing thoughts, insomnia, and noradrenergic-dopaminergic hyperactivity."
+        ),
+        "patient_action_plan": [
+            "Ensure secure, low-stimulus psychiatric inpatient environment to de-escalate psychomotor agitation and sensory overload.",
+            "Initiate or optimize mood stabilizer therapy (Lithium or Valproate) co-administered with a rapid-acting atypical antipsychotic (e.g., Olanzapine or Quetiapine).",
+            "Conduct comprehensive toxicology screen to exclude secondary stimulant-induced or substance-induced manic states.",
+            "Track circadian sleep patterns and biopotential fast-frequency spectral power reduction across pharmacological stabilization."
+        ],
+        "wave_params": {
+            "base_freq": 31.5, "alpha_amp": 4.0, "beta_amp": 45.0, "theta_amp": 3.0, "delta_amp": 2.0, "noise": 6.0
+        }
+    },
+    "case_28_schizophrenia_gamma_deficit": {
+        "id": "case_28_schizophrenia_gamma_deficit",
+        "patient_id": "PT-2026-028",
+        "patient_name": "Tariq Mansoor (Age 24, M)",
+        "category": "Psychiatric & Behavioral Disorders",
+        "name": "Schizophrenia / First-Episode Psychosis (Attenuated 40 Hz Auditory Gamma Evoked Synchrony)",
+        "dominant_freq": 6.2,
+        "bands": {"delta": 22.0, "theta": 46.0, "alpha": 20.0, "beta": 12.0},
+        "stress_index": 0.26,
+        "tbr": 3.83,
+        "abr": 2.30,
+        "cognitive_load": "MODERATE",
+        "patient_condition": (
+            "Attenuated evoked 40 Hz gamma-band phase locking following auditory steady-state stimulation combined with diffuse baseline theta excess and fragmented alpha rhythm. "
+            "Indicates parvalbumin GABAergic interneuron hypo-functioning and disrupted thalamocortical microcircuit gating."
+        ),
+        "patient_action_plan": [
+            "Comprehensive psychiatric evaluation with PANSS scoring for positive, negative, and cognitive symptom dimensions.",
+            "Initiate evidence-based second-generation antipsychotic therapy (e.g., Aripiprazole, Risperidone) with metabolic profile monitoring.",
+            "Perform 40 Hz Auditory Steady-State Response (ASSR) test to objectively index cortical auditory circuit integrity.",
+            "Integrate cognitive behavioral therapy for psychosis (CBTp) and supportive family psychoeducation programs."
+        ],
+        "wave_params": {
+            "base_freq": 6.2, "alpha_amp": 10.0, "beta_amp": 7.0, "theta_amp": 28.0, "delta_amp": 16.0, "noise": 4.5, "gamma_deficit": True
+        }
+    },
+    "case_29_rem_sleep_behavior_disorder": {
+        "id": "case_29_rem_sleep_behavior_disorder",
+        "patient_id": "PT-2026-029",
+        "patient_name": "Gunnar Lindholm (Age 67, M)",
+        "category": "Sleep & Circadian Disorders",
+        "name": "REM Sleep Behavior Disorder / RBD (REM Without Atonia & Submentalis Hypertonia)",
+        "dominant_freq": 6.8,
+        "bands": {"delta": 18.0, "theta": 44.0, "alpha": 22.0, "beta": 16.0},
+        "stress_index": 0.36,
+        "tbr": 2.75,
+        "abr": 2.00,
+        "cognitive_load": "MODERATE",
+        "patient_condition": (
+            "Desynchronized, mixed low-voltage theta/alpha cortical activity typical of REM sleep accompanied by abnormal persistent, high-amplitude submentalis and limb EMG muscle bursts ('REM sleep without atonia' - RSWA). "
+            "Associated with violent dream enactment behavior and alpha-synucleinopathy risk."
+        ),
+        "patient_action_plan": [
+            "Implement immediate bedroom safety modifications (bed rails, removing nightstands/sharp objects, floor mattress padding).",
+            "Initiate first-line pharmacotherapy with low-dose Clonazepam (0.5-1.0 mg at bedtime) or high-dose oral Melatonin (3-12 mg).",
+            "Counsel patient on long-term neurological surveillance for emerging neurodegenerative synucleinopathies (Parkinson's disease, DLB).",
+            "Conduct annual UPDRS motor and cognitive MoCA screening."
+        ],
+        "wave_params": {
+            "base_freq": 6.8, "alpha_amp": 12.0, "beta_amp": 10.0, "theta_amp": 26.0, "delta_amp": 12.0, "noise": 4.0, "emg_artifact": True
+        }
+    },
+    "case_30_severe_obstructive_sleep_apnea": {
+        "id": "case_30_severe_obstructive_sleep_apnea",
+        "patient_id": "PT-2026-030",
+        "patient_name": "Bruce MacIntyre (Age 53, M)",
+        "category": "Sleep & Circadian Disorders",
+        "name": "Severe Obstructive Sleep Apnea (AHI > 45, Cyclic Delta Slowing & Cortical Arousals)",
+        "dominant_freq": 3.2,
+        "bands": {"delta": 50.0, "theta": 28.0, "alpha": 12.0, "beta": 10.0},
+        "stress_index": 0.35,
+        "tbr": 2.80,
+        "abr": 2.33,
+        "cognitive_load": "MODERATE",
+        "patient_condition": (
+            "Cyclic electroencephalographic pattern consisting of 20-40 second periods of progressive delta-theta slowing during obstructive hypopnea/apnea abruptly terminated by sudden 3-10 second burst of fast alpha-beta activity and muscle artifact corresponding to sympathetic cortical arousal."
+        ),
+        "patient_action_plan": [
+            "Immediate initiation of nocturnal Positive Airway Pressure (CPAP / Auto-PAP) therapy with telemetry compliance tracking.",
+            "Comprehensive sleep clinic consultation for mask fitting, humidification optimization, and positional therapy.",
+            "Cardiovascular risk evaluation: 24-hour ambulatory blood pressure monitoring and nocturnal pulse oximetry titration.",
+            "Weight management, metabolic screening, and occupational driving safety restriction pending CPAP adherence."
+        ],
+        "wave_params": {
+            "base_freq": 3.2, "alpha_amp": 8.0, "beta_amp": 8.0, "theta_amp": 22.0, "delta_amp": 42.0, "noise": 4.0, "apnea_cycle": True
+        }
+    },
+    "case_31_fatal_insomnia_thalamectomy": {
+        "id": "case_31_fatal_insomnia_thalamectomy",
+        "patient_id": "PT-2026-031",
+        "patient_name": "Miriam Adler (Age 48, F)",
+        "category": "Sleep & Circadian Disorders",
+        "name": "Severe Chronic Insomnia Disorder (Complete Loss of Delta Slow Waves & Spindle Depletion)",
+        "dominant_freq": 18.5,
+        "bands": {"delta": 8.0, "theta": 16.0, "alpha": 26.0, "beta": 50.0},
+        "stress_index": 1.92,
+        "tbr": 0.32,
+        "abr": 0.62,
+        "cognitive_load": "MODERATE",
+        "patient_condition": (
+            "Marked nocturnal electrographic hyperarousal: profound depletion of stage N2 sleep spindles (12-14 Hz) and total absence of synchronized slow delta sleep (<10%), replaced by unrelenting low-voltage fast beta activity and autonomic micro-arousals throughout the night."
+        ),
+        "patient_action_plan": [
+            "Prescribe Cognitive Behavioral Therapy for Insomnia (CBT-I) as the first-line intervention.",
+            "Consider Dual Orexin Receptor Antagonists (DORA, e.g., Suvorexant, Lemborexant) to selectively promote sleep drive without GABAergic distortion.",
+            "Strict circadian realignment: light therapy in early morning and complete blue-light filtering 2 hours prior to scheduled sleep.",
+            "Perform polysomnography and neuroendocrine screening (24-hour salivary cortisol and thyroid panel)."
+        ],
+        "wave_params": {
+            "base_freq": 18.5, "alpha_amp": 14.0, "beta_amp": 32.0, "theta_amp": 10.0, "delta_amp": 5.0, "noise": 3.0
+        }
+    },
+    "case_32_tms_entrainment_10hz": {
+        "id": "case_32_tms_entrainment_10hz",
+        "patient_id": "PT-2026-032",
+        "patient_name": "Jonathan Cruz (Age 35, M)",
+        "category": "Neuromodulation & Brain Stimulation",
+        "name": "Transcranial Magnetic Stimulation (Phase-Locked 10.0 Hz rTMS Alpha Entrainment)",
+        "dominant_freq": 10.0,
+        "bands": {"delta": 8.0, "theta": 12.0, "alpha": 68.0, "beta": 12.0},
+        "stress_index": 0.17,
+        "tbr": 1.00,
+        "abr": 5.67,
+        "cognitive_load": "LOW",
+        "patient_condition": (
+            "High-amplitude, highly coherent 10.0 Hz sinusoidal oscillations across left dorsolateral prefrontal cortex (DLPFC) induced by repetitive TMS neuromodulation. "
+            "Evidences successful thalamocortical alpha resonance entrainment and enhanced neuroplastic plasticity."
+        ),
+        "patient_action_plan": [
+            "Verify coil positioning via stereotactic neuronavigation over F3 (left DLPFC) at 120% motor threshold.",
+            "Administer standardized 3,000-pulse therapeutic protocol (75 trains of 40 pulses at 10 Hz with 26-second inter-train intervals).",
+            "Record post-treatment resting EEG to evaluate durability of frontal alpha coherence and mood elevation.",
+            "Monitor for scalp discomfort, transient headache, and screen meticulously for contraindications (metallic implants, history of seizures)."
+        ],
+        "wave_params": {
+            "base_freq": 10.0, "alpha_amp": 48.0, "beta_amp": 8.0, "theta_amp": 7.0, "delta_amp": 5.0, "noise": 2.0, "rtms_burst": True
+        }
+    },
+    "case_33_tdcs_anodal_prefrontal": {
+        "id": "case_33_tdcs_anodal_prefrontal",
+        "patient_id": "PT-2026-033",
+        "patient_name": "Chloe Moreau (Age 31, F)",
+        "category": "Neuromodulation & Brain Stimulation",
+        "name": "Anodal transcranial Direct Current Stimulation (tDCS Prefrontal Excitability & Beta Power)",
+        "dominant_freq": 22.0,
+        "bands": {"delta": 10.0, "theta": 15.0, "alpha": 25.0, "beta": 50.0},
+        "stress_index": 1.25,
+        "tbr": 0.30,
+        "abr": 1.67,
+        "cognitive_load": "MODERATE",
+        "patient_condition": (
+            "Prefrontal cortical excitability elevation induced by 2.0 mA anodal tDCS over F3/Fp1. Characterized by localized enhancement of 18-24 Hz beta power and reduction in slow-frequency delta/theta power, indicative of enhanced working memory encoding and cognitive control."
+        ),
+        "patient_action_plan": [
+            "Confirm electrode impedance < 5 kΩ using isotonic saline sponge electrodes before ramping up current.",
+            "Deliver 2.0 mA constant direct current for 20 minutes concurrent with working memory n-back training tasks.",
+            "Check skin beneath electrode pads pre- and post-stimulation for irritation or electrochemical burns.",
+            "Log subjective cognitive workload and track sustained enhancement of executive attention on objective test batteries."
+        ],
+        "wave_params": {
+            "base_freq": 22.0, "alpha_amp": 16.0, "beta_amp": 34.0, "theta_amp": 9.0, "delta_amp": 6.0, "noise": 3.0
+        }
+    },
+    "case_34_psychedelic_psilocybin_entropy": {
+        "id": "case_34_psychedelic_psilocybin_entropy",
+        "patient_id": "PT-2026-034",
+        "patient_name": "Dante Rossi (Age 40, M)",
+        "category": "Neuromodulation & Brain Stimulation",
+        "name": "Serotonergic Psychedelic State (Psilocybin Induced Alpha Collapse & High Neural Entropy)",
+        "dominant_freq": 7.4,
+        "bands": {"delta": 24.0, "theta": 42.0, "alpha": 14.0, "beta": 20.0},
+        "stress_index": 0.47,
+        "tbr": 2.10,
+        "abr": 0.33,
+        "cognitive_load": "HIGH",
+        "patient_condition": (
+            "Profound suppression and disintegration of posterior alpha power (REBUS model) coupled with expanded broadband high-entropy oscillatory dynamics (theta-gamma cross-frequency decoupling). "
+            "Reflects 5-HT2A receptor activation, dissolution of Default Mode Network (DMN) rigidity, and heightened cortical entropy."
+        ),
+        "patient_action_plan": [
+            "Provide calm, continuous psychotherapeutic guiding presence in a controlled, supportive sensory room.",
+            "Monitor non-invasive biometrics (blood pressure, ECG rhythm, and galvanic skin response) every 30 minutes.",
+            "Maintain low ambient lighting, curated acoustic support, and non-judgmental reassurance during peak conscious dissolution.",
+            "Schedule post-session integration therapy 24 hours post-administration to translate neuroplastic insights into durable behavior change."
+        ],
+        "wave_params": {
+            "base_freq": 7.4, "alpha_amp": 8.0, "beta_amp": 14.0, "theta_amp": 26.0, "delta_amp": 16.0, "noise": 6.5, "entropy": True
+        }
+    },
+    "case_35_acute_cannabinoid_intoxication": {
+        "id": "case_35_acute_cannabinoid_intoxication",
+        "patient_id": "PT-2026-035",
+        "patient_name": "Keanu Reeves (Simulation Proxy) (Age 28, M)",
+        "category": "Artifacts & Pharmacological Effects",
+        "name": "Acute Cannabinoid CB1 Modulation (Frontal Theta Shift, Alpha Attenuation & Temporal Distortion)",
+        "dominant_freq": 5.5,
+        "bands": {"delta": 20.0, "theta": 50.0, "alpha": 18.0, "beta": 12.0},
+        "stress_index": 0.24,
+        "tbr": 4.17,
+        "abr": 0.36,
+        "cognitive_load": "LOW",
+        "patient_condition": (
+            "Prominent increase in fronto-central theta power (4-7 Hz) accompanied by moderate reduction in posterior alpha peak frequency and amplitude. "
+            "Signature of retrograde endocannabinoid CB1 receptor agonism, causing impaired short-term memory encoding, spatial disorientation, and subjective temporal elongation."
+        ),
+        "patient_action_plan": [
+            "Observe in quiet recovery suite until acute psychoactive peak subsides (typically 2-4 hours post-exposure).",
+            "Advise absolute prohibition of motor vehicle driving or operating safety-critical equipment for a minimum of 8-12 hours.",
+            "Offer oral hydration and reassurance in case of transient cannabis-induced anxiety or orthostatic tachycardia.",
+            "Conduct follow-up cognitive evaluation for cannabis use disorder screening if repeated intoxication episodes occur."
+        ],
+        "wave_params": {
+            "base_freq": 5.5, "alpha_amp": 11.0, "beta_amp": 8.0, "theta_amp": 32.0, "delta_amp": 14.0, "noise": 3.5
+        }
     }
 }
 
 def get_all_conditions() -> Dict[str, Dict[str, Any]]:
-    """Return all 20 patient condition definitions."""
+    """Return all 35 patient condition definitions."""
     return PATIENT_CONDITIONS
 
 def get_condition(condition_id: str) -> Dict[str, Any]:
     """Retrieve condition by ID, fallback to resting baseline if not found."""
     return PATIENT_CONDITIONS.get(condition_id, PATIENT_CONDITIONS["case_01_resting_baseline"])
+

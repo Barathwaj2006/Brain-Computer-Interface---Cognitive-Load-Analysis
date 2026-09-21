@@ -1,11 +1,11 @@
 """
-Unit Tests for 20 Clinical Patient Condition Simulations
+Unit Tests for 35 Clinical Patient Condition Simulations
 Verifies:
-1. All 20 distinct patient conditions exist with valid patient IDs (PT-2026-001 to PT-2026-020).
+1. All 35 distinct patient conditions exist with valid patient IDs (PT-2026-001 to PT-2026-035).
 2. Frequency band distributions, stress index, TBR, and ABR are physiologically valid.
 3. Every condition has detailed clinical diagnostic findings.
 4. Every condition has at least 3 concrete, prescriptive clinical actions.
-5. Server-side diagnostic report synthesis recognizes and handles all 20 conditions.
+5. Server-side diagnostic report synthesis recognizes and handles all 35 conditions.
 """
 
 import unittest
@@ -16,12 +16,12 @@ class TestPatientConditions(unittest.TestCase):
         self.conditions = get_all_conditions()
 
     def test_condition_count(self):
-        """Verify exactly 20 clinical conditions are loaded."""
-        self.assertEqual(len(self.conditions), 20, "Must define exactly 20 clinical patient conditions.")
+        """Verify exactly 35 clinical conditions are loaded."""
+        self.assertEqual(len(self.conditions), 35, "Must define exactly 35 clinical patient conditions.")
 
     def test_patient_ids_and_sequence(self):
-        """Verify sequential patient IDs PT-2026-001 through PT-2026-020."""
-        expected_ids = [f"PT-2026-{i:03d}" for i in range(1, 21)]
+        """Verify sequential patient IDs PT-2026-001 through PT-2026-035."""
+        expected_ids = [f"PT-2026-{i:03d}" for i in range(1, 36)]
         actual_ids = [cond["patient_id"] for cond in self.conditions.values()]
         for expected in expected_ids:
             self.assertIn(expected, actual_ids, f"Patient ID {expected} missing from conditions.")
@@ -80,9 +80,11 @@ class TestPatientConditions(unittest.TestCase):
         """Verify representation across clinical categories."""
         categories = set(cond["category"] for cond in self.conditions.values())
         expected_categories = {
-            "Normal & Sleep Electrophysiology",
-            "Cognitive & Mental States",
-            "Neurological & Clinical Pathologies",
+            "Neurological & Neurodegenerative Disorders",
+            "Acute Critical Care Pathologies",
+            "Psychiatric & Behavioral Disorders",
+            "Sleep & Circadian Disorders",
+            "Neuromodulation & Brain Stimulation",
             "Artifacts & Pharmacological Effects"
         }
         self.assertEqual(categories, expected_categories)

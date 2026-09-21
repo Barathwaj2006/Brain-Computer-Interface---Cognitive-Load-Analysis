@@ -31,7 +31,9 @@ import secrets
 import hashlib
 import logging
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
-from urllib.parse import urlparse, parse_qs
+import urllib.request
+import urllib.parse
+from urllib.parse import urlparse, parse_qs, quote
 import datetime
 import re
 import math
@@ -1222,7 +1224,6 @@ class NeuroSimHTTPHandler(SimpleHTTPRequestHandler):
                 gemini_key = os.environ.get('GEMINI_API_KEY')
                 if gemini_key and not condition_id:
                     try:
-                        import urllib.request
                         gemini_prompt = (
                             f"You are a clinical neuroscientist analyzing 250Hz EEG biopotentials. "
                             f"Patient metrics: Delta: {delta}%, Theta: {theta}%, Alpha: {alpha}%, Beta: {beta}%, "

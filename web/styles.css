@@ -2536,3 +2536,297 @@ kbd.keycap {
         z-index: 99999;
     }
 }
+
+/* ========================================================================== */
+/* Neural Simulation Mode & Clinical Disorder Synthesizer Panel               */
+/* ========================================================================== */
+.neural-simulation-panel {
+    background: #FFFFFF;
+    border: 1px solid #CBD5E1;
+    border-top: 3px solid var(--cyan);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-top: 14px;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.sim-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    flex-wrap: wrap;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #F1F5F9;
+}
+
+.sim-panel-title-cluster {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.sim-panel-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #0F172A;
+    letter-spacing: 0.2px;
+}
+
+.sim-icon {
+    font-size: 14px;
+    color: var(--cyan);
+}
+
+.sim-subtitle {
+    font-size: 11px;
+    color: #64748B;
+    font-weight: 500;
+    margin-left: 4px;
+    border-left: 1px solid #CBD5E1;
+    padding-left: 8px;
+}
+
+.badge-sim-status {
+    font-size: 10.5px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    padding: 3px 10px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+
+.badge-sim-status.idle {
+    background: #F1F5F9;
+    border: 1px solid #CBD5E1;
+    color: #64748B;
+}
+
+.badge-sim-status.active {
+    background: rgba(16, 185, 129, 0.12);
+    border: 1px solid #10B981;
+    color: #047857;
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.15);
+}
+
+.sim-idle-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #94A3B8;
+    display: inline-block;
+}
+
+.sim-pulse-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #10B981;
+    display: inline-block;
+    box-shadow: 0 0 6px #10B981;
+    animation: telemetryPulse 1.6s infinite;
+}
+
+.sim-power-action-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-simulation-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 11.5px;
+    font-weight: 800;
+    font-family: inherit;
+    border: 1px solid #94A3B8;
+    background: #FFFFFF;
+    color: #334155;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+    user-select: none;
+}
+
+.btn-simulation-toggle:hover {
+    border-color: #0284C7;
+    color: #0F172A;
+    background: #F8FAFC;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.1);
+}
+
+.btn-simulation-toggle.active {
+    background: linear-gradient(135deg, #059669, #047857);
+    border-color: #047857;
+    color: #FFFFFF;
+    box-shadow: 0 2px 8px rgba(5, 150, 105, 0.35);
+}
+
+.sim-toggle-led {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #94A3B8;
+    transition: all 0.2s ease;
+    display: inline-block;
+}
+
+.btn-simulation-toggle.active .sim-toggle-led {
+    background: #34D399;
+    box-shadow: 0 0 8px #34D399;
+    animation: telemetryPulse 1.6s infinite;
+}
+
+/* Category Filter Bar */
+.sim-category-filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    background: #F8FAFC;
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: 1px solid #E2E8F0;
+}
+
+.sim-filter-label {
+    font-size: 10px;
+    font-weight: 800;
+    color: #475569;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+}
+
+.sim-filter-pills {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.sim-category-pill {
+    background: #FFFFFF;
+    border: 1px solid #CBD5E1;
+    color: #475569;
+    padding: 3px 9px;
+    border-radius: 12px;
+    font-size: 10.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.sim-category-pill:hover {
+    background: rgba(2, 132, 199, 0.08);
+    color: #0284C7;
+    border-color: #0284C7;
+}
+
+.sim-category-pill.active {
+    background: #0284C7;
+    color: #FFFFFF;
+    border-color: #0284C7;
+    font-weight: 700;
+    box-shadow: 0 1px 3px rgba(2, 132, 199, 0.25);
+}
+
+/* Disorder Selection Row */
+.sim-disorder-select-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    background: #F8FAFC;
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid #E2E8F0;
+}
+
+.sim-dropdown-cluster {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    min-width: 300px;
+}
+
+.sim-dropdown-cluster .case-label {
+    white-space: nowrap;
+    font-size: 10.5px;
+    font-weight: 800;
+    color: #0369A1;
+}
+
+.sim-dropdown-cluster .clinical-case-dropdown {
+    flex: 1;
+    max-width: none;
+}
+
+.sim-quick-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-sim-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 12px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    border: 1px solid transparent;
+}
+
+.btn-sim-record {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.35);
+    color: #DC2626;
+}
+
+.btn-sim-record:hover {
+    background: #DC2626;
+    color: #FFFFFF;
+    box-shadow: 0 2px 6px rgba(220, 38, 38, 0.25);
+}
+
+.btn-sim-diag {
+    background: rgba(14, 165, 233, 0.1);
+    border-color: rgba(14, 165, 233, 0.35);
+    color: #0284C7;
+}
+
+.btn-sim-diag:hover {
+    background: #0284C7;
+    color: #FFFFFF;
+    box-shadow: 0 2px 6px rgba(2, 132, 199, 0.25);
+}
+
+/* Quick Disorder Electrophysiology Summary Info Strip */
+.sim-disorder-info-strip {
+    background: #F1F5F9;
+    border: 1px solid #CBD5E1;
+    border-left: 3px solid #0284C7;
+    border-radius: 4px;
+    padding: 6px 12px;
+    font-size: 11.5px;
+    color: #334155;
+    line-height: 1.4;
+    box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.02);
+}
