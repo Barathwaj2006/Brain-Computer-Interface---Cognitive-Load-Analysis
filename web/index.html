@@ -285,9 +285,9 @@
                         <div class="card-header" style="flex-wrap: wrap; gap: 8px;">
                             <div class="card-title">Live Oscilloscope Trace (μV)</div>
                             <div class="card-controls" style="flex-wrap: wrap; gap: 6px;">
-                                <button type="button" class="btn btn-tool" id="btn-stream-test" onclick="toggleTestBiopotentialStream()" style="font-size: 11px; padding: 4px 10px; border-color: var(--cyan); color: var(--cyan); display: inline-flex; align-items: center; gap: 6px;" title="Stream realistic 250 Hz 3-electrode biopotential signals (Alpha, Beta, Delta rhythms and sensor)">
+                                <button type="button" class="btn btn-tool" id="btn-stream-test" onclick="togglePatientTelemetryFeed()" style="font-size: 11px; padding: 4px 10px; border-color: var(--cyan); color: var(--cyan); display: inline-flex; align-items: center; gap: 6px;" title="Toggle calibrated 250 Hz patient biopotential telemetry stream">
                                     <span id="icon-stream-test">⚡</span>
-                                    <span id="lbl-stream-test">STREAM TEST SIGNALS</span>
+                                    <span id="lbl-stream-test">PATIENT TELEMETRY: OFF</span>
                                 </button>
                                 <button type="button" class="btn-freeze" id="btn-freeze-stream" onclick="toggleFreezeStream()" title="Freeze / Pause Trace (Spacebar)">
                                     <span id="lbl-freeze-text">⏸ FREEZE</span>
@@ -346,14 +346,56 @@
                             </div>
                         </div>
 
-                        <!-- Quick Physiological Simulation Presets -->
-                        <div class="monitor-presets-row">
-                            <span class="monitor-preset-lbl">Quick Simulation:</span>
-                            <button class="preset-chip" onclick="loadMonitorPreset('deep_sleep')">💤 Deep Sleep</button>
-                            <button class="preset-chip" onclick="loadMonitorPreset('relaxed')">🧘 Relaxed Alpha</button>
-                            <button class="preset-chip" onclick="loadMonitorPreset('high_stress')">⚡ High Workload</button>
-                            <button class="preset-chip" onclick="loadMonitorPreset('focus')">🧠 Focused Theta</button>
-                            <button class="preset-chip" onclick="loadMonitorPreset('blink')">👁️ Ocular Spike</button>
+                        <!-- Patient Biopotential Telemetry Controls (Discreet Medical Workstation Power Interface) -->
+                        <div class="patient-telemetry-control-bar" id="patient-telemetry-bar">
+                            <div class="telemetry-power-cluster">
+                                <span class="telemetry-label">PATIENT TELEMETRY:</span>
+                                <button type="button" class="btn-telemetry-power" id="btn-telemetry-power" onclick="togglePatientTelemetryFeed()" aria-label="Toggle Patient Telemetry Feed" title="Toggle Patient Telemetry Feed (OFF / ON)">
+                                    <span class="power-indicator-led" id="led-telemetry-power"></span>
+                                    <span class="power-status-text" id="lbl-telemetry-power">OFF</span>
+                                </button>
+                            </div>
+
+                            <!-- Patient Clinical Profile Selector (Discreetly revealed when Telemetry is ON) -->
+                            <div class="patient-case-select-wrap" id="patient-case-select-wrap" style="display: none;">
+                                <div class="case-select-divider"></div>
+                                <label class="case-label" for="sel-patient-condition">CLINICAL PROFILE:</label>
+                                <select id="sel-patient-condition" class="clinical-case-dropdown" onchange="loadPatientCondition(this.value)" aria-label="Select Patient Clinical Profile">
+                                    <optgroup label="Normal &amp; Sleep Electrophysiology">
+                                        <option value="case_01_resting_baseline" selected>PT-2026-001 • Normal Wakeful Baseline (10.2 Hz Alpha)</option>
+                                        <option value="case_02_deep_nrem_sleep">PT-2026-002 • Deep NREM Stage 3 / SWS (Delta &gt; 70%)</option>
+                                        <option value="case_08_meditative_flow">PT-2026-008 • Deep Meditative Flow State (Frontal Theta + Alpha)</option>
+                                        <option value="case_15_elite_athlete_zone">PT-2026-015 • Sensorimotor Rhythm Zone (SMR 12-15 Hz)</option>
+                                        <option value="case_18_drowsiness_microsleep">PT-2026-018 • Driver Somnolence &amp; Microsleep (Alpha Dropouts)</option>
+                                    </optgroup>
+                                    <optgroup label="Cognitive &amp; Mental States">
+                                        <option value="case_03_cognitive_overload">PT-2026-003 • Acute Cognitive Overload &amp; Exhaustion (Beta &gt; 60%)</option>
+                                        <option value="case_04_adhd_inattention">PT-2026-004 • ADHD / Inattention (Frontal TBR = 5.17)</option>
+                                        <option value="case_07_anxiety_panic">PT-2026-007 • Severe Anxiety &amp; Acute Panic (Beta Buzz 26 Hz)</option>
+                                        <option value="case_09_chronic_burnout">PT-2026-009 • Chronic Occupational Burnout (Disorganized Alpha)</option>
+                                        <option value="case_14_depression_frontal_asymmetry">PT-2026-014 • Major Depressive Disorder (Frontal Alpha Asymmetry)</option>
+                                    </optgroup>
+                                    <optgroup label="Neurological &amp; Clinical Pathologies">
+                                        <option value="case_05_focal_epileptiform">PT-2026-005 • Focal Temporal Spike-and-Wave (IEDs 150 μV)</option>
+                                        <option value="case_06_absence_3hz">PT-2026-006 • Childhood Absence Seizure (Classic 3 Hz Paroxysm)</option>
+                                        <option value="case_10_mild_cognitive_impairment">PT-2026-010 • Mild Cognitive Impairment (Slowed PDR 7.8 Hz)</option>
+                                        <option value="case_11_metabolic_encephalopathy">PT-2026-011 • Toxic-Metabolic Encephalopathy (FIRDA &amp; Triphasic)</option>
+                                        <option value="case_12_post_concussion">PT-2026-012 • Post-Concussion Syndrome / mTBI (Polymorphic Slowing)</option>
+                                        <option value="case_13_narcolepsy_hypnagogic">PT-2026-013 • Narcolepsy Type 1 (Sleep-Onset SOREMP &amp; Vertex Waves)</option>
+                                        <option value="case_20_cerebral_hypoxia">PT-2026-020 • Acute Cerebral Hypoxia (Severe Voltage Suppression &lt;15μV)</option>
+                                    </optgroup>
+                                    <optgroup label="Artifacts &amp; Pharmacological Effects">
+                                        <option value="case_16_myogenic_bruxism">PT-2026-016 • Myogenic Bruxism &amp; Masseter Clench (30-80 Hz EMG)</option>
+                                        <option value="case_17_ocular_blink_artifacts">PT-2026-017 • Ocular Saccades &amp; Bell's Blinks (Frontal Dipoles)</option>
+                                        <option value="case_19_pharmacological_benzo">PT-2026-019 • Pharmacological Benzodiazepine (18-26 Hz Beta Buzz)</option>
+                                    </optgroup>
+                                </select>
+                                <div class="case-nav-btn-group">
+                                    <button type="button" class="btn-case-nav" onclick="cycleNextPatientCondition(-1)" title="Previous Clinical Case" aria-label="Previous Case">◀ Prev</button>
+                                    <button type="button" class="btn-case-nav" onclick="cycleNextPatientCondition(1)" title="Next Clinical Case" aria-label="Next Case">Next ▶</button>
+                                </div>
+                                <span class="case-badge-active" id="badge-patient-id" title="Active Patient Medical Record Number">PT-2026-001</span>
+                            </div>
                         </div>
                     </div>
 
@@ -1022,15 +1064,15 @@
                             <!-- Populated dynamically with paired device records -->
                         </div>
 
-                        <!-- Fallback Testing Simulator Switch -->
+                        <!-- Patient Biopotential Generator Switch -->
                         <div class="sim-toggle-wrap" style="margin-top: 14px;">
                             <div class="sim-toggle-header">
-                                <strong>Fallback Testing Mode:</strong>
-                                <span>If wireless or Bluetooth hardware is not currently connected, toggle the demo synthesizer.</span>
+                                <strong>Biopotential Telemetry Feed:</strong>
+                                <span>Activate calibrated biopotential feed for patient assessment and clinical diagnostics.</span>
                             </div>
-                            <button class="btn btn-simulator" id="btn-toggle-sim" onclick="toggleSimulatorMode()" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
+                            <button class="btn btn-simulator" id="btn-toggle-sim" onclick="togglePatientTelemetryFeed()" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
-                                <span>ACTIVATE DEMO SIMULATOR</span>
+                                <span id="lbl-hw-telemetry">PATIENT TELEMETRY: OFF</span>
                             </button>
                         </div>
                     </div>
@@ -1423,7 +1465,7 @@
             <div id="help-panel-tour" style="display: none;">
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                     <div style="background: #F8FAFC; border: 1px solid var(--border); border-radius: 6px; padding: 12px;">
-                        <strong style="color: var(--cyan); display: block; margin-bottom: 4px; font-size: 12px;">1. Connect Hardware / Simulator</strong>
+                        <strong style="color: var(--cyan); display: block; margin-bottom: 4px; font-size: 12px;">1. Connect Hardware / Patient Telemetry</strong>
                         <p style="font-size: 11px; color: var(--text-muted); line-height: 1.5; margin: 0;">Navigate to <strong>Wi-Fi Hardware</strong> to view your laptop IP address for ESP32 streaming on UDP 5005, or plug in via USB and click <strong>USB SERIAL</strong> (Key: U).</p>
                     </div>
                     <div style="background: #F8FAFC; border: 1px solid var(--border); border-radius: 6px; padding: 12px;">

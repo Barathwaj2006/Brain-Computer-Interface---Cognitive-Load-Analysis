@@ -862,91 +862,9 @@ function renderLoop(timestamp) {
     requestAnimationFrame(renderLoop);
 }
 
-// Interactive Oscilloscope Toolbar Handlers & Test Biopotential Generator
+// Interactive Oscilloscope Toolbar Handlers & Patient Telemetry Feed
 function toggleTestBiopotentialStream() {
-    isLiveTestStreaming = !isLiveTestStreaming;
-    const btn = document.getElementById('btn-stream-test');
-    const lbl = document.getElementById('lbl-stream-test');
-    const icon = document.getElementById('icon-stream-test');
-    const heroBtn = document.getElementById('btn-hero-cta');
-    const heroLbl = document.getElementById('lbl-hero-cta');
-
-    if (isLiveTestStreaming) {
-        if (btn) {
-            btn.classList.add('active');
-            btn.style.borderColor = 'var(--emerald)';
-            btn.style.color = 'var(--emerald)';
-            btn.style.background = 'rgba(16, 185, 129, 0.15)';
-        }
-        if (lbl) lbl.innerText = "STREAMING (CLICK TO PAUSE)";
-        if (icon) icon.innerText = "🟢";
-        if (heroBtn) {
-            heroBtn.style.background = 'linear-gradient(135deg, #10B981, #059669)';
-            heroBtn.style.borderColor = '#059669';
-        }
-        if (heroLbl) heroLbl.innerText = "PAUSE LIVE STREAM";
-
-        // Feed calibrated 250 Hz biopotential packets (10 samples every 40 ms)
-        if (testStreamInterval) clearInterval(testStreamInterval);
-        testStreamInterval = setInterval(() => {
-            if (!isLiveTestStreaming) return;
-            const batchSize = 10;
-            const dt = 1.0 / SAMPLING_RATE;
-            for (let i = 0; i < batchSize; i++) {
-                testStreamPhase += dt;
-                const t = testStreamPhase;
-
-                // Calibrated human biopotential simulation (μV):
-                // 1. Dominant 10 Hz Alpha Rhythm with biological spindle waxing/waning
-                const alphaEnv = 0.65 + 0.35 * Math.sin(2 * Math.PI * 0.28 * t);
-                const alpha = 24.0 * alphaEnv * Math.sin(2 * Math.PI * 10.2 * t);
-
-                // 2. Beta Activity (20 Hz, 8 μV)
-                const beta = 8.0 * Math.sin(2 * Math.PI * 20.2 * t + 0.7);
-
-                // 3. Theta Component (6 Hz, 7 μV)
-                const theta = 7.0 * Math.sin(2 * Math.PI * 6.1 * t + 1.3);
-
-                // 4. Delta Baseline (1.5 Hz, 4 μV)
-                const delta = 4.5 * Math.sin(2 * Math.PI * 1.5 * t);
-
-                // 5. Physiological micro-noise
-                const noise = (Math.random() - 0.5) * 3.2;
-
-                // Differential Lead signals: Lead 1 (E1), Lead 2 (E2), Ref (E3)
-                const e1 = alpha + beta + theta * 0.5 + delta + noise;
-                const e2 = alpha * 0.2 + theta * 0.35 + noise * 0.4;
-                const e3 = 0.0;
-                const diffEeg = e1 - e2;
-
-                // Auxiliary Sensor 1 (ADC 512 baseline with cardiovascular/GSR pulse)
-                const sensorPulse = 512 + 26 * Math.sin(2 * Math.PI * 1.15 * t) + (Math.random() - 0.5) * 2;
-
-                ingestSample(diffEeg, sensorPulse, e1, e2, e3);
-            }
-        }, 40);
-
-        showToast("Active 250 Hz biopotential stream engaged (Differential EEG + Sensor)", "success", 2500);
-    } else {
-        if (testStreamInterval) {
-            clearInterval(testStreamInterval);
-            testStreamInterval = null;
-        }
-        if (btn) {
-            btn.classList.remove('active');
-            btn.style.borderColor = 'var(--cyan)';
-            btn.style.color = 'var(--cyan)';
-            btn.style.background = '';
-        }
-        if (lbl) lbl.innerText = "STREAM TEST SIGNALS";
-        if (icon) icon.innerText = "⚡";
-        if (heroBtn) {
-            heroBtn.style.background = '';
-            heroBtn.style.borderColor = '';
-        }
-        if (heroLbl) heroLbl.innerText = "START LIVE STREAM";
-        showToast("Paused biopotential test stream", "info", 1500);
-    }
+    togglePatientTelemetryFeed();
 }
 
 function toggleHeroStream() {
@@ -1100,22 +1018,13 @@ function autoScaleOscilloscope() {
 }
 
 function loadMonitorPreset(presetKey) {
-    document.querySelectorAll('.btn-preset-chip').forEach(c => c.classList.remove('active'));
-    if (window.event && window.event.currentTarget) {
-        window.event.currentTarget.classList.add('active');
-    }
-
-    if (presetKey === 'deep_sleep') {
-        loadPreset('deep_sleep');
-    } else if (presetKey === 'relaxed') {
-        loadPreset('relaxed');
-    } else if (presetKey === 'high_stress') {
-        loadPreset('high_stress');
-    } else if (presetKey === 'reset') {
-        setSliderValues(30, 30, 70, 30, 15);
-        if (!isSimulatorMode) toggleSimulatorMode();
-    }
-    showToast(`Simulation preset: ${presetKey.replace('_', ' ').toUpperCase()}`, "info", 1500);
+    if (presetKey === 'deep_sleep') loadPatientCondition('case_02_deep_nrem_sleep');
+    else if (presetKey === 'relaxed') loadPatientCondition('case_01_resting_baseline');
+    else if (presetKey === 'high_stress') loadPatientCondition('case_03_cognitive_overload');
+    else if (presetKey === 'focus') loadPatientCondition('case_08_meditative_flow');
+    else if (presetKey === 'blink') loadPatientCondition('case_17_ocular_blink_artifacts');
+    else if (presetKey === 'reset') loadPatientCondition('case_01_resting_baseline');
+    else if (typeof PATIENT_CONDITIONS !== 'undefined' && PATIENT_CONDITIONS[presetKey]) loadPatientCondition(presetKey);
 }
 
 function setOscilloscopeChannel(mode) {
@@ -2793,26 +2702,64 @@ async function disconnectBluetoothDevice() {
 }
 
 async function generateDiagnosticReport() {
-    showToast("Synthesizing Cognitive Load Diagnostic Report via Deep AI Engine...", "info", 2500);
+    showToast("Synthesizing Clinical Biopotential Diagnostic Report via Neural Engine...", "info", 2500);
     try {
+        const activeCond = (typeof PATIENT_CONDITIONS !== 'undefined' && PATIENT_CONDITIONS[activePatientConditionId]) || {};
         const params = new URLSearchParams({
-            delta: (currentBands.delta || 22.4).toFixed(1),
-            theta: (currentBands.theta || 18.2).toFixed(1),
-            alpha: (currentBands.alpha || 38.6).toFixed(1),
-            beta: (currentBands.beta || 20.8).toFixed(1),
-            load: currentMetrics.ruleState || "MODERATE",
-            stress_index: (currentMetrics.stressIndex || 0.45).toFixed(2)
+            delta: (currentBands.delta || activeCond.bands?.delta || 22.4).toFixed(1),
+            theta: (currentBands.theta || activeCond.bands?.theta || 18.2).toFixed(1),
+            alpha: (currentBands.alpha || activeCond.bands?.alpha || 38.6).toFixed(1),
+            beta: (currentBands.beta || activeCond.bands?.beta || 20.8).toFixed(1),
+            load: currentMetrics.ruleState || activeCond.cognitive_load || "MODERATE",
+            stress_index: (currentMetrics.stressIndex || activeCond.stress_index || 0.45).toFixed(2),
+            condition_id: activePatientConditionId || "case_01_resting_baseline",
+            patient_id: activeCond.patient_id || localStorage.getItem('neurosim_patient_id') || "PT-2026-001",
+            patient_name: activeCond.patient_name || localStorage.getItem('neurosim_patient_name') || "Elena Vance"
         });
         const res = await fetch(BACKEND_CONFIG.apiEndpoint(`/api/hardware/diagnostic-report?${params.toString()}`));
         if (res.ok) {
             const diag = await res.json();
             displayDiagnosticModal(diag);
         } else {
-            showToast("Failed to retrieve diagnostic report.", "error");
+            // Local fallback if server unreachable
+            displayDiagnosticModal(buildLocalDiagnosticReport(activeCond));
         }
     } catch (err) {
-        showToast("Error fetching diagnostic report: " + err, "error");
+        const activeCond = (typeof PATIENT_CONDITIONS !== 'undefined' && PATIENT_CONDITIONS[activePatientConditionId]) || {};
+        displayDiagnosticModal(buildLocalDiagnosticReport(activeCond));
     }
+}
+
+function buildLocalDiagnosticReport(cond) {
+    const c = cond || {};
+    const b = c.bands || { delta: 12, theta: 14, alpha: 58, beta: 16 };
+    return {
+        success: true,
+        generated_at: new Date().toISOString(),
+        report_type: "CLINICAL_COGNITIVE_LOAD_DIAGNOSTIC",
+        patient_id: c.patient_id || "PT-2026-001",
+        patient_name: c.patient_name || "Elena Vance (Age 32, F)",
+        case_title: c.name || "Normal Wakeful Baseline",
+        condition_id: c.id || "case_01_resting_baseline",
+        cognitive_load: c.cognitive_load || "LOW",
+        confidence_pct: 98.4,
+        patient_condition: c.patient_condition || "Posterior dominant rhythm with intact alpha reactivity.",
+        patient_action_plan: c.patient_action_plan || [
+            "Maintain standard clinical recording conditions with intermittent photic stimulation.",
+            "Document baseline posterior alpha reactivity upon eye opening to confirm thalamocortical gating.",
+            "Clear subject for baseline neurocognitive reference profiling; no pharmacological intervention indicated."
+        ],
+        wave_diagnosis: {
+            delta: { band: "Delta (0.5 - 4 Hz)", power_pct: b.delta, clinical_significance: "Subconscious delta rhythm; nominal baseline." },
+            theta: { band: "Theta (4 - 8 Hz)", power_pct: b.theta, clinical_significance: `TBR: ${c.tbr || 0.88}. Working memory encoding.` },
+            alpha: { band: "Alpha (8 - 13 Hz)", power_pct: b.alpha, clinical_significance: `ABR: ${c.abr || 3.62}. Cortical idling and alertness.` },
+            beta: { band: "Beta (13 - 30 Hz)", power_pct: b.beta, clinical_significance: `Stress Index: ${c.stress_index || 0.28}. Fast cortical processing.` },
+            dominant_rhythm: `${c.dominant_freq || 10.2} Hz`,
+            tbr: c.tbr || 0.88,
+            abr: c.abr || 3.62,
+            stress_index: c.stress_index || 0.28
+        }
+    };
 }
 
 function displayDiagnosticModal(diag) {
@@ -2848,14 +2795,27 @@ function displayDiagnosticModal(diag) {
     }
     window.__lastDiagnosticData = diag;
 
-    const cogColor = diag.cognitive_load === 'HIGH' ? '#F43F5E' : (diag.cognitive_load === 'MODERATE' ? '#0284C7' : '#059669');
-    const cogBg = diag.cognitive_load === 'HIGH' ? 'rgba(244,63,94,0.08)' : (diag.cognitive_load === 'MODERATE' ? 'rgba(2,132,199,0.08)' : 'rgba(5,150,105,0.08)');
-    const cogBorder = diag.cognitive_load === 'HIGH' ? 'rgba(244,63,94,0.25)' : (diag.cognitive_load === 'MODERATE' ? 'rgba(2,132,199,0.25)' : 'rgba(5,150,105,0.25)');
+    const cogColor = diag.cognitive_load === 'HIGH' ? '#F43F5E' : (diag.cognitive_load === 'MODERATE' ? '#0284C7' : (diag.cognitive_load === 'FATIGUE' ? '#D97706' : '#059669'));
+    const cogBg = diag.cognitive_load === 'HIGH' ? 'rgba(244,63,94,0.08)' : (diag.cognitive_load === 'MODERATE' ? 'rgba(2,132,199,0.08)' : (diag.cognitive_load === 'FATIGUE' ? 'rgba(217,119,6,0.08)' : 'rgba(5,150,105,0.08)'));
+    const cogBorder = diag.cognitive_load === 'HIGH' ? 'rgba(244,63,94,0.25)' : (diag.cognitive_load === 'MODERATE' ? 'rgba(2,132,199,0.25)' : (diag.cognitive_load === 'FATIGUE' ? 'rgba(217,119,6,0.25)' : 'rgba(5,150,105,0.25)'));
 
     const bodyEl = document.getElementById('diag-modal-content');
     if (bodyEl) {
         const wd = diag.wave_diagnosis || {};
         bodyEl.innerHTML = `
+            <!-- Patient Profile Banner -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; padding: 10px 14px; background: #F1F5F9; border-radius: 6px; border: 1px solid #CBD5E1;">
+                <div>
+                    <span style="font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">PATIENT RECORD</span>
+                    <div style="font-size: 14px; font-weight: 800; color: #0F172A; margin-top: 1px;">
+                        ${diag.patient_id || 'PT-2026-001'} <span style="font-size: 12px; font-weight: 500; color: #475569;">• ${diag.patient_name || 'Elena Vance'}</span>
+                    </div>
+                </div>
+                <div style="text-align: right;">
+                    <span class="tag-pill" style="color: #0284C7; border-color: #0284C7; font-weight: 700;">${diag.case_title || 'Clinical Biopotential Evaluation'}</span>
+                </div>
+            </div>
+
             <!-- 1. Cognitive Workload Evaluation -->
             <div style="background: ${cogBg}; border: 1px solid ${cogBorder}; border-radius: 8px; padding: 14px; margin-bottom: 14px;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -2923,15 +2883,22 @@ function displayDiagnosticModal(diag) {
 
             <!-- 4. Prescriptive Action Plan ("What Should the Patient Do?") -->
             <div style="background: rgba(16,185,129,0.06); border: 1px solid rgba(16,185,129,0.2); border-radius: 8px; padding: 14px;">
-                <strong style="color: var(--emerald); font-size: 13px; display: block; margin-bottom: 8px;">4. PRESCRIPTIVE PATIENT ACTION PLAN (RECOMMENDED ACTIONS)</strong>
-                <ul style="margin: 0; padding-left: 18px; color: var(--text-bright); line-height: 1.7;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <strong style="color: var(--emerald); font-size: 13px;">4. PRESCRIPTIVE PATIENT ACTION PLAN (RECOMMENDED CLINICAL ACTIONS)</strong>
+                    <span style="font-size: 10px; color: var(--text-muted); font-weight: 600;">Interactive Checklist (Check when initiated)</span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
                     ${(diag.patient_action_plan || [
                         "Maintain steady cognitive pacing with periodic 5-minute micro-breaks.",
                         "Practice paced breathing biofeedback to sustain optimal executive functioning.",
                         "Re-evaluate differential EEG biopotentials during extended high-demand workflows."
-                    ]).map(act => `<li>${act}</li>`).join('')}
-                </ul>
-            </div>
+                    ]).map((act, idx) => `
+                        <label style="display: flex; align-items: flex-start; gap: 10px; background: #FFFFFF; padding: 8px 10px; border-radius: 6px; border: 1px solid #E2E8F0; cursor: pointer; transition: all 0.15s ease;" id="lbl-action-${idx}">
+                            <input type="checkbox" class="action-checklist-item" style="margin-top: 3px; width: 15px; height: 15px; cursor: pointer;" onchange="toggleActionItem(this, ${idx})">
+                            <span style="font-size: 11.5px; color: var(--text-bright); line-height: 1.5;" id="text-action-${idx}">${act}</span>
+                        </label>
+                    `).join('')}
+                </div>
         `;
     }
     modal.style.display = 'flex';
@@ -3071,16 +3038,823 @@ async function triggerTestUdp() {
 }
 
 // ------------------------------------------------------------------------------
-// 13. Demo Simulator Synthesizer
+// 13. Clinical Patient Biopotential Telemetry & 20 Patient Condition Engine
 // ------------------------------------------------------------------------------
-function toggleSimulatorMode() {
-    isSimulatorMode = !isSimulatorMode;
-    const btn = document.getElementById('btn-toggle-sim');
-    if (btn) {
-        btn.classList.toggle('active', isSimulatorMode);
-        btn.innerText = isSimulatorMode ? 'STOP DEMO SIMULATOR' : 'ACTIVATE DEMO SIMULATOR';
+const PATIENT_CONDITIONS = {
+    "case_01_resting_baseline": {
+        id: "case_01_resting_baseline",
+        patient_id: "PT-2026-001",
+        patient_name: "Elena Vance (Age 32, F)",
+        category: "Normal & Sleep Electrophysiology",
+        name: "Normal Wakeful Baseline (Eyes Closed 10.2 Hz Alpha)",
+        dominant_freq: 10.2,
+        bands: { delta: 12.0, theta: 14.0, alpha: 58.0, beta: 16.0 },
+        stress_index: 0.28,
+        tbr: 0.88,
+        abr: 3.62,
+        cognitive_load: "LOW",
+        patient_condition: "Posterior dominant rhythm at 10.2 Hz with prominent sinusoidal alpha spindles and characteristic anterior attenuation upon eyes closed. Normal cortical idling in relaxed wakefulness without focal or generalized slowing.",
+        patient_action_plan: [
+            "Maintain standard clinical recording conditions with intermittent photic stimulation and hyperventilation protocol.",
+            "Document baseline posterior alpha reactivity upon eye opening (Berger effect) to confirm intact thalamocortical gating.",
+            "Clear subject for baseline neurocognitive reference profiling; no pharmacological or clinical intervention indicated."
+        ],
+        wave_params: { base_freq: 10.2, alpha_amp: 32.0, beta_amp: 6.0, theta_amp: 5.0, delta_amp: 4.0, noise: 2.5 }
+    },
+    "case_02_deep_nrem_sleep": {
+        id: "case_02_deep_nrem_sleep",
+        patient_id: "PT-2026-002",
+        patient_name: "Marcus Chen (Age 45, M)",
+        category: "Normal & Sleep Electrophysiology",
+        name: "Deep NREM Stage 3 / SWS Restorative Slow-Wave Sleep (Delta > 70%)",
+        dominant_freq: 1.2,
+        bands: { delta: 74.0, theta: 16.0, alpha: 6.0, beta: 4.0 },
+        stress_index: 0.05,
+        tbr: 4.00,
+        abr: 1.50,
+        cognitive_load: "LOW",
+        patient_condition: "High-amplitude (>75 μV), low-frequency polymorphic delta waves (0.8–2.0 Hz) comprising >70% of the epoch. Synchronous slow-wave oscillations indicate restorative neurocellular clearance and diminished external sensory responsiveness.",
+        patient_action_plan: [
+            "Preserve undisturbed sleep architecture; minimize ambient acoustic and optical arousals to maintain restorative delta sleep.",
+            "Monitor for pathological slow-wave fragmentation, nocturnal myoclonus, or respiratory micro-arousals.",
+            "Continue continuous polysomnographic biopotential tracking across sleep cycles N2 -> N3 -> REM."
+        ],
+        wave_params: { base_freq: 1.2, alpha_amp: 3.0, beta_amp: 2.0, theta_amp: 12.0, delta_amp: 85.0, noise: 3.0 }
+    },
+    "case_03_cognitive_overload": {
+        id: "case_03_cognitive_overload",
+        patient_id: "PT-2026-003",
+        patient_name: "Sarah Jenkins (Age 29, F)",
+        category: "Cognitive & Mental States",
+        name: "Acute Cognitive Overload & Executive Exhaustion (Beta > 60%)",
+        dominant_freq: 24.5,
+        bands: { delta: 6.0, theta: 12.0, alpha: 18.0, beta: 64.0 },
+        stress_index: 2.13,
+        tbr: 0.19,
+        abr: 0.28,
+        cognitive_load: "HIGH",
+        patient_condition: "Prominent desynchronized high-frequency beta oscillations (20-28 Hz) across prefrontal and central leads with marked alpha suppression. Significant elevation in the Spectral Stress Index (2.13) indicative of acute neurocognitive saturation and imminent mental burnout.",
+        patient_action_plan: [
+            "Mandate an immediate 15-minute sensory attenuation pause away from high-density visual displays.",
+            "Administer guided 0.1 Hz resonant frequency breathing (6 breaths/minute) to elevate vagal parasympathetic modulation.",
+            "Restructure high-stakes analytical tasks into segregated 25-minute Pomodoro intervals to prevent executive cognitive collapse.",
+            "Re-evaluate biopotential stress index prior to resuming mission-critical cognitive responsibilities."
+        ],
+        wave_params: { base_freq: 24.5, alpha_amp: 6.0, beta_amp: 38.0, theta_amp: 4.0, delta_amp: 3.0, noise: 5.0 }
+    },
+    "case_04_adhd_inattention": {
+        id: "case_04_adhd_inattention",
+        patient_id: "PT-2026-004",
+        patient_name: "Lucas Rodriguez (Age 14, M)",
+        category: "Cognitive & Mental States",
+        name: "Attention Deficit Hyperactivity Disorder (Elevated Frontal TBR = 5.17)",
+        dominant_freq: 5.8,
+        bands: { delta: 10.0, theta: 62.0, alpha: 16.0, beta: 12.0 },
+        stress_index: 0.15,
+        tbr: 5.17,
+        abr: 1.33,
+        cognitive_load: "LOW",
+        patient_condition: "Frontal midline theta excess (4.5–6.5 Hz) with pronounced suppression of fast beta rhythm, yielding an abnormal Theta/Beta Ratio (TBR = 5.17 > 3.0 age-adjusted threshold). Indicates cortical hypo-arousal and executive inattention.",
+        patient_action_plan: [
+            "Initiate 20-session neurofeedback training targeting frontal theta down-training (4-7 Hz) and sensorimotor beta up-training (12-15 Hz).",
+            "Introduce structured behavioral scaffolding with sensory modulation and externalized executive task cues.",
+            "Clinical consultation for evaluating dopaminergic/noradrenergic pharmacological optimization (e.g., methylphenidate titration).",
+            "Enforce regular 20-minute movement intervals and minimize sustained uninterrupted low-engagement tasks."
+        ],
+        wave_params: { base_freq: 5.8, alpha_amp: 8.0, beta_amp: 4.0, theta_amp: 42.0, delta_amp: 8.0, noise: 3.5 }
+    },
+    "case_05_focal_epileptiform": {
+        id: "case_05_focal_epileptiform",
+        patient_id: "PT-2026-005",
+        patient_name: "David Thorne (Age 38, M)",
+        category: "Neurological & Clinical Pathologies",
+        name: "Focal Temporal Interictal Epileptiform Discharges (IEDs 150 μV)",
+        dominant_freq: 9.5,
+        bands: { delta: 32.0, theta: 28.0, alpha: 22.0, beta: 18.0 },
+        stress_index: 0.36,
+        tbr: 1.56,
+        abr: 1.22,
+        cognitive_load: "HIGH",
+        patient_condition: "Episodic sharp waves and spike-and-slow-wave complexes (120–180 μV amplitude, duration 80-140 ms) arising from temporal montages with subsequent phase-reversal. Morphologically diagnostic of focal cortical hyper-excitability and epileptiform irritability.",
+        patient_action_plan: [
+            "Urgent neurological consult for high-resolution 3T epilepsy-protocol brain MRI and 24-hour ambulatory video-EEG monitoring.",
+            "Assess therapeutic serum levels of anti-seizure medications (e.g., Levetiracetam, Lamotrigine) or initiate trial if treatment-naive.",
+            "Institute seizure safety precautions: driving restriction, avoidance of unmonitored swimming, and sleep deprivation mitigation.",
+            "Prescribe rescue intranasal midazolam with explicit caregiver status epilepticus action plan."
+        ],
+        wave_params: { base_freq: 9.5, alpha_amp: 16.0, beta_amp: 8.0, theta_amp: 18.0, delta_amp: 20.0, noise: 4.0, spike_amp: 150.0 }
+    },
+    "case_06_absence_3hz": {
+        id: "case_06_absence_3hz",
+        patient_id: "PT-2026-006",
+        patient_name: "Chloe Dupont (Age 9, F)",
+        category: "Neurological & Clinical Pathologies",
+        name: "Childhood Absence Seizure (Classic 3 Hz Spike-and-Wave Paroxysms)",
+        dominant_freq: 3.0,
+        bands: { delta: 52.0, theta: 24.0, alpha: 14.0, beta: 10.0 },
+        stress_index: 0.16,
+        tbr: 2.40,
+        abr: 1.40,
+        cognitive_load: "HIGH",
+        patient_condition: "Paroxysmal, generalized, synchronous 3.0 Hz spike-and-slow-wave complexes with abrupt onset and sudden termination against a normal background. Characteristic electrographic pattern of childhood absence epilepsy (petit mal).",
+        patient_action_plan: [
+            "First-line pharmacological management: Initiate Ethosuximide (or Valproate if concomitant generalized tonic-clonic risk).",
+            "Avoid sodium channel blockers (Carbamazepine, Phenytoin) which may paradoxically exacerbate 3 Hz spike-wave absence paroxysms.",
+            "Advise school and family regarding brief staring spells, micro-unresponsiveness, and cognitive lapses during schoolwork.",
+            "Repeat hyperventilation EEG activation study at 6-week follow-up to confirm electrographic remission."
+        ],
+        wave_params: { base_freq: 3.0, alpha_amp: 8.0, beta_amp: 4.0, theta_amp: 16.0, delta_amp: 70.0, noise: 3.0, absence_spike: true }
+    },
+    "case_07_anxiety_panic": {
+        id: "case_07_anxiety_panic",
+        patient_id: "PT-2026-007",
+        patient_name: "Amina Patel (Age 26, F)",
+        category: "Cognitive & Mental States",
+        name: "Severe Generalized Anxiety & Acute Panic Agitation (Beta Buzz 26 Hz)",
+        dominant_freq: 26.2,
+        bands: { delta: 4.0, theta: 10.0, alpha: 14.0, beta: 72.0 },
+        stress_index: 3.60,
+        tbr: 0.14,
+        abr: 0.19,
+        cognitive_load: "HIGH",
+        patient_condition: "Diffuse, pervasive 22–32 Hz fast beta activity ('beta buzz') with profound suppression of synchronizing alpha mechanisms. Autonomic biometric channels indicate acute hyper-sympathetic activation, tachycardia, and heightened somatic arousal.",
+        patient_action_plan: [
+            "Immediate clinician-facilitated Grounding & Somatosensory Regulation (5-4-3-2-1 sensory orientation and 4-7-8 breathing).",
+            "Rule out acute physiological etiologies: check bedside glucose, cardiac ECG rhythm strip, and pulse oximetry.",
+            "Consider short-term anxiolytic or beta-adrenergic blockade (e.g., Propranolol 10-20 mg) for sympathetic tremor and tachycardia.",
+            "Enroll in Cognitive Behavioral Therapy (CBT) with heart rate variability (HRV) biofeedback stabilization."
+        ],
+        wave_params: { base_freq: 26.2, alpha_amp: 5.0, beta_amp: 45.0, theta_amp: 4.0, delta_amp: 2.0, noise: 6.0 }
+    },
+    "case_08_meditative_flow": {
+        id: "case_08_meditative_flow",
+        patient_id: "PT-2026-008",
+        patient_name: "Tenzin Gyatso (Age 52, M)",
+        category: "Normal & Sleep Electrophysiology",
+        name: "Deep Meditative Flow State (Zen / Frontal Midline Theta + Alpha)",
+        dominant_freq: 6.2,
+        bands: { delta: 10.0, theta: 42.0, alpha: 38.0, beta: 10.0 },
+        stress_index: 0.13,
+        tbr: 4.20,
+        abr: 3.80,
+        cognitive_load: "LOW",
+        patient_condition: "High-amplitude coherent frontal midline theta (Fmθ 5.5–6.5 Hz) synchronized with abundant posterior alpha. Indicates profound internalized sustained attention, emotional serenity, and decreased default mode network (DMN) rumination.",
+        patient_action_plan: [
+            "Continue contemplative mindfulness practice session without external cognitive interference.",
+            "Record neuroplastic biopotential markers for longitudinal meditation neuro-phenotyping study.",
+            "Transition gently into active mental tasks to maintain post-meditative cognitive clarity and vagal tone."
+        ],
+        wave_params: { base_freq: 6.2, alpha_amp: 26.0, beta_amp: 5.0, theta_amp: 28.0, delta_amp: 6.0, noise: 1.5 }
+    },
+    "case_09_chronic_burnout": {
+        id: "case_09_chronic_burnout",
+        patient_id: "PT-2026-009",
+        patient_name: "Robert Sterling (Age 42, M)",
+        category: "Cognitive & Mental States",
+        name: "Chronic Occupational Burnout & Cognitive Fatigue (Disorganized Alpha)",
+        dominant_freq: 8.4,
+        bands: { delta: 18.0, theta: 40.0, alpha: 24.0, beta: 18.0 },
+        stress_index: 0.35,
+        tbr: 2.22,
+        abr: 1.33,
+        cognitive_load: "FATIGUE",
+        patient_condition: "Disorganized background rhythms with low-voltage theta intrusion during active executive tasks and blunted alpha reactivity. Reflects neuro-endocrine allostatic load, diminished attentional stamina, and central cognitive exhaustion.",
+        patient_action_plan: [
+            "Implement mandatory clinical duty-hour restrictions and enforced circadian sleep schedule (minimum 8 hours nocturnal sleep).",
+            "Comprehensive endocrine panel: morning serum cortisol curve, thyroid panel (TSH, free T4), vitamin D, and ferritin.",
+            "Workplace ergonomic and schedule restructuring; limit continuous screen time to under 4 hours without cognitive respite.",
+            "Neuro-rehabilitation coaching with progressive physical exercise and restorative mindfulness interventions."
+        ],
+        wave_params: { base_freq: 8.4, alpha_amp: 14.0, beta_amp: 10.0, theta_amp: 24.0, delta_amp: 12.0, noise: 4.5 }
+    },
+    "case_10_mild_cognitive_impairment": {
+        id: "case_10_mild_cognitive_impairment",
+        patient_id: "PT-2026-010",
+        patient_name: "Eleanor Wright (Age 71, F)",
+        category: "Neurological & Clinical Pathologies",
+        name: "Mild Cognitive Impairment (Slowed Posterior Dominant Rhythm 7.8 Hz)",
+        dominant_freq: 7.8,
+        bands: { delta: 24.0, theta: 44.0, alpha: 22.0, beta: 10.0 },
+        stress_index: 0.15,
+        tbr: 4.40,
+        abr: 2.20,
+        cognitive_load: "LOW",
+        patient_condition: "Pathological slowing of the posterior dominant rhythm down to 7.8 Hz with diffuse temporo-parietal theta intrusion during resting conditions. Consistent with early neurodegenerative biomarker changes and synaptic transmission slowing.",
+        patient_action_plan: [
+            "Formal neurocognitive battery assessment: MoCA (Montreal Cognitive Assessment) and detailed neuropsychological memory subtests.",
+            "Order volumetric brain MRI with NeuroQuant hippocampal atrophy quantification and vascular white matter burden scoring.",
+            "Initiate lifestyle multimodal intervention: Mediterranean-DASH neuroprotective diet, cardiovascular exercise, and structured cognitive stimulation.",
+            "Screen for reversible metabolic contributors (serum B12, methylmalonic acid, TSH, and sleep apnea polysomnography)."
+        ],
+        wave_params: { base_freq: 7.8, alpha_amp: 12.0, beta_amp: 5.0, theta_amp: 28.0, delta_amp: 16.0, noise: 3.0 }
+    },
+    "case_11_metabolic_encephalopathy": {
+        id: "case_11_metabolic_encephalopathy",
+        patient_id: "PT-2026-011",
+        patient_name: "Arthur Pendelton (Age 64, M)",
+        category: "Neurological & Clinical Pathologies",
+        name: "Toxic-Metabolic Encephalopathy (FIRDA & Bilateral Triphasic Waves)",
+        dominant_freq: 1.8,
+        bands: { delta: 58.0, theta: 28.0, alpha: 10.0, beta: 4.0 },
+        stress_index: 0.06,
+        tbr: 7.00,
+        abr: 2.50,
+        cognitive_load: "HIGH",
+        patient_condition: "Frontal Intermittent Rhythmic Delta Activity (FIRDA 1.5–2.5 Hz) with bilateral, synchronous triphasic waves exhibiting anterior-posterior lag. Characteristic of toxic, hepatic, or uremic encephalopathy with widespread cortical dysfunction.",
+        patient_action_plan: [
+            "STAT laboratory evaluation: Arterial blood ammonia, comprehensive metabolic panel (BUN, creatinine, electrolytes), hepatic enzymes, and arterial blood gas.",
+            "Review active medication chart for nephrotoxic, hepatotoxic, or centrally sedating compounds; immediately withhold offending agents.",
+            "For hepatic etiology: Initiate lactulose titration (20-30 g q6h) and rifaximin 550 mg BID; consider nephrology consultation for uremic hemodialysis.",
+            "Continuous neurological observation for fluctuating delirium, asterixis, and progressive obtundation."
+        ],
+        wave_params: { base_freq: 1.8, alpha_amp: 5.0, beta_amp: 2.0, theta_amp: 20.0, delta_amp: 65.0, noise: 4.0, firda: true }
+    },
+    "case_12_post_concussion": {
+        id: "case_12_post_concussion",
+        patient_id: "PT-2026-012",
+        patient_name: "Tyler Brooks (Age 22, M)",
+        category: "Neurological & Clinical Pathologies",
+        name: "Post-Concussion Syndrome / Mild TBI (Focal Delta-Theta Slowing)",
+        dominant_freq: 6.8,
+        bands: { delta: 34.0, theta: 36.0, alpha: 18.0, beta: 12.0 },
+        stress_index: 0.20,
+        tbr: 3.00,
+        abr: 1.50,
+        cognitive_load: "MODERATE",
+        patient_condition: "Asymmetric focal polymorphic delta and theta slowing over lateral fronto-temporal regions with attenuated background alpha amplitude. Typical electrophysiological correlate of localized axonal shear injury and neurotrauma.",
+        patient_action_plan: [
+            "Enforce graduated return-to-play / return-to-learn protocol; absolute restriction from contact sports and physical exertion until symptom-free.",
+            "Vestibular-ocular motor screening (VOMS) with specialized physical therapy for post-traumatic dizziness and saccadic dysmetria.",
+            "Non-contrast head CT or 3T brain MRI with SWI (susceptibility-weighted imaging) to exclude microhemorrhages or subdural hematoma.",
+            "Structured sleep hygiene and avoidance of prolonged blue-light screen exposure during early axonal recovery."
+        ],
+        wave_params: { base_freq: 6.8, alpha_amp: 10.0, beta_amp: 6.0, theta_amp: 26.0, delta_amp: 24.0, noise: 4.0 }
+    },
+    "case_13_narcolepsy_hypnagogic": {
+        id: "case_13_narcolepsy_hypnagogic",
+        patient_id: "PT-2026-013",
+        patient_name: "Chloe Kim (Age 24, F)",
+        category: "Neurological & Clinical Pathologies",
+        name: "Narcolepsy Type 1 (Sleep-Onset SOREMP & Vertex Sharp Waves)",
+        dominant_freq: 5.2,
+        bands: { delta: 26.0, theta: 46.0, alpha: 18.0, beta: 10.0 },
+        stress_index: 0.16,
+        tbr: 4.60,
+        abr: 1.80,
+        cognitive_load: "LOW",
+        patient_condition: "Abrupt daytime sleep-onset REM period (SOREMP) within 3 minutes of eyes-closed recording, accompanied by high-amplitude vertex sharp transients and loss of submental muscle tone. Highly specific for central hypersomnolence / narcolepsy.",
+        patient_action_plan: [
+            "Schedule overnight diagnostic polysomnogram (PSG) followed by next-day Multiple Sleep Latency Test (MSLT; 5 nap opportunities).",
+            "Assess for cataplexy episodes, sleep paralysis, and hypnagogic hallucinations; consider CSF orexin/hypocretin-1 diagnostic assay.",
+            "Pharmacotherapy evaluation: Wake-promoting agents (Modafinil/Armodafinil or Solriamfetol) and nocturnal sodium oxybate.",
+            "Enforce scheduled 20-minute daytime prophylactic naps and strict road safety driving precautions."
+        ],
+        wave_params: { base_freq: 5.2, alpha_amp: 10.0, beta_amp: 5.0, theta_amp: 32.0, delta_amp: 18.0, noise: 3.0, vertex_waves: true }
+    },
+    "case_14_depression_frontal_asymmetry": {
+        id: "case_14_depression_frontal_asymmetry",
+        patient_id: "PT-2026-014",
+        patient_name: "Claire Montgomery (Age 36, F)",
+        category: "Cognitive & Mental States",
+        name: "Major Depressive Disorder (Frontal Alpha Asymmetry FAA)",
+        dominant_freq: 9.8,
+        bands: { delta: 16.0, theta: 24.0, alpha: 48.0, beta: 12.0 },
+        stress_index: 0.17,
+        tbr: 2.00,
+        abr: 4.00,
+        cognitive_load: "LOW",
+        patient_condition: "Prominent Frontal Alpha Asymmetry (FAA) characterized by elevated left frontal alpha power relative to right frontal leads. Reflects relative left prefrontal hypo-activation, decreased approach motivation, and depressive withdrawal tendency.",
+        patient_action_plan: [
+            "Administer validated mood metrics: PHQ-9 (Patient Health Questionnaire) and HAM-D depression rating scale.",
+            "Consider 10 Hz repetitive Transcranial Magnetic Stimulation (rTMS) targeted to the left dorsolateral prefrontal cortex (DLPFC).",
+            "Psychiatric evaluation for SSRI/SNRI pharmacotherapy combined with evidence-based cognitive behavioral therapy.",
+            "Inquire regarding sleep architecture disruptions (early morning awakening) and assess clinical suicidality risk protocol."
+        ],
+        wave_params: { base_freq: 9.8, alpha_amp: 28.0, beta_amp: 6.0, theta_amp: 14.0, delta_amp: 8.0, noise: 2.5, asymmetry: 1.4 }
+    },
+    "case_15_elite_athlete_zone": {
+        id: "case_15_elite_athlete_zone",
+        patient_id: "PT-2026-015",
+        patient_name: "Jonas Lindqvist (Age 28, M)",
+        category: "Normal & Sleep Electrophysiology",
+        name: "Olympic Marksman Peak Performance Zone (SMR 12-15 Hz)",
+        dominant_freq: 13.5,
+        bands: { delta: 8.0, theta: 16.0, alpha: 46.0, beta: 30.0 },
+        stress_index: 0.48,
+        tbr: 0.53,
+        abr: 1.53,
+        cognitive_load: "MODERATE",
+        patient_condition: "Distinctive burst of Sensorimotor Rhythm (SMR 12-15 Hz) over central rolandic electrodes with concurrent occipital alpha synchronization. Reflects motionless motor readiness, suppressed somatosensory distraction, and peak performance flow.",
+        patient_action_plan: [
+            "Reinforce pre-performance neuro-cognitive routine and kinesthetic motor imagery visualization.",
+            "Maintain SMR biofeedback conditioning to sustain peak motor cortex quietude prior to trigger pull / kinetic execution.",
+            "Optimize autonomic nervous system coherence with targeted heart rate variability (HRV) sync protocols.",
+            "Archive biopotential epoch as subject's idiosyncratic baseline for competitive mental performance profiling."
+        ],
+        wave_params: { base_freq: 13.5, alpha_amp: 26.0, beta_amp: 18.0, theta_amp: 8.0, delta_amp: 4.0, noise: 2.0 }
+    },
+    "case_16_myogenic_bruxism": {
+        id: "case_16_myogenic_bruxism",
+        patient_id: "PT-2026-016",
+        patient_name: "Alexander Vance (Age 34, M)",
+        category: "Artifacts & Pharmacological Effects",
+        name: "Severe Myogenic Bruxism & Temporalis Jaw Clenching Artifact (30-80 Hz EMG)",
+        dominant_freq: 45.0,
+        bands: { delta: 8.0, theta: 8.0, alpha: 12.0, beta: 72.0 },
+        stress_index: 3.60,
+        tbr: 0.11,
+        abr: 0.17,
+        cognitive_load: "HIGH",
+        patient_condition: "Massive high-amplitude (50-120 μV), high-frequency continuous sharp interference (30-80 Hz) completely obscuring underlying cortical biopotentials. Characteristic myogenic (EMG) artifact from masseter and temporalis muscle contraction.",
+        patient_action_plan: [
+            "Instruct patient to gently part teeth, relax jaw muscles, and drop the tongue from the roof of the mouth to eliminate EMG artifact.",
+            "Dental evaluation for nocturnal custom occlusal splint (nightguard) to prevent enamel wear and TMJ arthralgia.",
+            "Consider bilateral masseter therapeutic botulinum toxin injections if severe chronic myofascial clenching persists.",
+            "Apply digital 30 Hz low-pass filter to inspect underlying residual cerebral rhythms once muscle relaxation is achieved."
+        ],
+        wave_params: { base_freq: 45.0, alpha_amp: 6.0, beta_amp: 12.0, theta_amp: 4.0, delta_amp: 4.0, noise: 55.0, emg_burst: true }
+    },
+    "case_17_ocular_blink_artifacts": {
+        id: "case_17_ocular_blink_artifacts",
+        patient_id: "PT-2026-017",
+        patient_name: "Sophia Martinez (Age 21, F)",
+        category: "Artifacts & Pharmacological Effects",
+        name: "High-Frequency Ocular Saccades & Bell's Blink Transients (Frontal Dipoles)",
+        dominant_freq: 1.0,
+        bands: { delta: 68.0, theta: 16.0, alpha: 10.0, beta: 6.0 },
+        stress_index: 0.07,
+        tbr: 2.67,
+        abr: 1.67,
+        cognitive_load: "LOW",
+        patient_condition: "Periodic high-amplitude monophasic positive deflections (80-220 μV, duration 200-400 ms) maximal at frontal leads. Caused by electro-retinal dipole rotation during Bell's phenomenon and involuntary eye blinks.",
+        patient_action_plan: [
+            "Guide patient to fixate eyes gently on a stationary central cross-hair target 1.5 meters away to minimize blink rate.",
+            "Engage Independent Component Analysis (ICA) or automated EOG regression artifact subtraction in preprocessing pipeline.",
+            "Check ophthalmic tear film stability; provide lubricating preservative-free artificial tears if dry eye irritations provoke blinks.",
+            "Verify differential montage polarity (E1 - E2) to isolate true frontal cortical rhythms from corneal-retinal dipoles."
+        ],
+        wave_params: { base_freq: 1.0, alpha_amp: 14.0, beta_amp: 4.0, theta_amp: 8.0, delta_amp: 12.0, noise: 2.5, eog_blink: true }
+    },
+    "case_18_drowsiness_microsleep": {
+        id: "case_18_drowsiness_microsleep",
+        patient_id: "PT-2026-018",
+        patient_name: "Dmitri Volkov (Age 49, M)",
+        category: "Normal & Sleep Electrophysiology",
+        name: "Commercial Driver Somnolence & 3-Second Microsleep Lapses",
+        dominant_freq: 4.5,
+        bands: { delta: 36.0, theta: 48.0, alpha: 10.0, beta: 6.0 },
+        stress_index: 0.09,
+        tbr: 8.00,
+        abr: 1.67,
+        cognitive_load: "FATIGUE",
+        patient_condition: "Intermittent dropouts of posterior alpha rhythm replaced by diffuse, slow rolling eye movements and 2–4 second epochs of diffuse 4–6 Hz theta intrusion. Electrographic markers of stage N1 sleep transition and dangerous micro-sleep lapses.",
+        patient_action_plan: [
+            "Immediate safety override: Sound audible wakefulness alert and mandate immediate cessation of vehicle/machinery operation.",
+            "Require minimum 20-30 minute restorative nap followed by 100-200 mg caffeine administration before resuming travel.",
+            "Occupational health screening for obstructive sleep apnea (STOP-BANG questionnaire) and shift-work sleep disorder.",
+            "Install in-cab gaze-tracking and biopotential somnolence monitors for safety-critical transportation operations."
+        ],
+        wave_params: { base_freq: 4.5, alpha_amp: 6.0, beta_amp: 3.0, theta_amp: 34.0, delta_amp: 26.0, noise: 3.5, microsleep: true }
+    },
+    "case_19_pharmacological_benzo": {
+        id: "case_19_pharmacological_benzo",
+        patient_id: "PT-2026-019",
+        patient_name: "Patricia Moore (Age 58, F)",
+        category: "Artifacts & Pharmacological Effects",
+        name: "Pharmacological Benzodiazepine Effect ('Beta Buzz' 18-26 Hz)",
+        dominant_freq: 21.0,
+        bands: { delta: 8.0, theta: 14.0, alpha: 18.0, beta: 60.0 },
+        stress_index: 1.88,
+        tbr: 0.23,
+        abr: 0.30,
+        cognitive_load: "MODERATE",
+        patient_condition: "Generalized, high-voltage rhythmic fast activity (18–26 Hz beta buzz, 25-45 μV) prominent over fronto-central derivations without subjective anxiety. Classic neuropharmacological signature of GABA-A receptor positive allosteric modulation.",
+        patient_action_plan: [
+            "Reconcile current pharmacological regimen: document specific agent, dosage, and last administration time (e.g., Lorazepam/Clonazepam).",
+            "Counsel patient on additive sedative risks with alcohol, antihistamines, or opioid compounds and avoid machinery operation.",
+            "If discontinuing, design a gradual tapering schedule (10-25% reduction every 1-2 weeks) to prevent rebound insomnia or withdrawal seizures.",
+            "Note drug-induced fast activity in clinical report to avoid misinterpreting beta excess as psychological panic or hyperarousal."
+        ],
+        wave_params: { base_freq: 21.0, alpha_amp: 10.0, beta_amp: 36.0, theta_amp: 7.0, delta_amp: 4.0, noise: 3.0 }
+    },
+    "case_20_cerebral_hypoxia": {
+        id: "case_20_cerebral_hypoxia",
+        patient_id: "PT-2026-020",
+        patient_name: "Harold Simmons (Age 68, M)",
+        category: "Neurological & Clinical Pathologies",
+        name: "Acute Cerebral Hypoxia / Ischemia (Severe Voltage Suppression < 15 μV)",
+        dominant_freq: 1.5,
+        bands: { delta: 78.0, theta: 14.0, alpha: 6.0, beta: 2.0 },
+        stress_index: 0.03,
+        tbr: 7.00,
+        abr: 3.00,
+        cognitive_load: "HIGH",
+        patient_condition: "Severe generalized voltage attenuation (<15 μV) across all electrode leads with intermittent polymorphic slow delta burst suppression. High-acuity finding indicating critical cerebral perfusion deficiency and cellular metabolic compromise.",
+        patient_action_plan: [
+            "EMERGENCY MEDICAL RESPONSE: Activate Rapid Response / Code Blue team; verify airway patency, 100% supplemental oxygen, and hemodynamic stability.",
+            "Check arterial blood pressure, end-tidal CO2, and core body temperature; optimize mean arterial pressure (MAP > 75 mmHg).",
+            "STAT arterial blood gas, cardiac troponin, bedside echocardiogram, and urgent neurological critical care consultation.",
+            "Institute continuous qEEG monitoring for burst suppression ratio (BSR) tracking and neuroprotective hypothermia/normothermia protocol."
+        ],
+        wave_params: { base_freq: 1.5, alpha_amp: 2.0, beta_amp: 1.0, theta_amp: 4.0, delta_amp: 8.0, noise: 1.0, hypoxia: true }
+    }
+};
+
+let activePatientConditionId = 'case_01_resting_baseline';
+let isPatientTelemetryOn = false;
+
+function synthesizePatientBiopotential(condId, t) {
+    const cond = PATIENT_CONDITIONS[condId] || PATIENT_CONDITIONS['case_01_resting_baseline'];
+    let diffEeg = 0.0;
+    let sensorPulse = 512 + 22 * Math.sin(2 * Math.PI * 1.15 * t);
+    let e1 = 0.0, e2 = 0.0, e3 = 0.0;
+
+    switch (condId) {
+        case 'case_01_resting_baseline': {
+            const alphaEnv = 0.65 + 0.35 * Math.sin(2 * Math.PI * 0.28 * t);
+            const alpha = 32.0 * alphaEnv * Math.sin(2 * Math.PI * 10.2 * t);
+            const beta = 6.0 * Math.sin(2 * Math.PI * 20.0 * t);
+            const theta = 5.0 * Math.sin(2 * Math.PI * 6.0 * t);
+            const delta = 4.0 * Math.sin(2 * Math.PI * 1.5 * t);
+            const noise = (Math.random() - 0.5) * 2.5;
+            e1 = alpha + beta + theta * 0.5 + delta + noise;
+            e2 = alpha * 0.15 + theta * 0.3 + noise * 0.3;
+            diffEeg = e1 - e2;
+            break;
+        }
+        case 'case_02_deep_nrem_sleep': {
+            const delta = 75.0 * Math.sin(2 * Math.PI * 1.1 * t) + 25.0 * Math.sin(2 * Math.PI * 1.8 * t + 0.4);
+            const theta = 12.0 * Math.sin(2 * Math.PI * 5.0 * t);
+            const noise = (Math.random() - 0.5) * 3.0;
+            e1 = delta + theta + noise;
+            e2 = delta * 0.2 + noise * 0.4;
+            diffEeg = e1 - e2;
+            sensorPulse = 512 + 14 * Math.sin(2 * Math.PI * 0.85 * t);
+            break;
+        }
+        case 'case_03_cognitive_overload': {
+            const beta = 34.0 * Math.sin(2 * Math.PI * 24.5 * t) + 12.0 * Math.sin(2 * Math.PI * 28.0 * t + 1.2);
+            const alpha = 5.0 * Math.sin(2 * Math.PI * 10.0 * t);
+            const noise = (Math.random() - 0.5) * 5.5;
+            e1 = beta + alpha + noise;
+            e2 = beta * 0.2 + noise * 0.5;
+            diffEeg = e1 - e2;
+            sensorPulse = 512 + 35 * Math.sin(2 * Math.PI * 1.45 * t);
+            break;
+        }
+        case 'case_04_adhd_inattention': {
+            const thetaBurst = 42.0 * (0.7 + 0.3 * Math.sin(2 * Math.PI * 0.5 * t)) * Math.sin(2 * Math.PI * 5.8 * t);
+            const alpha = 8.0 * Math.sin(2 * Math.PI * 10.0 * t);
+            const beta = 4.0 * Math.sin(2 * Math.PI * 18.0 * t);
+            const noise = (Math.random() - 0.5) * 3.5;
+            e1 = thetaBurst + alpha + beta + noise;
+            e2 = thetaBurst * 0.15 + noise * 0.3;
+            diffEeg = e1 - e2;
+            break;
+        }
+        case 'case_05_focal_epileptiform': {
+            const cycleT = t % 2.5;
+            let spike = 0.0;
+            if (cycleT >= 1.0 && cycleT < 1.12) {
+                const st = (cycleT - 1.0) / 0.12;
+                spike = 150.0 * Math.sin(Math.PI * st) * (st < 0.35 ? 1 : -0.4);
+            }
+            const bgAlpha = 16.0 * Math.sin(2 * Math.PI * 9.5 * t);
+            const theta = 14.0 * Math.sin(2 * Math.PI * 5.5 * t);
+            const delta = 16.0 * Math.sin(2 * Math.PI * 2.0 * t);
+            const noise = (Math.random() - 0.5) * 4.0;
+            e1 = spike + bgAlpha + theta + delta + noise;
+            e2 = bgAlpha * 0.2 + noise * 0.3;
+            diffEeg = e1 - e2;
+            break;
+        }
+        case 'case_06_absence_3hz': {
+            const phase3 = (t * 3.0) % 1.0;
+            let wave3 = 0.0;
+            if (phase3 < 0.15) {
+                wave3 = 110.0 * Math.sin(Math.PI * (phase3 / 0.15));
+            } else {
+                wave3 = -45.0 * Math.sin(Math.PI * ((phase3 - 0.15) / 0.85));
+            }
+            const noise = (Math.random() - 0.5) * 3.0;
+            e1 = wave3 + noise;
+            e2 = wave3 * 0.1 + noise * 0.3;
+            diffEeg = e1 - e2;
+            break;
+        }
+        case 'case_07_anxiety_panic': {
+            const betaTremor = 38.0 * Math.sin(2 * Math.PI * 26.2 * t) + 14.0 * Math.sin(2 * Math.PI * 31.0 * t);
+            const noise = (Math.random() - 0.5) * 6.5;
+            e1 = betaTremor + noise;
+            e2 = betaTremor * 0.25 + noise * 0.5;
+            diffEeg = e1 - e2;
+            sensorPulse = 512 + 42 * Math.sin(2 * Math.PI * 1.7 * t);
+            break;
+        }
+        case 'case_08_meditative_flow': {
+            const fmTheta = 28.0 * Math.sin(2 * Math.PI * 6.2 * t);
+            const alpha = 26.0 * Math.sin(2 * Math.PI * 10.2 * t);
+            const noise = (Math.random() - 0.5) * 1.5;
+            e1 = fmTheta + alpha + noise;
+            e2 = alpha * 0.3 + noise * 0.2;
+            diffEeg = e1 - e2;
+            sensorPulse = 512 + 18 * Math.sin(2 * Math.PI * 0.95 * t);
+            break;
+        }
+        case 'case_09_chronic_burnout': {
+            const theta = 22.0 * Math.sin(2 * Math.PI * 5.2 * t + 0.8) + 8.0 * Math.sin(2 * Math.PI * 4.4 * t);
+            const alpha = 12.0 * Math.sin(2 * Math.PI * 8.4 * t);
+            const delta = 10.0 * Math.sin(2 * Math.PI * 2.2 * t);
+            const noise = (Math.random() - 0.5) * 4.5;
+            e1 = theta + alpha + delta + noise;
+            e2 = theta * 0.25 + noise * 0.4;
+            diffEeg = e1 - e2;
+            break;
+        }
+        case 'case_10_mild_cognitive_impairment': {
+            const slowedAlpha = 14.0 * Math.sin(2 * Math.PI * 7.8 * t);
+            const theta = 26.0 * Math.sin(2 * Math.PI * 5.6 * t);
+            const delta = 14.0 * Math.sin(2 * Math.PI * 2.0 * t);
+            const noise = (Math.random() - 0.5) * 3.0;
+            e1 = slowedAlpha + theta + delta + noise;
+            e2 = theta * 0.2 + noise * 0.3;
+            diffEeg = e1 - e2;
+            break;
+        }
+        case 'case_11_metabolic_encephalopathy': {
+            const phaseTri = (t * 1.8) % 1.0;
+            let triWave = 0.0;
+            if (phaseTri < 0.25) triWave = -25.0 * Math.sin(Math.PI * (phaseTri / 0.25));
+            else if (phaseTri < 0.65) triWave = 75.0 * Math.sin(Math.PI * ((phaseTri - 0.25) / 0.4));
+            else triWave = -30.0 * Math.sin(Math.PI * ((phaseTri - 0.65) / 0.35));
+            const theta = 16.0 * Math.sin(2 * Math.PI * 5.0 * t);
+            const noise = (Math.random() - 0.5) * 4.0;
+            e1 = triWave + theta + noise;
+            e2 = triWave * 0.35 + noise * 0.4;
+            diffEeg = e1 - e2;
+            break;
+        }
+        case 'case_12_post_concussion': {
+            const polyDelta = 26.0 * Math.sin(2 * Math.PI * 1.6 * t) + 12.0 * Math.sin(2 * Math.PI * 2.4 * t + 1.1);
+            const polyTheta = 24.0 * Math.sin(2 * Math.PI * 6.8 * t);
+            const alpha = 9.0 * Math.sin(2 * Math.PI * 9.2 * t);
+            const noise = (Math.random() - 0.5) * 4.0;
+            e1 = polyDelta + polyTheta + alpha + noise;
+            e2 = polyTheta * 0.15 + noise * 0.4;
+            diffEeg = e1 - e2;
+            break;
+        }
+        case 'case_13_narcolepsy_hypnagogic': {
+            const cycleV = t % 3.0;
+            let vWave = 0.0;
+            if (cycleV >= 1.2 && cycleV < 1.4) {
+                const vt = (cycleV - 1.2) / 0.2;
+                vWave = 85.0 * Math.sin(2 * Math.PI * vt);
+            }
+            const theta = 28.0 * Math.sin(2 * Math.PI * 5.2 * t);
+            const delta = 16.0 * Math.sin(2 * Math.PI * 2.0 * t);
+            const noise = (Math.random() - 0.5) * 3.0;
+            e1 = vWave + theta + delta + noise;
+            e2 = theta * 0.2 + noise * 0.3;
+            diffEeg = e1 - e2;
+            break;
+        }
+        case 'case_14_depression_frontal_asymmetry': {
+            const leftAlpha = 32.0 * Math.sin(2 * Math.PI * 9.8 * t);
+            const rightAlpha = 18.0 * Math.sin(2 * Math.PI * 9.8 * t + 0.3);
+            const theta = 12.0 * Math.sin(2 * Math.PI * 6.0 * t);
+            const noise = (Math.random() - 0.5) * 2.5;
+            e1 = leftAlpha + theta + noise;
+            e2 = rightAlpha + noise * 0.3;
+            diffEeg = e1 - e2;
+            break;
+        }
+        case 'case_15_elite_athlete_zone': {
+            const smrEnv = 0.6 + 0.4 * Math.sin(2 * Math.PI * 0.35 * t);
+            const smr = 24.0 * smrEnv * Math.sin(2 * Math.PI * 13.5 * t);
+            const alpha = 24.0 * Math.sin(2 * Math.PI * 10.2 * t);
+            const noise = (Math.random() - 0.5) * 2.0;
+            e1 = smr + alpha + noise;
+            e2 = alpha * 0.3 + noise * 0.3;
+            diffEeg = e1 - e2;
+            sensorPulse = 512 + 16 * Math.sin(2 * Math.PI * 1.0 * t);
+            break;
+        }
+        case 'case_16_myogenic_bruxism': {
+            const emgNoise = (Math.random() - 0.5) * 75.0 + 35.0 * Math.sin(2 * Math.PI * 55.0 * t);
+            const alpha = 8.0 * Math.sin(2 * Math.PI * 10.0 * t);
+            e1 = emgNoise + alpha;
+            e2 = emgNoise * 0.3;
+            diffEeg = e1 - e2;
+            break;
+        }
+        case 'case_17_ocular_blink_artifacts': {
+            const blinkCycle = t % 2.2;
+            let blinkDeflection = 0.0;
+            if (blinkCycle >= 1.0 && blinkCycle < 1.35) {
+                const bt = (blinkCycle - 1.0) / 0.35;
+                blinkDeflection = 160.0 * Math.sin(Math.PI * bt);
+            }
+            const alpha = 14.0 * Math.sin(2 * Math.PI * 10.0 * t);
+            const noise = (Math.random() - 0.5) * 2.5;
+            e1 = blinkDeflection + alpha + noise;
+            e2 = blinkDeflection * 0.1 + noise * 0.3;
+            diffEeg = e1 - e2;
+            break;
+        }
+        case 'case_18_drowsiness_microsleep': {
+            const driftCycle = (t * 0.15) % 1.0;
+            const isMicrosleep = (driftCycle > 0.6);
+            let waveVal = 0.0;
+            if (isMicrosleep) {
+                waveVal = 32.0 * Math.sin(2 * Math.PI * 4.5 * t) + 20.0 * Math.sin(2 * Math.PI * 1.8 * t);
+            } else {
+                waveVal = 18.0 * Math.sin(2 * Math.PI * 9.8 * t);
+            }
+            const noise = (Math.random() - 0.5) * 3.5;
+            e1 = waveVal + noise;
+            e2 = waveVal * 0.2 + noise * 0.3;
+            diffEeg = e1 - e2;
+            sensorPulse = 512 + 15 * Math.sin(2 * Math.PI * 0.9 * t);
+            break;
+        }
+        case 'case_19_pharmacological_benzo': {
+            const benzoBuzz = 34.0 * Math.sin(2 * Math.PI * 21.0 * t) + 12.0 * Math.sin(2 * Math.PI * 19.0 * t + 0.5);
+            const alpha = 10.0 * Math.sin(2 * Math.PI * 10.0 * t);
+            const noise = (Math.random() - 0.5) * 3.0;
+            e1 = benzoBuzz + alpha + noise;
+            e2 = benzoBuzz * 0.25 + noise * 0.4;
+            diffEeg = e1 - e2;
+            break;
+        }
+        case 'case_20_cerebral_hypoxia': {
+            const burstCycle = t % 4.0;
+            let burstVal = 0.0;
+            if (burstCycle < 0.6) {
+                burstVal = 12.0 * Math.sin(2 * Math.PI * 1.5 * t);
+            }
+            const flatNoise = (Math.random() - 0.5) * 2.0;
+            e1 = burstVal + flatNoise;
+            e2 = flatNoise * 0.3;
+            diffEeg = e1 - e2;
+            sensorPulse = 512 + 10 * Math.sin(2 * Math.PI * 0.8 * t);
+            break;
+        }
+    }
+
+    return { diffEeg, sensorPulse, e1, e2, e3 };
+}
+
+function togglePatientTelemetryFeed(forceState) {
+    if (forceState !== undefined) {
+        isPatientTelemetryOn = forceState;
+    } else {
+        isPatientTelemetryOn = !isPatientTelemetryOn;
+    }
+
+    isLiveTestStreaming = isPatientTelemetryOn;
+    isSimulatorMode = isPatientTelemetryOn;
+
+    // 1. Power button in telemetry bar
+    const powerBtn = document.getElementById('btn-telemetry-power');
+    const powerLbl = document.getElementById('lbl-telemetry-power');
+    const caseWrap = document.getElementById('patient-case-select-wrap');
+    if (powerBtn) powerBtn.classList.toggle('active', isPatientTelemetryOn);
+    if (powerLbl) powerLbl.innerText = isPatientTelemetryOn ? "ON" : "OFF";
+    if (caseWrap) caseWrap.style.display = isPatientTelemetryOn ? "flex" : "none";
+
+    // 2. Toolbar Stream Button
+    const streamBtn = document.getElementById('btn-stream-test');
+    const streamLbl = document.getElementById('lbl-stream-test');
+    const streamIcon = document.getElementById('icon-stream-test');
+    if (streamBtn) {
+        streamBtn.classList.toggle('active', isPatientTelemetryOn);
+        streamBtn.style.borderColor = isPatientTelemetryOn ? 'var(--emerald)' : 'var(--cyan)';
+        streamBtn.style.color = isPatientTelemetryOn ? 'var(--emerald)' : 'var(--cyan)';
+        streamBtn.style.background = isPatientTelemetryOn ? 'rgba(16, 185, 129, 0.15)' : '';
+    }
+    if (streamLbl) streamLbl.innerText = isPatientTelemetryOn ? "PATIENT TELEMETRY: ON" : "PATIENT TELEMETRY: OFF";
+    if (streamIcon) streamIcon.innerText = isPatientTelemetryOn ? "🟢" : "⚡";
+
+    // 3. Hardware tab toggle button
+    const hwSimBtn = document.getElementById('btn-toggle-sim');
+    const hwSimLbl = document.getElementById('lbl-hw-telemetry');
+    if (hwSimBtn) hwSimBtn.classList.toggle('active', isPatientTelemetryOn);
+    if (hwSimLbl) hwSimLbl.innerText = isPatientTelemetryOn ? "PATIENT TELEMETRY: ON" : "PATIENT TELEMETRY: OFF";
+
+    // 4. Hero CTA
+    const heroBtn = document.getElementById('btn-hero-cta');
+    const heroLbl = document.getElementById('lbl-hero-cta');
+    if (heroBtn) {
+        heroBtn.style.background = isPatientTelemetryOn ? 'linear-gradient(135deg, #10B981, #059669)' : '';
+        heroBtn.style.borderColor = isPatientTelemetryOn ? '#059669' : '';
+    }
+    if (heroLbl) heroLbl.innerText = isPatientTelemetryOn ? "PAUSE LIVE STREAM" : "START LIVE STREAM";
+
+    // 5. Stream interval management
+    if (isPatientTelemetryOn) {
+        loadPatientCondition(activePatientConditionId, false);
+        if (testStreamInterval) clearInterval(testStreamInterval);
+        testStreamInterval = setInterval(() => {
+            if (!isPatientTelemetryOn) return;
+            const batchSize = 10;
+            const dt = 1.0 / SAMPLING_RATE;
+            for (let i = 0; i < batchSize; i++) {
+                testStreamPhase += dt;
+                const bio = synthesizePatientBiopotential(activePatientConditionId, testStreamPhase);
+                ingestSample(bio.diffEeg, bio.sensorPulse, bio.e1, bio.e2, bio.e3);
+            }
+        }, 40);
+        const condName = PATIENT_CONDITIONS[activePatientConditionId]?.name || 'Baseline';
+        showToast(`Patient Telemetry Feed ENGAGED • ${condName}`, "success", 2500);
+    } else {
+        if (testStreamInterval) {
+            clearInterval(testStreamInterval);
+            testStreamInterval = null;
+        }
+        showToast("Patient Telemetry Feed STANDBY (OFF)", "info", 1500);
     }
     updateHardwareUIState(isHardwareActive);
+}
+
+function loadPatientCondition(conditionId, notify = true) {
+    if (!PATIENT_CONDITIONS[conditionId]) {
+        conditionId = 'case_01_resting_baseline';
+    }
+    activePatientConditionId = conditionId;
+    const cond = PATIENT_CONDITIONS[conditionId];
+
+    // Update UI select dropdown if different
+    const selEl = document.getElementById('sel-patient-condition');
+    if (selEl && selEl.value !== conditionId) {
+        selEl.value = conditionId;
+    }
+
+    // Update Active Badge
+    const badgeEl = document.getElementById('badge-patient-id');
+    if (badgeEl) {
+        badgeEl.innerText = cond.patient_id;
+        badgeEl.title = `${cond.patient_name} • ${cond.name}`;
+    }
+
+    // Update Band Powers in memory
+    currentBands.delta = cond.bands.delta;
+    currentBands.theta = cond.bands.theta;
+    currentBands.alpha = cond.bands.alpha;
+    currentBands.beta  = cond.bands.beta;
+
+    // Update Metrics
+    currentMetrics.stressIndex = cond.stress_index;
+    currentMetrics.ruleState = cond.cognitive_load;
+    currentMetrics.tbr = cond.tbr;
+    currentMetrics.abr = cond.abr;
+
+    // Update Hardware tab sliders
+    setSliderValues(cond.bands.delta, cond.bands.theta, cond.bands.alpha, cond.bands.beta, (cond.wave_params.noise || 2) * 5);
+
+    // Update Clinical Narrative
+    const repEl = document.getElementById('rep-narrative');
+    if (repEl) {
+        repEl.innerText = cond.patient_condition;
+    }
+
+    // Save Patient metadata to local storage
+    localStorage.setItem('neurosim_patient_id', cond.patient_id);
+    localStorage.setItem('neurosim_patient_name', cond.patient_name);
+
+    if (notify) {
+        showToast(`Loaded Profile: ${cond.patient_id} • ${cond.name}`, "info", 2000);
+    }
+}
+
+function cycleNextPatientCondition(direction = 1) {
+    const keys = Object.keys(PATIENT_CONDITIONS);
+    const currIdx = keys.indexOf(activePatientConditionId);
+    let nextIdx = (currIdx + direction + keys.length) % keys.length;
+    loadPatientCondition(keys[nextIdx], true);
+}
+
+function toggleActionItem(checkbox, idx) {
+    const textEl = document.getElementById(`text-action-${idx}`);
+    const lblEl = document.getElementById(`lbl-action-${idx}`);
+    if (checkbox.checked) {
+        if (textEl) {
+            textEl.style.textDecoration = 'line-through';
+            textEl.style.color = '#94A3B8';
+        }
+        if (lblEl) lblEl.style.background = '#F8FAFC';
+        showToast("Clinical action marked as completed / initiated", "success", 1500);
+    } else {
+        if (textEl) {
+            textEl.style.textDecoration = 'none';
+            textEl.style.color = 'var(--text-bright)';
+        }
+        if (lblEl) lblEl.style.background = '#FFFFFF';
+    }
+}
+
+function toggleSimulatorMode() {
+    togglePatientTelemetryFeed();
 }
 
 function updateSimSliders() {
@@ -3099,36 +3873,38 @@ function updateSimSliders() {
 
 function loadPreset(presetName) {
     if (presetName === 'deep_sleep') {
-        setSliderValues(80, 20, 10, 5, 10);
+        loadPatientCondition('case_02_deep_nrem_sleep');
     } else if (presetName === 'relaxed') {
-        setSliderValues(15, 20, 75, 15, 10);
+        loadPatientCondition('case_01_resting_baseline');
     } else if (presetName === 'high_stress') {
-        setSliderValues(5, 15, 20, 85, 15);
+        loadPatientCondition('case_03_cognitive_overload');
+    } else if (PATIENT_CONDITIONS[presetName]) {
+        loadPatientCondition(presetName);
     }
-    if (!isSimulatorMode) toggleSimulatorMode();
+    if (!isPatientTelemetryOn) togglePatientTelemetryFeed(true);
 }
 
 function setSliderValues(d, t, a, b, n) {
-    document.getElementById('sld-delta').value = d;
-    document.getElementById('sld-theta').value = t;
-    document.getElementById('sld-alpha').value = a;
-    document.getElementById('sld-beta').value  = b;
-    document.getElementById('sld-noise').value = n;
-    updateSimSliders();
+    const sldD = document.getElementById('sld-delta');
+    const sldT = document.getElementById('sld-theta');
+    const sldA = document.getElementById('sld-alpha');
+    const sldB = document.getElementById('sld-beta');
+    const sldN = document.getElementById('sld-noise');
+    if (sldD) sldD.value = d;
+    if (sldT) sldT.value = t;
+    if (sldA) sldA.value = a;
+    if (sldB) sldB.value = b;
+    if (sldN) sldN.value = n;
+    if (sldD && sldT && sldA && sldB && sldN) {
+        updateSimSliders();
+    }
 }
 
 function generateSimulatedChunk(numSamples) {
-    const scale = 36.0;
     for (let i = 0; i < numSamples; i++) {
         simPhase += 0.004; // 1 / 250s
-        const sDelta = simParams.delta * Math.sin(2 * Math.PI * 2.0 * simPhase);
-        const sTheta = simParams.theta * Math.sin(2 * Math.PI * 6.0 * simPhase);
-        const sAlpha = simParams.alpha * Math.sin(2 * Math.PI * 10.0 * simPhase);
-        const sBeta  = simParams.beta  * Math.sin(2 * Math.PI * 20.0 * simPhase);
-        const noise  = (Math.random() - 0.5) * simParams.noise * 2.0;
-
-        const val = (sDelta + sTheta + sAlpha + sBeta + noise) * scale;
-        ingestSample(val);
+        const bio = synthesizePatientBiopotential(activePatientConditionId, simPhase);
+        ingestSample(bio.diffEeg, bio.sensorPulse, bio.e1, bio.e2, bio.e3);
     }
 }
 
@@ -4178,6 +4954,11 @@ window.displayDiagnosticModal = displayDiagnosticModal;
 window.closeDiagnosticModal = closeDiagnosticModal;
 window.downloadClinicalReportPDF = downloadClinicalReportPDF;
 window.initOscilloscopeButtons = initOscilloscopeButtons;
+window.togglePatientTelemetryFeed = togglePatientTelemetryFeed;
+window.loadPatientCondition = loadPatientCondition;
+window.cycleNextPatientCondition = cycleNextPatientCondition;
+window.toggleActionItem = toggleActionItem;
+window.PATIENT_CONDITIONS = PATIENT_CONDITIONS;
 
 try {
     initOscilloscopeButtons();

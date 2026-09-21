@@ -1105,6 +1105,22 @@ class NeuroSimHTTPHandler(SimpleHTTPRequestHandler):
             })
             return
 
+        # 1b-2. Clinical Patient Conditions Catalog
+        elif parsed.path == '/api/patient-conditions':
+            try:
+                from src.simulation.patient_conditions import get_all_conditions
+                all_conds = get_all_conditions()
+                self.send_json_response(200, {
+                    "success": True,
+                    "count": len(all_conds),
+                    "conditions": all_conds
+                }, {
+                    "Cache-Control": "public, max-age=3600"
+                })
+            except Exception as e:
+                self.send_json_response(500, {"success": False, "error": str(e)})
+            return
+
         # 1c. Cognitive Load & Clinical Neural Diagnostic Report
         elif parsed.path in ('/api/hardware/diagnostic-report', '/api/diagnostic-report', '/api/session/diagnostic-report'):
             try:
@@ -1113,64 +1129,98 @@ class NeuroSimHTTPHandler(SimpleHTTPRequestHandler):
                 from src.classification.ai_report_model import DeepNeuroReportModel
                 deep_model = DeepNeuroReportModel.load_trained()
 
-                # Extract spectral parameters from query string or live telemetry
-                delta = float(query_params.get('delta', [22.4])[0])
-                theta = float(query_params.get('theta', [18.2])[0])
-                alpha = float(query_params.get('alpha', [38.6])[0])
-                beta  = float(query_params.get('beta', [20.8])[0])
-                tbr = round(theta / max(0.1, beta), 3)
-                abr = round(alpha / max(0.1, beta), 3)
-                stress_idx = round(beta / max(0.1, alpha + theta), 3)
+                condition_id = query_params.get('condition_id', [None])[0]
+                patient_record_id = query_params.get('patient_id', ["PT-2026-001"])[0]
+                patient_name = query_params.get('patient_name', ["Anonymous Subject"])[0]
+                case_title = None
 
-                # Cognitive Workload Classification
-                load_override = query_params.get('load', [None])[0]
-                if load_override and load_override.upper() in ("LOW", "MODERATE", "HIGH", "FATIGUE"):
-                    cognitive_load = load_override.upper()
-                elif beta > 35.0 or stress_idx > 0.65:
-                    cognitive_load = "HIGH"
-                elif beta > 22.0 or stress_idx > 0.35:
-                    cognitive_load = "MODERATE"
+                if condition_id:
+                    from src.simulation.patient_conditions import get_condition, PATIENT_CONDITIONS
+                    if condition_id in PATIENT_CONDITIONS:
+                        cond_data = get_condition(condition_id)
+                        patient_record_id = cond_data.get("patient_id", patient_record_id)
+                        patient_name = cond_data.get("patient_name", patient_name)
+                        case_title = cond_data.get("name")
+                        delta = float(cond_data["bands"]["delta"])
+                        theta = float(cond_data["bands"]["theta"])
+                        alpha = float(cond_data["bands"]["alpha"])
+                        beta  = float(cond_data["bands"]["beta"])
+                        tbr = float(cond_data.get("tbr", round(theta / max(0.1, beta), 3)))
+                        abr = float(cond_data.get("abr", round(alpha / max(0.1, beta), 3)))
+                        stress_idx = float(cond_data.get("stress_index", round(beta / max(0.1, alpha + theta), 3)))
+                        cognitive_load = cond_data.get("cognitive_load", "LOW")
+                        patient_condition = cond_data.get("patient_condition", "")
+                        patient_actions = list(cond_data.get("patient_action_plan", []))
+                    else:
+                        delta = float(query_params.get('delta', [22.4])[0])
+                        theta = float(query_params.get('theta', [18.2])[0])
+                        alpha = float(query_params.get('alpha', [38.6])[0])
+                        beta  = float(query_params.get('beta', [20.8])[0])
+                        tbr = round(theta / max(0.1, beta), 3)
+                        abr = round(alpha / max(0.1, beta), 3)
+                        stress_idx = round(beta / max(0.1, alpha + theta), 3)
+                        cognitive_load = "LOW"
+                        patient_condition = "Routine clinical recording."
+                        patient_actions = ["Maintain standard clinical observation."]
                 else:
-                    cognitive_load = "LOW"
+                    # Extract spectral parameters from query string or live telemetry
+                    delta = float(query_params.get('delta', [22.4])[0])
+                    theta = float(query_params.get('theta', [18.2])[0])
+                    alpha = float(query_params.get('alpha', [38.6])[0])
+                    beta  = float(query_params.get('beta', [20.8])[0])
+                    tbr = round(theta / max(0.1, beta), 3)
+                    abr = round(alpha / max(0.1, beta), 3)
+                    stress_idx = round(beta / max(0.1, alpha + theta), 3)
 
-                # Clinical Patient Condition Diagnosis
-                if cognitive_load == "HIGH":
-                    patient_condition = (
-                        "Marked elevation in high-frequency beta oscillations (13-30 Hz) accompanied by suppression of "
-                        "synchronous posterior alpha rhythms. Findings indicate acute mental workload, heightened stress reactivity, "
-                        "and attentional hyper-vigilance with elevated cortical metabolic strain."
-                    )
-                    patient_actions = [
-                        "Enforce immediate cognitive de-escalation with a 10-15 minute quiet sensory attenuation break.",
-                        "Administer guided paced diaphragm breathing (4-second inhale, 6-second exhale) to stimulate vagal tone.",
-                        "Temporarily suspend complex analytical tasks to prevent neurocognitive task-saturation and mental exhaustion.",
-                        "Re-evaluate differential EEG biopotentials after the rest interval to confirm alpha recovery."
-                    ]
-                elif cognitive_load == "MODERATE":
-                    patient_condition = (
-                        "Harmonic fronto-central rhythm distribution with preserved alpha baseline and steady beta engagement. "
-                        "Theta/Beta ratio indicates balanced executive attention, working memory allocation, and stable cognitive capacity."
-                    )
-                    patient_actions = [
-                        "Safe to proceed with analytical intellectual tasks; maintain ergonomic posture and visual hydration.",
-                        "Enforce a 5-minute micro-break every 45-50 minutes to preserve attentional stamina.",
-                        "Monitor Theta/Beta Ratio (TBR) and Alpha/Beta Ratio (ABR) if switching to complex multi-demand environments.",
-                        "Maintain steady cognitive pacing without uninterrupted prolonged exposure."
-                    ]
-                else:
-                    patient_condition = (
-                        "Prominent synchronized posterior alpha rhythms (8-13 Hz) reflecting relaxed wakefulness, calm cortical idling, "
-                        "and minimal mental strain. No signs of attentional stress or abnormal biopotential hyperarousal."
-                    )
-                    patient_actions = [
-                        "Patient is operating at an optimal relaxed cognitive state; fully cleared for routine tasks.",
-                        "If higher vigilance is demanded, introduce moderate cognitive stimulation or task re-orientation.",
-                        "Maintain standard ergonomic workspace conditions and routine hydration."
-                    ]
+                    # Cognitive Workload Classification
+                    load_override = query_params.get('load', [None])[0]
+                    if load_override and load_override.upper() in ("LOW", "MODERATE", "HIGH", "FATIGUE"):
+                        cognitive_load = load_override.upper()
+                    elif beta > 35.0 or stress_idx > 0.65:
+                        cognitive_load = "HIGH"
+                    elif beta > 22.0 or stress_idx > 0.35:
+                        cognitive_load = "MODERATE"
+                    else:
+                        cognitive_load = "LOW"
 
-                # Google AI Studio (Gemini 1.5 Flash) Real-Time Synthesis
+                    # Clinical Patient Condition Diagnosis
+                    if cognitive_load == "HIGH":
+                        patient_condition = (
+                            "Marked elevation in high-frequency beta oscillations (13-30 Hz) accompanied by suppression of "
+                            "synchronous posterior alpha rhythms. Findings indicate acute mental workload, heightened stress reactivity, "
+                            "and attentional hyper-vigilance with elevated cortical metabolic strain."
+                        )
+                        patient_actions = [
+                            "Enforce immediate cognitive de-escalation with a 10-15 minute quiet sensory attenuation break.",
+                            "Administer guided paced diaphragm breathing (4-second inhale, 6-second exhale) to stimulate vagal tone.",
+                            "Temporarily suspend complex analytical tasks to prevent neurocognitive task-saturation and mental exhaustion.",
+                            "Re-evaluate differential EEG biopotentials after the rest interval to confirm alpha recovery."
+                        ]
+                    elif cognitive_load == "MODERATE":
+                        patient_condition = (
+                            "Harmonic fronto-central rhythm distribution with preserved alpha baseline and steady beta engagement. "
+                            "Theta/Beta ratio indicates balanced executive attention, working memory allocation, and stable cognitive capacity."
+                        )
+                        patient_actions = [
+                            "Safe to proceed with analytical intellectual tasks; maintain ergonomic posture and visual hydration.",
+                            "Enforce a 5-minute micro-break every 45-50 minutes to preserve attentional stamina.",
+                            "Monitor Theta/Beta Ratio (TBR) and Alpha/Beta Ratio (ABR) if switching to complex multi-demand environments.",
+                            "Maintain steady cognitive pacing without uninterrupted prolonged exposure."
+                        ]
+                    else:
+                        patient_condition = (
+                            "Prominent synchronized posterior alpha rhythms (8-13 Hz) reflecting relaxed wakefulness, calm cortical idling, "
+                            "and minimal mental strain. No signs of attentional stress or abnormal biopotential hyperarousal."
+                        )
+                        patient_actions = [
+                            "Patient is operating at an optimal relaxed cognitive state; fully cleared for routine tasks.",
+                            "If higher vigilance is demanded, introduce moderate cognitive stimulation or task re-orientation.",
+                            "Maintain standard ergonomic workspace conditions and routine hydration."
+                        ]
+
+                # Google AI Studio (Gemini 1.5 Flash) Real-Time Synthesis (Only if condition_id is not specified)
                 gemini_key = os.environ.get('GEMINI_API_KEY')
-                if gemini_key:
+                if gemini_key and not condition_id:
                     try:
                         import urllib.request
                         gemini_prompt = (
@@ -1238,12 +1288,16 @@ class NeuroSimHTTPHandler(SimpleHTTPRequestHandler):
                     "success": True,
                     "generated_at": datetime.datetime.now().isoformat(),
                     "report_type": "CLINICAL_COGNITIVE_LOAD_DIAGNOSTIC",
+                    "patient_id": patient_record_id,
+                    "patient_name": patient_name,
+                    "case_title": case_title,
+                    "condition_id": condition_id,
                     "cognitive_load": cognitive_load,
                     "confidence_pct": 95.4,
                     "patient_condition": patient_condition,
                     "wave_diagnosis": wave_diagnosis,
                     "patient_action_plan": patient_actions,
-                    "pdf_download_url": f"/api/session/report-pdf?delta={delta}&theta={theta}&alpha={alpha}&beta={beta}&load={cognitive_load}",
+                    "pdf_download_url": f"/api/session/report-pdf?delta={delta}&theta={theta}&alpha={alpha}&beta={beta}&load={cognitive_load}&patient_id={patient_record_id}&patient_name={urllib.parse.quote(patient_name)}",
                     "model_telemetry": {
                         "architecture": "Deep Neural Network (512->512->384->64->4)",
                         "trainable_parameters": deep_model.total_parameters,

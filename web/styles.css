@@ -1752,43 +1752,171 @@ input[type="range"] {
     animation: pulse 1.5s infinite;
 }
 
-/* Quick Simulation Preset Chips */
-.monitor-presets-row {
+/* Patient Biopotential Telemetry Controls & Clinical Case Bar */
+.patient-telemetry-control-bar {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 12px;
     flex-wrap: wrap;
-    margin-top: 8px;
-    padding-top: 8px;
+    margin-top: 10px;
+    padding-top: 10px;
     border-top: 1px solid var(--border);
+    background: #F8FAFC;
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid #E2E8F0;
 }
 
-.monitor-preset-lbl {
+.telemetry-power-cluster {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.telemetry-label {
     font-size: 10px;
     font-weight: 700;
     color: var(--text-muted);
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    user-select: none;
 }
 
-.preset-chip {
-    background: #FFFFFF;
-    border: 1px solid #CBD5E1;
-    color: #334155;
-    padding: 3px 10px;
-    border-radius: 12px;
-    font-size: 11px;
-    cursor: pointer;
-    transition: all 0.15s ease;
+.btn-telemetry-power {
     display: inline-flex;
     align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 11px;
+    font-weight: 700;
+    font-family: inherit;
+    border: 1px solid #CBD5E1;
+    background: #FFFFFF;
+    color: #475569;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+    user-select: none;
+}
+
+.btn-telemetry-power:hover {
+    border-color: #94A3B8;
+    color: #0F172A;
+    background: #F1F5F9;
+}
+
+.btn-telemetry-power.active {
+    background: rgba(16, 185, 129, 0.12);
+    border-color: #10B981;
+    color: #047857;
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+}
+
+.power-indicator-led {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #94A3B8;
+    transition: all 0.2s ease;
+    display: inline-block;
+}
+
+.btn-telemetry-power.active .power-indicator-led {
+    background: #10B981;
+    box-shadow: 0 0 8px #10B981;
+    animation: telemetryPulse 1.8s infinite;
+}
+
+@keyframes telemetryPulse {
+    0% { transform: scale(1); opacity: 1; box-shadow: 0 0 4px #10B981; }
+    50% { transform: scale(1.15); opacity: 0.85; box-shadow: 0 0 10px #10B981; }
+    100% { transform: scale(1); opacity: 1; box-shadow: 0 0 4px #10B981; }
+}
+
+.patient-case-select-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    animation: fadeIn 0.2s ease-in-out;
+}
+
+.case-select-divider {
+    height: 18px;
+    width: 1px;
+    background: #CBD5E1;
+    margin: 0 2px;
+}
+
+.case-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #0284C7;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.clinical-case-dropdown {
+    font-size: 11px;
+    font-weight: 600;
+    font-family: inherit;
+    padding: 4px 10px;
+    border-radius: 6px;
+    border: 1px solid #CBD5E1;
+    background: #FFFFFF;
+    color: #0F172A;
+    max-width: 420px;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.clinical-case-dropdown:focus {
+    border-color: #0284C7;
+    box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.18);
+}
+
+.case-nav-btn-group {
+    display: inline-flex;
     gap: 4px;
 }
 
-.preset-chip:hover {
-    background: rgba(2, 132, 199, 0.08);
-    border-color: var(--cyan);
-    color: var(--cyan);
+.btn-case-nav {
+    font-size: 10px;
+    font-weight: 600;
+    font-family: inherit;
+    padding: 3px 8px;
+    border-radius: 4px;
+    border: 1px solid #CBD5E1;
+    background: #FFFFFF;
+    color: #334155;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.btn-case-nav:hover {
+    background: #F1F5F9;
+    border-color: #94A3B8;
+    color: #0F172A;
+}
+
+.case-badge-active {
+    font-size: 10px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    padding: 3px 8px;
+    border-radius: 12px;
+    background: rgba(14, 165, 233, 0.1);
+    border: 1px solid rgba(14, 165, 233, 0.3);
+    color: #0284C7;
+    letter-spacing: 0.5px;
+}
+
+/* Clinical Action Checklist in Diagnostic Modal */
+.action-checklist-item {
+    cursor: pointer;
+    accent-color: #059669;
 }
 
 /* Topo Canvas Tooltip */
